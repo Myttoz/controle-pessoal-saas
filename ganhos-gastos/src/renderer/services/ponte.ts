@@ -2,13 +2,13 @@
  * Ponte única entre o renderer e a API.
  *
  * - No Electron, `window.api` é injetado pelo preload (IPC).
- * - No navegador, não existe `window.api`; usamos o adaptador `fetch`.
+ * - No navegador (SaaS), usamos o adaptador Supabase.
  *
  * Todo o restante do renderer importa `api` daqui — assim a mesma base de
- * código roda no desktop e na web sem `if (window.api)` espalhado.
+ * código roda no desktop e no SaaS sem `if (window.api)` espalhado.
  */
 import type { ApiElectron } from '@/types/api-electron';
-import { criarApiWeb } from './apiWeb';
+import { criarApiSupabase } from './apiSupabase';
 
 const apiElectron =
   typeof window !== 'undefined'
@@ -18,4 +18,4 @@ const apiElectron =
 /** `true` quando está rodando dentro do Electron. */
 export const ehDesktop = !!apiElectron;
 
-export const api: ApiElectron = apiElectron ?? criarApiWeb();
+export const api: ApiElectron = apiElectron ?? criarApiSupabase();

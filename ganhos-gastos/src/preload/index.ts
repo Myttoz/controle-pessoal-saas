@@ -38,6 +38,7 @@ const api: ApiElectron = {
 
   login: (payload: PayloadLogin) => ipcRenderer.invoke('api:login', payload),
   verificar: (payload: PayloadVerificar) => ipcRenderer.invoke('api:verificar', payload),
+  logout: () => ipcRenderer.invoke('api:logout'),
   proxy: (payload: Record<string, unknown>) =>
     ipcRenderer.invoke('api:proxy', payload),
 

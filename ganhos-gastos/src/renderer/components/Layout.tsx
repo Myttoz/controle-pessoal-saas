@@ -166,8 +166,8 @@ export function Layout({ children, usuario, aoLogout }: Props) {
 
         <div className="space-y-1 border-t border-slate-800 p-3 text-[11px] leading-relaxed text-slate-600">
           <StatusSync />
-          <span className="hidden md:block">Dados via API Google Sheets</span>
-          <span className="md:hidden">API</span>
+          <span className="hidden md:block">Dados via Supabase</span>
+          <span className="md:hidden">Supabase</span>
         </div>
       </aside>
 

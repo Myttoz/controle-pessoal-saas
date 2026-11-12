@@ -96,21 +96,32 @@ export const useStoreAuth = create<EstadoAuth>((set, get) => ({
   verificar: async () => {
     const { token } = get();
     console.log('[auth] verificar() chamado, token presente:', !!token);
-    if (!token) {
-      console.log('[auth] verificar(): sem token, retornando false');
-      return false;
-    }
     set({ carregando: true, erro: null });
     try {
+      // Sem token local ainda: pode ser o retorno do login com Google (OAuth),
+      // em que a sessão já está no Supabase — nesse caso pedimos para o serviço
+      // devolver a sessão existente. Se não houver, ele responde "token inválido".
       const payload: PayloadVerificar = { acao: 'verificar', token };
       const resposta = await api.verificar(payload);
       console.log('[auth] resposta do verificar:', resposta);
 
       if (!resposta.sucesso) {
-        console.log('[auth] verificar(): token inválido, fazendo logout');
-        get().logout();
+        console.log('[auth] verificar(): token inválido');
+        if (token) get().logout();
+        set({ carregando: false });
         return false;
       }
+
+      // Sessão válida. Se não tínhamos token local (ou o token mudou),
+      // restaura a sessão completa no store.
+      if (!token || resposta.token !== token) {
+        const atual = get().usuario;
+        const usuarioPerfil: Usuario = resposta.usuario
+          ? { usuario: resposta.usuario }
+          : (atual ?? { usuario: '' });
+        get().setSessao(resposta.token, usuarioPerfil);
+      }
+
       console.log('[auth] verificar(): token válido');
       set({ carregando: false, erro: null });
       return true;
@@ -129,6 +140,7 @@ export const useStoreAuth = create<EstadoAuth>((set, get) => ({
     limparTokenSessao();
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USUARIO_KEY);
+    void api.logout();
   },
 
   setSessao: (token, usuario) => {

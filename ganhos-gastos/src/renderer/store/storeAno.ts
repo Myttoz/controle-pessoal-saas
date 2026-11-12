@@ -61,21 +61,21 @@ export interface EstadoAno {
   editarLancamento(
     ano: number,
     aba: string,
-    linha: number,
+    linha: number | string,
     dados: DadosMensais,
   ): Promise<boolean>;
-  removerLancamento(ano: number, aba: string, linha: number): Promise<boolean>;
+  removerLancamento(ano: number, aba: string, linha: number | string): Promise<boolean>;
 
-  editarSalario(ano: number, linha: number, dados: DadosSalario): Promise<boolean>;
+  editarSalario(ano: number, linha: number | string, dados: DadosSalario): Promise<boolean>;
 
   adicionarExtra(ano: number, tabela: TabelaExtra, dados: DadosExtra): Promise<boolean>;
   editarExtra(
     ano: number,
     tabela: TabelaExtra,
-    linha: number,
+    linha: number | string,
     dados: DadosExtra,
   ): Promise<boolean>;
-  removerExtra(ano: number, tabela: TabelaExtra, linha: number): Promise<boolean>;
+  removerExtra(ano: number, tabela: TabelaExtra, linha: number | string): Promise<boolean>;
 
   criarNovoAno(ano: number): Promise<boolean>;
   gerarDashboard(ano: number): Promise<boolean>;
@@ -408,7 +408,7 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
         })),
       reverter: () => restaurarMes(ano, sigla, anterior),
       aposSucesso: (resposta) => {
-        if (!('linha' in resposta) || typeof resposta.linha !== 'number') return;
+        if (!('linha' in resposta)) return;
         const linhaReal = resposta.linha;
         const dadosConfirmados =
           'registro' in resposta && resposta.registro
@@ -532,7 +532,7 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
       otimizar: () => patchExtras(ano, tabela, (lista) => [...lista, registroTemporario]),
       reverter: () => restaurarExtras(ano, anterior),
       aposSucesso: (resposta) => {
-        if (!('linha' in resposta) || typeof resposta.linha !== 'number') return;
+        if (!('linha' in resposta)) return;
         const linhaReal = resposta.linha;
         const dadosConfirmados =
           'registro' in resposta && resposta.registro

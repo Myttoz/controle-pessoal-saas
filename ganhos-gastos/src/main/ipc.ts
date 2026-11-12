@@ -51,6 +51,12 @@ export function registrarIpc(): void {
   ipcMain.handle('api:verificar', (_evento, payload) =>
     proteger('verificar', () => postJsonProxy(payload)),
   );
+  ipcMain.handle('api:logout', () =>
+    proteger('logout', async () => {
+      // No desktop o token vive no renderer (localStorage); aqui só confirmamos.
+      // Nenhuma sessão é mantida no processo principal.
+    }),
+  );
 
   // ---------- proxy (autenticado — token injetado na chamada real) ----------
   // Escritas via proxy entram na MESMA fila sequencial das escritas diretas:

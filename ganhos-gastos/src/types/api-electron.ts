@@ -92,6 +92,7 @@ export interface ApiElectron {
   // ---- autenticação ----
   login(payload: PayloadLogin): Promise<LoginResposta>;
   verificar(payload: PayloadVerificar): Promise<TokenResposta>;
+  logout(): Promise<void>;
   proxy(payload: Record<string, unknown>): Promise<unknown>;
 
   // ---- cache em disco ----

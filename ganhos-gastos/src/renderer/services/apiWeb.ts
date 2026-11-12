@@ -125,6 +125,10 @@ export function criarApiWeb(): ApiElectron {
     verificar: async (payload: PayloadVerificar): Promise<TokenResposta> =>
       (await postJson(payload as unknown as Record<string, unknown>)) as TokenResposta,
 
+    logout: async (): Promise<void> => {
+      localStorage.clear();
+    },
+
     proxy: async (payload: Record<string, unknown>): Promise<unknown> => postJson(payload),
 
     // ---- leituras (não usadas pelo renderer web) ----

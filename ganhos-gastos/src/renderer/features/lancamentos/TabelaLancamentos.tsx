@@ -90,10 +90,10 @@ interface LinhaProps {
   /** grid-template-columns dinâmico (mesmo do cabeçalho). */
   colunas: string;
   /** Número da linha na planilha (usado para editar). */
-  linha: number;
+  linha: number | string;
   aoEditar: (registro: Registro<LancamentoMensal>) => void;
   aoExcluir: (registro: Registro<LancamentoMensal>) => void;
-  aoEditarObservacao: (linha: number, novoValor: string) => Promise<void>;
+  aoEditarObservacao: (linha: number | string, novoValor: string) => Promise<void>;
 }
 
 const Linha = memo(function Linha({ registro, colunas, linha, aoEditar, aoExcluir, aoEditarObservacao }: LinhaProps) {
@@ -178,7 +178,7 @@ interface DadosVirtuais {
   linhaInicial: number;
   aoEditar: (registro: Registro<LancamentoMensal>) => void;
   aoExcluir: (registro: Registro<LancamentoMensal>) => void;
-  aoEditarObservacao: (linha: number, novoValor: string) => Promise<void>;
+  aoEditarObservacao: (linha: number | string, novoValor: string) => Promise<void>;
 }
 
 function LinhaVirtual({ index, style, data }: ListChildComponentProps<DadosVirtuais>) {
@@ -209,7 +209,7 @@ interface Props {
   opcoes: OpcoesColunas;
   aoEditar: (registro: Registro<LancamentoMensal>) => void;
   aoExcluir: (registro: Registro<LancamentoMensal>) => void;
-  aoEditarObservacao: (linha: number, novoValor: string) => Promise<void>;
+  aoEditarObservacao: (linha: number | string, novoValor: string) => Promise<void>;
 }
 
 export function TabelaLancamentos({ registros, opcoes, aoEditar, aoExcluir, aoEditarObservacao }: Props) {

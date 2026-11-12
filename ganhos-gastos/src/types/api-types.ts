@@ -112,8 +112,8 @@ export type DadosExtra = Partial<Omit<LinhaExtra, never>>;
 
 /** Registro como a API devolve: dados + número da linha (usado em editar/remover). */
 export interface Registro<T> {
-  /** Número da linha na planilha — identificador estável para editar/remover. */
-  linha: number;
+  /** Identificador estável para editar/remover (número da linha ou UUID do Supabase). */
+  linha: number | string;
   dados: T;
 }
 
@@ -246,7 +246,7 @@ export type RespostaListas = Resposta<{
 export type RespostaAdicionar<T> = Resposta<{
   aba: string;
   /** Linha onde o registro foi gravado — guarde para editar/remover. */
-  linha: number;
+  linha: number | string;
   /** Campos efetivamente preenchidos. */
   gravadas: string[];
   registro: T;
@@ -255,7 +255,7 @@ export type RespostaAdicionar<T> = Resposta<{
 /** acao=editar */
 export type RespostaEditar<T> = Resposta<{
   aba: string;
-  linha: number;
+  linha: number | string;
   alteradas: string[];
   registro: T;
 }>;
@@ -263,7 +263,7 @@ export type RespostaEditar<T> = Resposta<{
 /** acao=remover */
 export type RespostaRemover = Resposta<{
   aba: string;
-  linha: number;
+  linha: number | string;
   removido: true;
 }>;
 
@@ -308,7 +308,7 @@ export interface PayloadAdicionar<T> extends BasePayload {
 export interface PayloadEditar<T> extends BasePayload {
   acao: 'editar';
   aba: string;
-  linha: number;
+  linha: number | string;
   dados: T;
   tabela?: 'ganhos' | 'gastos';
 }
@@ -316,7 +316,7 @@ export interface PayloadEditar<T> extends BasePayload {
 export interface PayloadRemover extends BasePayload {
   acao: 'remover';
   aba: string;
-  linha: number;
+  linha: number | string;
   tabela?: 'ganhos' | 'gastos';
 }
 
@@ -348,7 +348,11 @@ export interface Usuario {
 }
 
 export type LoginResposta = Resposta<{ token: string; usuario: string }>;
-export type TokenResposta = Resposta<{ token: string }>;
+export type TokenResposta = Resposta<{
+  token: string;
+  /** E-mail/usuário da sessão — usado para restaurar sessão (OAuth/Google). */
+  usuario?: string;
+}>;
 
 export interface PayloadLogin {
   acao: 'login';

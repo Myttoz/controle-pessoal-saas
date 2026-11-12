@@ -131,7 +131,7 @@ export function LancamentosPage() {
   }, []);
 
   const aoEditarObservacao = useCallback(
-    async (linha: number, novoValor: string) => {
+    async (linha: number | string, novoValor: string) => {
       if (!ano || !aba) return;
       await editarLancamento(ano, aba, linha, { OBSERVAÇÃO: novoValor });
     },

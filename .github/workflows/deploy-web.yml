@@ -40,6 +40,12 @@ jobs:
         run: npm ci
 
       - name: Gerar build web
+        # A chave "publishable/anon" do Supabase é pública por design
+        # (vai no bundle do site); a proteção dos dados é feita por RLS.
+        # Se quiser trocar o projeto, defina os secrets no GitHub.
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://srojhhwpwfjbotuphoxq.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'sb_publishable_kcVOc7NhsDkX2Z09f-QR8A_nVrG4Yty' }}
         run: npm run build:web
 
       - name: Configurar GitHub Pages
