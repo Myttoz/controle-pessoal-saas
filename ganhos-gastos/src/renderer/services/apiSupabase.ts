@@ -17,14 +17,17 @@ import type {
   Categoria,
   DadosExtra,
   DadosMensais,
+  DadosLembrete,
   DadosSalario,
   FormaPgto,
   InfoAba,
   LancamentoMensal,
+  Lembrete,
   LinhaExtra,
   LinhaSalario,
   LoginResposta,
   MesSnapshot,
+  PayloadEscrita,
   PayloadLogin,
   PayloadVerificar,
   QuemPaga,
@@ -40,6 +43,14 @@ import type {
   ResumoDashboard,
   SiglaMes,
   SnapshotAno,
+  StatusLembrete,
+  RespostaLembretes,
+  RespostaStatusLembretes,
+  RespostaAdicionarLembrete,
+  RespostaEditarLembrete,
+  RespostaRemoverLembrete,
+  RespostaTestarLembrete,
+  RespostaInstalarLembretes,
   TokenResposta,
   TipoPagamento,
 } from '@/types/api-types';
@@ -295,11 +306,121 @@ function gravarCache(chave: string, valor: unknown): void {
 }
 
 // ---------------------------------------------------------------------------
+// lembretes (SaaS: tabela `lembretes`; o envio de e-mail era feito pelo
+// Google Apps Script e não existe aqui — o lembrete fica salvo no banco)
+// ---------------------------------------------------------------------------
+
+function rowToLembrete(r: Record<string, unknown>): Lembrete {
+  const statusBruto = String(r.status ?? 'PENDENTE').toUpperCase();
+  const status: StatusLembrete =
+    statusBruto === 'ENVIADO' || statusBruto === 'CANCELADO' ? statusBruto : 'PENDENTE';
+  return {
+    id: String(r.id),
+    titulo: String(r.titulo ?? ''),
+    dataCriacao: String(r.created_at ?? '').slice(0, 19).replace('T', ' '),
+    dataLembrete: String(r.data ?? '').slice(0, 10),
+    email: String(r.email ?? ''),
+    whatsapp: String(r.whatsapp ?? ''),
+    mensagem: String(r.mensagem ?? ''),
+    enviadoEmail: false,
+    enviadoWhatsapp: false,
+    eventoId: '',
+    status,
+    enviadoEm: '',
+    erro: '',
+  };
+}
+
+async function opListarLembretes(): Promise<RespostaLembretes> {
+  const uid = await getUserId();
+  if (!uid) return erro('Faça login.', 'NAO_AUTORIZADO');
+  const { data, error } = await supabase
+    .from('lembretes')
+    .select('*')
+    .eq('user_id', uid)
+    .order('data', { ascending: true });
+  if (error) return erro(error.message);
+  return {
+    sucesso: true,
+    lembretes: ((data ?? []) as Record<string, unknown>[]).map(rowToLembrete),
+  };
+}
+
+async function opStatusLembretes(): Promise<RespostaStatusLembretes> {
+  const uid = await getUserId();
+  if (!uid) return erro('Faça login.', 'NAO_AUTORIZADO');
+  const { count, error } = await supabase
+    .from('lembretes')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', uid);
+  if (error) return erro(error.message);
+  return {
+    sucesso: true,
+    aba: 'lembretes',
+    total: count ?? 0,
+    gatilhoAtivo: false,
+    fuso: 'America/Sao_Paulo',
+    emailRestante: -1,
+  };
+}
+
+async function opAdicionarLembrete(
+  dados: DadosLembrete,
+): Promise<RespostaAdicionarLembrete> {
+  const uid = await getUserId();
+  if (!uid) return erro('Faça login.', 'NAO_AUTORIZADO');
+  const { data, error } = await supabase
+    .from('lembretes')
+    .insert({
+      user_id: uid,
+      titulo: dados.titulo,
+      descricao: dados.mensagem,
+      data: dados.dataLembrete || null,
+      mensagem: dados.mensagem,
+      email: dados.email,
+      whatsapp: dados.whatsapp,
+      status: 'PENDENTE',
+      ativo: true,
+    })
+    .select()
+    .single();
+  if (error) return erro(error.message);
+  return { sucesso: true, lembrete: rowToLembrete(data as Record<string, unknown>) };
+}
+
+async function opEditarLembrete(
+  id: string,
+  dados: DadosLembrete,
+): Promise<RespostaEditarLembrete> {
+  const { data, error } = await supabase
+    .from('lembretes')
+    .update({
+      titulo: dados.titulo,
+      descricao: dados.mensagem,
+      data: dados.dataLembrete || null,
+      mensagem: dados.mensagem,
+      email: dados.email,
+      whatsapp: dados.whatsapp,
+    })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) return erro(error.message);
+  return { sucesso: true, lembrete: rowToLembrete(data as Record<string, unknown>) };
+}
+
+async function opRemoverLembrete(id: string): Promise<RespostaRemoverLembrete> {
+  const { error } = await supabase.from('lembretes').delete().eq('id', id);
+  if (error) return erro(error.message);
+  return { sucesso: true, removido: true, id };
+}
+
+// ---------------------------------------------------------------------------
 // adaptador
 // ---------------------------------------------------------------------------
 
 export function criarApiSupabase(): ApiElectron {
-  return {
+  const api: ApiElectron = {
     janela: undefined,
 
     // ---- autenticação ----
@@ -774,11 +895,15 @@ export function criarApiSupabase(): ApiElectron {
       gravarCache(LOCAL_KEY, dados);
     },
 
-    // ---- proxy (dados locais no Supabase) ----
+    // ---- proxy: CADA ação real usada por `servicoApi` (services/api.ts) ----
+    // O renderer nunca chama as leituras/escritas direto pelo contrato: ele
+    // envelopa tudo em `proxy` com `acao_real` (mesma assinatura da versão
+    // desktop, que despacha no Auth.gs). Aqui despachamos para as operações
+    // do próprio adaptador.
     proxy: async (payload: Record<string, unknown>): Promise<unknown> => {
       const acaoReal = payload.acao_real as string;
 
-      if (acaoReal === 'dadosLocais') {
+      const dadosLocaisCompleto = async (): Promise<unknown> => {
         const uid = await getUserId();
         if (!uid) return erro('Faça login.', 'NAO_AUTORIZADO');
         const [profRes, heRes, ferRes, manRes] = await Promise.all([
@@ -802,12 +927,11 @@ export function criarApiSupabase(): ApiElectron {
           manutencoes: ((manRes.data ?? []) as Record<string, unknown>[]).map(rowToManutencao),
         };
         return { sucesso: true, dados, salvoEm: dados.salvoEm };
-      }
+      };
 
-      if (acaoReal === 'salvarDadosLocais') {
+      const salvarDadosLocais = async (dados: DadosLocais): Promise<unknown> => {
         const uid = await getUserId();
         if (!uid) return erro('Faça login.', 'NAO_AUTORIZADO');
-        const dados = payload.dados as DadosLocais;
 
         const { error: profErr } = await supabase
           .from('profiles')
@@ -861,9 +985,78 @@ export function criarApiSupabase(): ApiElectron {
         }
 
         return { sucesso: true, salvoEm: Date.now() };
-      }
+      };
 
-      return erro('Ação desconhecida.', 'ACAO_INVALIDA');
+      switch (acaoReal) {
+        // ---- leituras ----
+        case 'abas':
+          return api.getAbas();
+        case 'ano':
+          return api.getAno(inteiro(payload.ano) ?? 0);
+        case 'dashboard':
+          return api.getDashboard(
+            inteiro(payload.ano) ?? 0,
+            typeof payload.agrupar === 'string' ? payload.agrupar : undefined,
+          );
+        case 'listas':
+          return api.getListas();
+        case 'listar':
+          return api.listar(
+            String(payload.aba ?? ''),
+            payload.tabela as 'ganhos' | 'gastos' | undefined,
+          );
+
+        // ---- escritas ----
+        case 'adicionar':
+        case 'editar':
+        case 'remover':
+        case 'criarAno':
+        case 'atualizarDashboard': {
+          const resto = { ...payload };
+          delete resto.acao;
+          delete resto.acao_real;
+          delete resto.token;
+          return api.escrita({ ...resto, acao: acaoReal } as unknown as PayloadEscrita);
+        }
+
+        // ---- dados locais (horas extras / férias / manutenção / config) ----
+        case 'dadosLocais':
+          return dadosLocaisCompleto();
+        case 'salvarDadosLocais':
+          return salvarDadosLocais(payload.dados as DadosLocais);
+
+        // ---- lembretes ----
+        case 'lembretes':
+          return opListarLembretes();
+        case 'statusLembretes':
+          return opStatusLembretes();
+        case 'adicionarLembrete':
+          return opAdicionarLembrete(payload.dados as DadosLembrete);
+        case 'editarLembrete':
+          return opEditarLembrete(String(payload.id), payload.dados as DadosLembrete);
+        case 'removerLembrete':
+          return opRemoverLembrete(String(payload.id));
+        case 'testarLembrete': {
+          const resposta: RespostaTestarLembrete = {
+            sucesso: true,
+            mensagem:
+              'O SaaS não envia e-mails de lembrete (isso era feito pelo Google Apps Script). O lembrete fica salvo no banco e aparece na lista.',
+          };
+          return resposta;
+        }
+        case 'instalarLembretes': {
+          const resposta: RespostaInstalarLembretes = {
+            sucesso: true,
+            mensagem: 'Nenhum gatilho a instalar no SaaS — os lembretes ficam salvos no banco.',
+            fuso: 'America/Sao_Paulo',
+            gatilhosAnterioresRemovidos: 0,
+          };
+          return resposta;
+        }
+
+        default:
+          return erro(`Ação desconhecida: ${acaoReal}`, 'ACAO_INVALIDA');
+      }
     },
 
     // ---- diagnóstico ----
@@ -872,6 +1065,8 @@ export function criarApiSupabase(): ApiElectron {
       return { baseUrl: url ?? '', temChave: true };
     },
   };
+
+  return api;
 }
 
 export default criarApiSupabase;

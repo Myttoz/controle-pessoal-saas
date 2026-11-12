@@ -167,6 +167,10 @@ create table if not exists lembretes (
   data date,
   hora time,
   ativo boolean default true,
+  email text,
+  whatsapp text,
+  mensagem text,
+  status text default 'PENDENTE',
   created_at timestamptz default now()
 );
 
