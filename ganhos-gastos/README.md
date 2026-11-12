@@ -1,5 +1,11 @@
 # Ganhos & Gastos — App Desktop
 
+> ⚠️ **Atualização (nov/2026):** a versão de produção é a **web**
+> (GitHub Pages + Supabase) — https://myttoz.github.io/controle-pessoal-saas/
+> com guia de manutenção em `COLINHA.md` (na raiz do repositório).
+> Este README descreve a arquitetura desktop/Google Sheets original e as
+> áreas do app — as fórmulas, atalhos e estrutura valem para as duas versões.
+
 Aplicativo desktop de controle financeiro construído com **Electron + React + TypeScript + Vite**,
 consumindo a API web do Google Apps Script da planilha "Ganhos & Gastos" para
 lançamentos, salário e extras. Não há dados fictícios: sem dados na API, o app
