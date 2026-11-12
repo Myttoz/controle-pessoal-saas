@@ -93,6 +93,17 @@ function clonar<T>(valor: T): T {
   return JSON.parse(JSON.stringify(valor)) as T;
 }
 
+/**
+ * Ano pré-selecionado no primeiro acesso. Prefere o ano corrente (se houver
+ * na base); só usa o último ano como fallback. Evita cair num ano vazio
+ * criado pelo usuário (ex.: 2027 criado antecipadamente).
+ */
+function anoPadrao(anos: number[]): number | null {
+  if (!anos.length) return null;
+  const anoAtual = new Date().getFullYear();
+  return anos.includes(anoAtual) ? anoAtual : anos[anos.length - 1];
+}
+
 function persistir(): void {
   if (timerPersistencia) clearTimeout(timerPersistencia);
   timerPersistencia = setTimeout(() => {
@@ -264,7 +275,8 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
         carregando: false,
         snapshots: cache.snapshots,
         anos: cache.anos,
-        anoSelecionado: cache.anoSelecionado ?? (cache.anos.length ? cache.anos[cache.anos.length - 1] : null),
+        anoSelecionado:
+          cache.anoSelecionado ?? anoPadrao(cache.anos),
         atualizadoEm: cache.atualizadoEm,
         listas: cache.listas,
       });
@@ -285,7 +297,7 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
     set({ pronto: true, carregando: true });
     await get().atualizarAnos();
     const anos = get().anos;
-    const ano = anos.length ? anos[anos.length - 1] : null;
+    const ano = anoPadrao(anos);
 
     if (ano != null) {
       set({ anoSelecionado: ano });
@@ -303,7 +315,7 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
       await get().atualizarAnos();
     }
     const anos = get().anos;
-    const ano = get().anoSelecionado ?? (anos.length ? anos[anos.length - 1] : null);
+    const ano = get().anoSelecionado ?? anoPadrao(anos);
 
     if (ano != null) {
       if (get().anoSelecionado !== ano) {
