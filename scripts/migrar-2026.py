@@ -61,6 +61,21 @@ def normalize_date(d):
     return d
 
 
+def excel_time(serial):
+    """Converte fração do dia do Excel (0..1) para 'HH:MM:SS'."""
+    try:
+        n = float(serial)
+    except (TypeError, ValueError):
+        return None
+    if n <= 0 or n >= 1:
+        return None
+    total = int(round(n * 24 * 3600))
+    h = total // 3600
+    m = (total % 3600) // 60
+    s = total % 60
+    return '%02d:%02d:%02d' % (h, m, s)
+
+
 def load_workbook(path):
     z = zipfile.ZipFile(path)
     wb = ET.fromstring(z.read('xl/workbook.xml'))
@@ -303,10 +318,10 @@ def parse_hora_extra(rows):
             continue
         out.append({
             'data': excel_date(data),
-            'entrada': r.get('C', ''),
-            'almoco_inicio': r.get('D', ''),
-            'almoco_fim': r.get('E', ''),
-            'saida': r.get('F', ''),
+            'entrada': excel_time(r.get('C', '')),
+            'almoco_inicio': excel_time(r.get('D', '')),
+            'almoco_fim': excel_time(r.get('E', '')),
+            'saida': excel_time(r.get('F', '')),
             'hora_100': sql_num(r.get('I', '')),
             'hora_50': sql_num(r.get('J', '')),
             'valor_presencial': sql_num(r.get('K', '')),
