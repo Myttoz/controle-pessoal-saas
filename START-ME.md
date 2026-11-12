@@ -89,7 +89,8 @@ Mesmo tipo **Notes**:
 | Widget | Para que | URL/configuração |
 |---|---|---|
 | 🌦️ Weather | Mostrar clima | cidade da casa |
-| 📈 RSS — GitHub Status | Saber se GitHub caiu | feed: status.github.com |
+| 📈 RSS — GitHub Incidents | Saber se o GitHub caiu (histórico) | `https://www.githubstatus.com/history.rss` — se o widget recusar, use o Atom: `https://www.githubstatus.com/history.atom` |
+| 📝 RSS — seus commits | Ver todo push no seu repo no histórico | `https://github.com/Myttoz/controle-pessoal-saas/commits/master.atom` |
 | 🗓️ Calendar | ver Google Agenda direto | sua conta do Google |
 | ✅ To-do | pendências do app em si | ex.: "rodar ALTER TABLE lembretes" |
 | 📝 Bookmarks | salvar docs | COLINHA.md do repo, deck, start.me |
