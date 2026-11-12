@@ -188,7 +188,7 @@ def parse_mensal(rows, mes):
     out = []
     for r in rows[header_idx + 1:]:
         cat = str(r.get('A', '')).strip()
-        if not cat:
+        if not cat or cat.upper().startswith('TOTAL'):
             continue
         valor = r.get('B', '')
         if valor in ('', None):
@@ -261,6 +261,8 @@ def parse_imp_ganho(rows):
             valor = r.get(c_val, '')
             data = r.get(c_data, '')
             if not desc or valor in ('', None):
+                continue
+            if desc.upper().startswith('TOTAL'):
                 continue
             out.append({
                 'mes': mes,
@@ -335,7 +337,7 @@ def parse_ferias(rows):
     out = []
     for r in rows[3:]:
         periodo = str(r.get('A', '')).strip()
-        if not periodo:
+        if not periodo or periodo.upper().startswith('TOTAL'):
             continue
         out.append({
             'periodo': periodo,
@@ -354,10 +356,11 @@ def parse_manutencao(rows, veiculo='C4'):
     out = []
     for r in rows[1:]:
         item = str(r.get('A', '')).strip()
-        if not item:
+        if not item or item.lower().startswith('total') or item.lower().startswith('gasto total'):
             continue
         out.append({
             'veiculo': veiculo,
+            'item': item,
             'data': excel_date(r.get('B', '')),
             'km': r.get('C', '') if r.get('C', '') not in ('', None) else None,
             'valor': sql_num(r.get('D', '')),
@@ -472,9 +475,9 @@ def gerar_sql(xlsx, user_uuid):
         man_rows = parse('Manutenção C4')
         for r in parse_manutencao(man_rows, 'C4'):
             linhas.append(
-                "insert into manutencao (user_id, veiculo, data, km, valor, mecanico, observacao, prox_data, prox_km, status) "
-                "values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
-                % (uid, sql_str(r['veiculo']), sql_str(r['data']), sql_num(r['km']),
+                "insert into manutencao (user_id, veiculo, item, data, km, valor, mecanico, observacao, prox_data, prox_km, status) "
+                "values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
+                % (uid, sql_str(r['veiculo']), sql_str(r['item']), sql_str(r['data']), sql_num(r['km']),
                    r['valor'], sql_str(r['mecanico']), sql_str(r['observacao']),
                    sql_str(r['prox_data']), sql_num(r['prox_km']), sql_str(r['status']))
             )

@@ -144,6 +144,7 @@ create table if not exists manutencao (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users(id) on delete cascade,
   veiculo text,
+  item text,
   data date,
   km int,
   valor numeric(12,2),
