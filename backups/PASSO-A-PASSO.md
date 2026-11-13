@@ -6,9 +6,8 @@
 >
 > **Tempo estimado:** 5 minutos.
 >
-> **Pré-requisito:** senha do banco (a que você criou na hora de criar o projeto
-> Supabase — está no seu Telegram). Se não souber, você pode redefinir em:
-> Supabase → Project Settings → Database → **Reset database password**.
+> **Pré-requisito:** senha do banco (você criou com o projeto; se não souber,
+> resetei na tela Connect do Supabase — botão **Reset database password**).
 
 ---
 
@@ -23,46 +22,38 @@
 
 ## Passo 2 — Pegar a connection string do Supabase
 
-1. https://supabase.com/dashboard/project/srojhhwpwfjbotuphoxq
-2. Menu lateral: **Project Settings** → **Database**
-3. Sessão **Connection string** → escolha **URI**
-4. O valor virá parecido com:
+1. Abra o botão verde **Connect** na barra superior do seu projeto
+2. Clique na aba **Direct** (a terceira, "Connection string")
+3. Selecione **Session pooler** (terceira opção da lista — o GitHub Actions não
+   tem IPv6, então é o Session pooler que funciona)
+4. No final da tela, em **Connection string**, copie o texto inteiro
 
-   ```
-   postgresql://postgres:[YOUR-PASSWORD]@db.srojhhwpwfjbotuphoxq.supabase.co:5432/postgres
-   ```
+A string tem formato parecido com:
 
-   Substitua `[YOUR-PASSWORD]` pela senha real do banco (aquela do Telegram ou a que
-   você acabou de redefinir). Guarde o resultado completo — é o seu `SUPABASE_DB_URL`.
+```
+postgresql://postgres.srojhhwpwfjbotuphoxq:[YOUR-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:5432/postgres
+```
+
+Troque `[YOUR-PASSWORD]` pela senha do banco. Se não souber, clique em
+**Reset database password** (mesmo modal, ao lado da caixa) e use a nova senha.
 
 > ⚠️ **Não cole essa senha no chat, nem em arquivo nenhum.** Ela vai apenas para o
-> campo de **Secrets** no GitHub, que você cola diretamente lá.
->
-> Se o Supabase mostrar endereços IPv6 e o `pg_dump` falhar, troque pelo
-> **connection pooler** na mesma página (endereço parecido com
-> `aws-0-sa-east-1.pooler.supabase.com:6543`, usuário `postgres.srojhhwpwfjbotuphoxq`).
+> campo de **Secrets** no GitHub.
 
 ---
 
-## Passo 3 — Colar os secrets no GitHub
+## Passo 3 — Colar o secret no GitHub
 
 No repositório **controle-pessoal-backups**:
 
 1. **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
-2. Crie o primeiro:
+2. Crie o secret:
 
    - Name: `SUPABASE_DB_URL`
    - Value: a connection string completa obtida no passo 2
-3. Crie o segundo (token para o workflow poder commitar):
 
-   - Name: `BACKUPS_REPO_TOKEN`
-   - Value: um **Fine-grained personal access token** com:
-     - Repositories: só `controle-pessoal-backups`
-     - Permissions: **Contents → Read and write** (todo o resto pode ficar "No access")
-   - Gere em: https://github.com/settings/personal-access-tokens/new
-
-> Opcional mais simples: o token `ghp_…` do seu Telegram também funciona, mas o
-> fine-grained acima é mais seguro (acesso só ao repo de backups).
+> O workflow usa o `GITHUB_TOKEN` padrão do próprio repositório para commitar o
+> `.dump` — **não é preciso criar nenhum token adicional**.
 
 ---
 
@@ -78,12 +69,11 @@ No repositório **controle-pessoal-backups**:
 ## Passo 5 — Testar
 
 1. Aba **Actions** do repositório de backups → workflow **Backup Supabase — semanal**
-2. **Run workflow** → faça aparecer `Actions` ativado para o repo (se pedir confirmação)
-3. Espere ~1 minuto: o run deve ficar **verde** e o repo ganha um arquivo
-   `backups/backup-AAAA-MM-DD.dump`
+2. **Run workflow**
+3. Após ~1 minuto o run deve ficar **verde** e aparecer `backups/backup-AAAA-MM-DD.dump`
 
-Pronto — backup automático semanal configurado. O arquivo `backup.dump` fica
-salvo no repo privado para sempre (ou até rodar uma limpeza ocasional).
+Pronto — backup automático semanal configurado. O `.dump` fica guardado para
+sempre no repo privado (pode limpar de tempos em tempos se acumular).
 
 ---
 

@@ -11,14 +11,15 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write          # GITHUB_TOKEN padrão: checkout + push no próprio repo
+
 jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo de backups
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.BACKUPS_REPO_TOKEN }}
+        uses: actions/checkout@v4   # usa o GITHUB_TOKEN padrão do próprio repo — sem secret extra
 
       - name: Instalar cliente Postgres
         run: |
