@@ -177,7 +177,7 @@ export function LancamentosPage() {
         <Botao variante="primario" icone={Plus} onClick={abrirNovo} disabled={!aba}>
           Novo lançamento
           <kbd className="ml-1 hidden rounded border border-sky-400/40 px-1 text-[10px] text-sky-200/80 sm:inline">
-            Ctrl+N
+            Ctrl+O
           </kbd>
         </Botao>
       </div>

@@ -25,7 +25,7 @@ function podeAbrirNovoLancamento(): boolean {
 
 /**
  * Atalhos globais:
- *  Ctrl/Cmd + N  → novo lançamento
+ *  Ctrl/Cmd + O  → novo lançamento
  *  Ctrl/Cmd + F  → busca de lançamentos
  *  /             → busca (quando não está digitando)
  *  Esc           → fecha modal
@@ -44,7 +44,7 @@ export function useAtalhosGlobais(): void {
       const ctrl = evento.ctrlKey || evento.metaKey;
       const tecla = evento.key.toLowerCase();
 
-      if (ctrl && tecla === 'n') {
+      if (ctrl && tecla === 'o') {
         evento.preventDefault();
         podeAbrirNovoLancamento();
       } else if (ctrl && tecla === 'f') {

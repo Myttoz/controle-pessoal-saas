@@ -141,7 +141,7 @@ As fórmulas reproduzem a planilha "Ganhos & Gastos" (`src/renderer/lib/calculos
 
 | Atalho | Ação |
 |--------|------|
-| `Ctrl/Cmd + N` | Novo lançamento (no mês selecionado) |
+| `Ctrl/Cmd + O` | Novo lançamento (no mês selecionado) |
 | `Ctrl/Cmd + F` ou `/` | Ir para Lançamentos com a busca focada |
 | `Esc` | Fechar modal |
 

@@ -81,7 +81,17 @@ navedador ──► https://myttoz.github.io/controle-pessoal-saas/
 ## 4. Fluxo normal para mudar qualquer coisa
 
 Editar algo no site = editar código no seu PC → commit → push → o site é
-reconstruído sozinho:
+reconstruído sozinho. **Regra de ouro:** antes de qualquer alteração,
+substitua o backup da pasta (fica em `/home/infra/Documentos/Pessoal/`):
+
+```bash
+cd "/home/infra/Documentos/Pessoal"
+rm -f APP-Financas-backup.tar.gz
+tar --exclude='APP Financas/ganhos-gastos/node_modules' \
+    --exclude='APP Financas/ganhos-gastos/out' \
+    --exclude='APP Financas/ganhos-gastos/dist-web' \
+    -czf APP-Financas-backup.tar.gz "APP Financas"
+```
 
 ```bash
 cd "/home/infra/Documentos/Pessoal/APP Financas"
@@ -224,16 +234,25 @@ https://calendar.google.com/calendar/render?action=TEMPLATE&text=Controle%20Pess
 
 Contém seus dados; não vai para o GitHub (`.gitignore` bloqueia).
 
-| Arquivo | Conteúdo |
+**Regra vigente:** antes de qualquer alteração, **substitua o backup** em
+`/home/infra/Documentos/Pessoal/APP-Financas-backup.tar.gz` (comando na seção 4).
+Não gera múltiplas versões — sobrescreve; guardar só a mais recente.
+
+| Arquivo/local | Conteúdo |
 |---|---|
+| `/home/infra/Documentos/Pessoal/APP-Financas-backup.tar.gz` | **Backup da pasta inteira** (`APP Financas` com `.git`, `.env`, planilhas, migrations; sem node_modules) |
+| Repo privado `controle-pessoal-backups` (GitHub) | **Backup automático semanal** do Postgres (workflow `backups/backup-semanal.yml`, copia pro repo privado) — ver `backups/PASSO-A-PASSO.md` |
 | `scripts/Ganhos-Gastos 2026.xlsx` | Planilha original 2026 (usada na migração) |
 | `scripts/migracao-2026.sql` | SQL gerado a partir da planilha (ENTREGA ÚNICA; não está no Git) |
-| `ganhos-gastos-backup-2026-11-12.tar.gz` | Backup binário do projeto desktop (na pasta) |
-| `Ganhos-Gastos 2027.xlsx` | Planilha 2027 (aba nova vazia) |
-| `../APP/` | Projeto desktop antigo **completo** (Electron + Apps Script), funcional por pendrive |
-| `sql/schema.sql` | Schema do banco (tablas + RLS) — versão controlada |
-| Supabase | dados de produção (São Paulo) — **sem backup automático** |
-| Export CSV (seção 5.3) | Backup manual recomendado 1×/mês |
+| `../APP/` | Projeto desktop antigo **completo** — congelado; só servirá como backup/estrado antes de excluir; nada mais será trabalhado nela |
+| `sql/schema.sql` | Schema do banco (tabelas + RLS) — versão controlada |
+| Supabase | dados de produção (São Paulo) — **backup nativo é pago**; alternativa gratuita = repo privado (acima) |
+| Export CSV (seção 5.3) | Backup manual complementar |
+
+Para restaurar a pasta a partir do tar, apague `APP Financas`, copie
+`APP-Financas-backup.tar.gz` em `Documentos/Pessoal/` e extraia com
+`tar -xzf` (os arquivos sensíveis voltam junto: `.env`, `scripts/migracao-2026.sql`
+e as planilhas).
 
 ---
 
