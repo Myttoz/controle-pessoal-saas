@@ -13,9 +13,8 @@ import { useStoreUI } from '@/store/storeUI';
 
 const MESES: SiglaMes[] = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
-/** Chaves de localStorage para os campos digitados pelo usuário (persistem entre recargas). */
+/** Chave de localStorage para os campos digitados pelo usuário (persistem entre recargas). */
 const LS_SALDO_CAIXA = 'pg_saldoCaixa';
-const LS_DESPESAS_MES_ANTERIOR = 'pg_despesasMesAnterior';
 
 function numero(valor: number | undefined | null): number {
   const n = Number(valor);
@@ -38,15 +37,11 @@ interface LinhaPagamento {
   rotulo: string;
   /** Salário do mês (aba Ganhos → Total ganhos). */
   salario: number;
-  /** Despesas do mês anterior (Meu gasto real). Manual apenas para o 1º mês. */
-  despesasMesAnterior: number;
-  /** Se o valor acima veio de campo manual (mês 1 sem dados do ano anterior). */
-  despesasMesAnteriorManual: boolean;
-  /** Label do campo manual de despesas do mês anterior (varia por mês). */
-  labelDespesasMesAnterior: string;
+  /** Despesas do mês atual (Meu gasto real — buscado de Lançamentos do mesmo mês). */
+  despesas: number;
   /** Despesas da Lívia do mês atual (informativo: Dividido/2 + Livia). */
   despesasLivia: number;
-  /** Restante = Salário − Despesas mês anterior. */
+  /** Restante = Salário − Despesas do mês. */
   restante: number;
   /** Pix gasto neste mês. */
   pixMes: number;
@@ -54,8 +49,6 @@ interface LinhaPagamento {
   pixMesAnterior: number;
   /** Se há lançamentos neste mês. */
   temDados: boolean;
-  /** Se é o primeiro mês do ano (despesas mês anterior vêm de campo manual). */
-  ehPrimeiroMes: boolean;
 }
 
 export function PagamentosPage() {
@@ -69,18 +62,12 @@ export function PagamentosPage() {
 
   // ---- campos digitados pelo usuário, persistidos em localStorage ----
   const [saldoCaixaTexto, setSaldoCaixaTexto] = useState(localStorage.getItem(LS_SALDO_CAIXA) ?? '');
-  const [despesasMesAnteriorTexto, setDespesasMesAnteriorTexto] = useState(
-    localStorage.getItem(LS_DESPESAS_MES_ANTERIOR) ?? '',
-  );
 
   const saldoCaixa = parseValor(saldoCaixaTexto) || 0;
-  const despesasMesAnteriorValor = parseValor(despesasMesAnteriorTexto) || 0;
 
   useEffect(() => {
     if (saldoCaixaTexto !== '') localStorage.setItem(LS_SALDO_CAIXA, saldoCaixaTexto);
-    if (despesasMesAnteriorTexto !== '')
-      localStorage.setItem(LS_DESPESAS_MES_ANTERIOR, despesasMesAnteriorTexto);
-  }, [saldoCaixaTexto, despesasMesAnteriorTexto]);
+  }, [saldoCaixaTexto]);
 
   if (carregando && !snapshot) {
     return <Carregando texto="Carregando dados de pagamentos…" />;
@@ -116,7 +103,6 @@ export function PagamentosPage() {
   /** Linhas do resumo mensal — uma por mês do ano selecionado. */
   const linhas = useMemo<LinhaPagamento[]>(() => {
     const resultado: LinhaPagamento[] = [];
-    let divisaoAnterior: ReturnType<typeof resumirDivisao> | null = null;
     let pixAnterior = 0;
 
     for (const m of MESES) {
@@ -136,54 +122,27 @@ export function PagamentosPage() {
         ),
       );
 
-      const ehPrimeiroMes = !divisaoAnterior;
-      const mesIndex = MESES.indexOf(m);
-      const mesAnteriorSigla = MESES[mesIndex - 1];
-      const mesAnteriorNome = ehPrimeiroMes
-        ? 'Dezembro (ano anterior)'
-        : NOMES_MESES[mesAnteriorSigla] ?? '';
-
-      // Label do campo manual varia por mês:
-      // JAN → "DESPESAS DEZEMBRO (mês anterior — não está na planilha)"
-      // FEV → "DESPESAS MÊS JANEIRO", MAR → "DESPESAS MÊS FEVEREIRO", etc.
-      const labelDespesasMesAnterior = ehPrimeiroMes
-        ? 'Despesas dezembro (mês anterior — não está na planilha)'
-        : `Despesas mês ${mesAnteriorNome}`;
-
-      let despesasMesAnterior = 0;
-      let despesasMesAnteriorManual = false;
-
-      if (ehPrimeiroMes) {
-        // 1º mês do ano: não há dados do mês anterior na planilha → campo manual
-        despesasMesAnterior = despesasMesAnteriorValor;
-        despesasMesAnteriorManual = despesasMesAnteriorValor > 0;
-      } else {
-        despesasMesAnterior = divisaoAnterior!.totalReal;
-      }
-
-      const restante = arredondar2(salarioMes - despesasMesAnterior);
+      // Despesas do PRÓPRIO mês (Lançamentos: Meu gasto real) — automático.
+      const despesas = arredondar2(divisao.totalReal);
+      const restante = arredondar2(salarioMes - despesas);
 
       resultado.push({
         mes: m,
         rotulo: NOMES_MESES[m] ?? m,
         salario: salarioMes,
-        despesasMesAnterior,
-        despesasMesAnteriorManual,
-        labelDespesasMesAnterior,
+        despesas,
         despesasLivia: arredondar2(divisao.receboLivia),
         restante,
         pixMes,
         pixMesAnterior: pixAnterior,
         temDados,
-        ehPrimeiroMes,
       });
 
-      divisaoAnterior = divisao;
       pixAnterior = pixMes;
     }
 
     return resultado;
-  }, [snapshot, salarioPorMes, despesasMesAnteriorValor]);
+  }, [snapshot, salarioPorMes]);
 
   // Pix do mês selecionado (para a área informativa de reposição)
   const mesAtualSnapshot = snapshot.meses[mes];
@@ -207,7 +166,7 @@ export function PagamentosPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <MesTabs meses={snapshot.meses} selecionado={mes} aoSelecionar={setMes} />
         <p className="text-xs text-slate-500">
-          Salário do mês − Despesas do mês anterior = Restante · Saldo = Caixa (digitado) + Restante
+          Salário do mês − Despesas do mês (Lançamentos) = Restante · Saldo = Caixa (digitado) + Restante
         </p>
       </div>
 
@@ -238,37 +197,17 @@ export function PagamentosPage() {
                 </p>
               </div>
 
-              {linhaMesSelecionado?.ehPrimeiroMes ? (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                    {linhaMesSelecionado.labelDespesasMesAnterior}
-                  </label>
-                  <input
-                    type="text"
-                    value={despesasMesAnteriorTexto}
-                    onChange={(e) =>
-                      setDespesasMesAnteriorTexto(e.target.value.replace(/[^0-9,.-]/g, ''))
-                    }
-                    placeholder="Ex.: 3.200,00"
-                    className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-sky-500"
-                  />
-                  <p className="text-[10px] text-slate-600">
-                    Meu gasto real de dezembro/2026. Só usado na linha de janeiro (1º mês do ano).
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                    {linhaMesSelecionado?.labelDespesasMesAnterior ?? 'Despesas mês anterior'}
-                  </label>
-                  <span className="text-lg font-semibold tabular-nums text-slate-100">
-                    {formatarMoeda(linhaMesSelecionado?.despesasMesAnterior ?? 0)}
-                  </span>
-                  <p className="text-[10px] text-slate-600">
-                    Buscado automaticamente do mês anterior (Meu gasto real).
-                  </p>
-                </div>
-              )}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  Despesas do mês (Lançamentos)
+                </label>
+                <span className="text-lg font-semibold tabular-nums text-slate-100">
+                  {formatarMoeda(linhaMesSelecionado?.despesas ?? 0)}
+                </span>
+                <p className="text-[10px] text-slate-600">
+                  Meu gasto real do mesmo mês (automático).
+                </p>
+              </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
@@ -290,7 +229,7 @@ export function PagamentosPage() {
                   {formatarMoeda(restanteMesSelecionado)}
                 </span>
                 <p className="text-[10px] text-slate-600">
-                  Salário − despesas do mês anterior.
+                  Salário − despesas do mês (Lançamentos).
                 </p>
               </div>
 
@@ -318,8 +257,8 @@ export function PagamentosPage() {
                   <tr className="border-b border-slate-800 bg-slate-950/60 text-left text-[11px] uppercase tracking-wider text-slate-500">
                     <th className="px-4 py-3 font-semibold">Mês</th>
                     <th className="px-3 py-3 text-right font-semibold">Salário mês</th>
-                    <th className="px-3 py-3 text-right font-semibold" title="Despesas do mês anterior (Meu gasto real)">
-                      Despesas mês ant.
+                    <th className="px-3 py-3 text-right font-semibold" title="Despesas do mês (Meu gasto real, Lançamentos)">
+                      Despesas
                     </th>
                     <th className="px-3 py-3 text-right font-semibold" title="Dividido 50/50 ÷ 2 + Livia do mês — informativo">
                       Despesas Livia
@@ -333,7 +272,7 @@ export function PagamentosPage() {
                 <tbody>
                   {linhas.map((linha) => {
                     const temSalario = linha.salario > 0;
-                    const podeCalcular = temSalario && (linha.temDados || linha.despesasMesAnteriorManual);
+                    const podeCalcular = temSalario && linha.temDados;
                     return (
                       <tr
                         key={linha.mes}
@@ -351,14 +290,7 @@ export function PagamentosPage() {
                           {temSalario ? formatarMoeda(linha.salario) : '—'}
                         </td>
                         <td className="px-3 py-2.5 text-right tabular-nums">
-                          {podeCalcular || linha.despesasMesAnteriorManual
-                            ? formatarMoeda(linha.despesasMesAnterior)
-                            : '—'}
-                          {linha.despesasMesAnteriorManual && !linha.temDados ? (
-                            <span className="ml-1 text-[10px] text-amber-400" title="Valor digitado manualmente">
-                              *
-                            </span>
-                          ) : null}
+                          {podeCalcular ? formatarMoeda(linha.despesas) : '—'}
                         </td>
                         <td className="px-3 py-2.5 text-right tabular-nums text-slate-400">
                           {linha.temDados ? formatarMoeda(linha.despesasLivia) : '—'}
@@ -393,7 +325,7 @@ export function PagamentosPage() {
                       </td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-slate-300">
                         {formatarMoeda(
-                          arredondar2(linhas.reduce((s, l) => s + l.despesasMesAnterior, 0)),
+                          arredondar2(linhas.reduce((s, l) => s + l.despesas, 0)),
                         )}
                       </td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-slate-400">
@@ -457,12 +389,6 @@ export function PagamentosPage() {
                 Digite o <strong>saldo em caixa</strong> acima para ver o <strong>Saldo</strong> do mês selecionado.
               </p>
             )}
-            {linhaMesSelecionado?.ehPrimeiroMes && despesasMesAnteriorValor === 0 && (
-              <p className="border-t border-slate-800 px-4 py-2.5 text-xs text-amber-400">
-                <CreditCard className="h-3.5 w-3.5 shrink-0" />
-                Informe as <strong>despesas de dezembro</strong> (mês anterior) para calcular o restante de janeiro.
-              </p>
-            )}
           </section>
 
           {/* ---------- área informativa do Pix ---------- */}
@@ -499,7 +425,7 @@ export function PagamentosPage() {
               Atualizar
             </Botao>
             <span className="text-xs text-slate-600">
-              Salário vem da aba Ganhos (Total ganhos) · Despesas vêm de Lançamentos (Meu gasto real)
+              Salário vem da aba Ganhos (Total ganhos) · Despesas vêm de Lançamentos do mesmo mês (Meu gasto real)
             </span>
           </div>
         </>
