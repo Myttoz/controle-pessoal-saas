@@ -13,13 +13,26 @@
  */
 
 // ---------------------------------------------------------------------------
-//  CONFIGURAÇÃO (compartilhada entre as três áreas)
+//  CONFIGURAÇÃO (compartilhada entre as três áreas + Resumo de Pagamentos)
 // ---------------------------------------------------------------------------
+
+/** Um mês do Resumo de Pagamentos, com entrada manual do usuário. */
+export interface ResumoMesConfig {
+  /** Despesas informadas à mão (ex.: R$ 2.000,00). */
+  despesas: number | null;
+  /** Recebido da Lívia no mês (ex.: R$ 500,00). */
+  recebidoLivia: number | null;
+}
+
 export interface ConfigLocal {
   /** Salário bruto mensal (R$). Base de todos os cálculos de hora extra e férias. */
   salarioBruto: number;
   /** Quilometragem atual do veículo (usada no status da manutenção). */
   kmAtual: number;
+  /** Saldo do caixa no início de cada ano (ex.: "2026": 10000). */
+  saldoInicial?: Record<string, number>;
+  /** Resumo manual por mês, com chave "AAAA-MM" (ex.: "2026-01"). */
+  resumoMes?: Record<string, ResumoMesConfig>;
 }
 
 // ---------------------------------------------------------------------------
@@ -96,7 +109,12 @@ export interface DadosLocais {
   manutencoes: RegistroManutencao[];
 }
 
-export const CONFIG_PADRAO: ConfigLocal = { salarioBruto: 0, kmAtual: 0 };
+export const CONFIG_PADRAO: ConfigLocal = {
+  salarioBruto: 0,
+  kmAtual: 0,
+  saldoInicial: {},
+  resumoMes: {},
+};
 
 export function dadosLocaisVazios(): DadosLocais {
   return {

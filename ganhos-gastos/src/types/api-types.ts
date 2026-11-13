@@ -29,9 +29,11 @@ export type SiglaMes =
 // ---------------------------------------------------------------------------
 export const LISTAS = {
   CATEGORIA: [
-    'Moradia/Contas', 'Mercado', 'Compra Conjunta', 'Compra Pessoal',
+    'Contas fixas', 'Mercado', 'Compra Conjunta', 'Compra Pessoal',
     'Transporte', 'Alimentação', 'Saúde', 'Lazer', 'Assinaturas',
     'Pix/Saldo', 'Outros',
+    'Veículos', 'Doação', 'Cuidados', 'Estudos', 'Vícios',
+    'Viagem',
   ],
   'FORMA DE PGTO': [
     'XP', 'NU', 'BB', 'MP', 'MPC', 'Boleto', 'Pix',

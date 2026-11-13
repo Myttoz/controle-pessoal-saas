@@ -17,6 +17,7 @@ import type {
   RegistroFerias,
   RegistroHoraExtra,
   RegistroManutencao,
+  ResumoMesConfig,
 } from '@/types/dados-locais';
 import { dadosLocaisVazios } from '@/types/dados-locais';
 import { msgDeErro, servicoApi } from '@/services/api';
@@ -43,6 +44,11 @@ interface EstadoLocal {
   sincronizar(manual?: boolean): Promise<void>;
 
   setConfig(parcial: Partial<ConfigLocal>): void;
+  /** Define o saldo inicial do ano (um valor por ano, usado
+   *  como ponto de partida do Restante acumulado). */
+  setSaldoInicial(ano: number, valor: number): void;
+  /** Define/apaga o resumo de um mês (chave "AAAA-MM"). */
+  setResumoMes(chave: string, valores: ResumoMesConfig | null): void;
 
   adicionarHoraExtra(registro: Omit<RegistroHoraExtra, 'id'>): void;
   editarHoraExtra(id: string, parcial: Partial<RegistroHoraExtra>): void;
@@ -76,10 +82,22 @@ function normalizar(carregado: DadosLocais | null | undefined): DadosLocais | nu
     return null;
   }
   const base = dadosLocaisVazios();
+  const configDaVez = (carregado.config as ConfigLocal) ?? {};
   return {
     ...base,
     ...carregado,
-    config: { ...base.config, ...carregado.config },
+    config: {
+      ...base.config,
+      ...configDaVez,
+      saldoInicial:
+        configDaVez.saldoInicial && typeof configDaVez.saldoInicial === 'object'
+          ? configDaVez.saldoInicial
+          : {},
+      resumoMes:
+        configDaVez.resumoMes && typeof configDaVez.resumoMes === 'object'
+          ? configDaVez.resumoMes
+          : {},
+    },
     horasExtras: Array.isArray(carregado.horasExtras) ? carregado.horasExtras : [],
     ferias: Array.isArray(carregado.ferias) ? carregado.ferias : [],
     manutencoes: Array.isArray(carregado.manutencoes) ? carregado.manutencoes : [],
@@ -93,7 +111,9 @@ function estaVazio(dados: DadosLocais): boolean {
     dados.ferias.length === 0 &&
     dados.manutencoes.length === 0 &&
     !dados.config.salarioBruto &&
-    !dados.config.kmAtual
+    !dados.config.kmAtual &&
+    Object.keys(dados.config.saldoInicial ?? {}).length === 0 &&
+    Object.keys(dados.config.resumoMes ?? {}).length === 0
   );
 }
 
@@ -267,7 +287,38 @@ export const useStoreLocal = create<EstadoLocal>((set, get) => {
     },
 
     setConfig: (parcial) =>
-      mutar((d) => ({ ...d, config: { ...d.config, ...parcial } })),
+      mutar((d) => ({
+        ...d,
+        config: {
+          ...d.config,
+          ...parcial,
+          saldoInicial: { ...(d.config.saldoInicial ?? {}), ...(parcial.saldoInicial ?? {}) },
+          resumoMes: { ...(d.config.resumoMes ?? {}), ...(parcial.resumoMes ?? {}) },
+        },
+      })),
+
+    setSaldoInicial: (ano, valor) =>
+      mutar((d) => ({
+        ...d,
+        config: {
+          ...d.config,
+          saldoInicial: {
+            ...(d.config.saldoInicial ?? {}),
+            [String(ano)]: Number.isFinite(valor) && valor >= 0 ? valor : 0,
+          },
+        },
+      })),
+
+    setResumoMes: (chave, valores) =>
+      mutar((d) => {
+        const mapa = { ...(d.config.resumoMes ?? {}) };
+        if (valores) mapa[chave] = valores;
+        else delete mapa[chave];
+        return {
+          ...d,
+          config: { ...d.config, resumoMes: mapa },
+        };
+      }),
 
     // -----------------------------------------------------------------------
     //  HORA EXTRA

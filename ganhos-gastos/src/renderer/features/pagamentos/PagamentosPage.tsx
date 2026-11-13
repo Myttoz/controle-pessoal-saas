@@ -1,54 +1,91 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CreditCard, RefreshCw, Wallet } from 'lucide-react';
-import type { LancamentoMensal, Registro, SiglaMes, LinhaSalario } from '@/types/api-types';
+import { CreditCard, RefreshCw, Trash2, Wallet } from 'lucide-react';
 import { AreaErro, Carregando, EstadoVazio } from '@/components/Estados';
 import { Botao } from '@/components/Botoes';
 import { MesTabs } from '@/components/MesTabs';
 import { arredondar2, formatarMoeda, parseValor } from '@/lib/formatar';
 import { NOMES_MESES } from '@/lib/meses';
-import { resumirDivisao } from '@/lib/divisao';
 import { useSnapshot } from '@/hooks/useRegistrosFiltrados';
+import {
+  calcularResumo,
+  chaveResumo,
+  gastosProximoMes,
+  MESES_RESUMO,
+} from '@/lib/resumo';
 import { useStoreAno } from '@/store/storeAno';
+import { useStoreLocal } from '@/store/storeLocal';
 import { useStoreUI } from '@/store/storeUI';
 
-const MESES: SiglaMes[] = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-
-/** Chave de localStorage para os campos digitados pelo usuário (persistem entre recargas). */
-const LS_SALDO_CAIXA = 'pg_saldoCaixa';
-
-function numero(valor: number | undefined | null): number {
-  const n = Number(valor);
-  return Number.isFinite(n) ? n : 0;
+/** Formata o valor digitado pelo usuário em "R$ X.XXX,XX" (ou vazio). */
+function formatarParaInput(valor: number | null | undefined): string {
+  if (valor == null || !Number.isFinite(valor) || valor === 0) return valor === 0 ? '0,00' : '';
+  return formatarMoeda(valor).replace(/^R\$\s*/, '').replace(/\./g, '.');
 }
 
-/** Salário total do mês (igual ao app calcula na aba Ganhos): base + 13º + férias + outros + freelance. Sem TICKET. */
-function totalGanhosSalario(d: LinhaSalario): number {
-  const totalSalario =
-    numero(d['SALÁRIO BASE']) +
-    numero(d['13º']) +
-    numero(d['FÉRIAS']) +
-    numero(d['FREELANCE']);
-  return arredondar2(numero(d['OUTROS']) + numero(d['FREELANCE']) + totalSalario);
-}
-
-interface LinhaPagamento {
-  mes: SiglaMes;
-  /** Nome do mês para exibição. */
+/**
+ * Campo digitado pelo usuário, com persistência local controlada.
+ */
+function CampoEditavel({
+  rotulo,
+  valor,
+  placeholder,
+  dica,
+  comDestaque,
+  onSalvar,
+}: {
   rotulo: string;
-  /** Salário do mês (aba Ganhos → Total ganhos). */
-  salario: number;
-  /** Despesas do mês atual (Meu gasto real — buscado de Lançamentos do mesmo mês). */
-  despesas: number;
-  /** Despesas da Lívia do mês atual (informativo: Dividido/2 + Livia). */
-  despesasLivia: number;
-  /** Restante = Salário − Despesas do mês. */
-  restante: number;
-  /** Pix gasto neste mês. */
-  pixMes: number;
-  /** Pix gasto no mês anterior (informativo, para repor). */
-  pixMesAnterior: number;
-  /** Se há lançamentos neste mês. */
-  temDados: boolean;
+  valor: number | null | undefined;
+  placeholder?: string;
+  dica?: string;
+  comDestaque?: 'positivo' | 'negativo';
+  onSalvar: (valor: number | null) => void;
+}) {
+  const [texto, setTexto] = useState(() =>
+    valor == null ? '' : formatarParaInput(valor),
+  );
+  const [emEdicao, setEmEdicao] = useState(false);
+
+  // Reseta o texto quando o valor remoto muda (ex.: após sync) e a campo não está em edição.
+  useEffect(() => {
+    if (!emEdicao) setTexto(valor == null ? '' : formatarParaInput(valor));
+  }, [valor, emEdicao]);
+
+  const destacar =
+    comDestaque === 'positivo'
+      ? 'text-emerald-300 border-emerald-800/60 focus:border-emerald-600'
+      : comDestaque === 'negativo'
+        ? 'text-rose-300 border-rose-800/60 focus:border-rose-600'
+        : 'text-slate-200 border-slate-700 focus:border-sky-600';
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+        {rotulo}
+      </label>
+      <input
+        type="text"
+        inputMode="decimal"
+        autoComplete="off"
+        placeholder={placeholder ?? '0,00'}
+        value={texto}
+        onFocus={() => setEmEdicao(true)}
+        onBlur={() => {
+          setEmEdicao(false);
+          const n = parseValor(texto);
+          onSalvar(texto.trim() === '' ? null : Number.isFinite(n) ? n : null);
+        }}
+        onChange={(e) => {
+          setTexto(e.target.value);
+          // salva enquanto o valor for interpretável
+          const n = parseValor(e.target.value);
+          if (e.target.value.trim() === '') onSalvar(null);
+          else if (Number.isFinite(n)) onSalvar(n);
+        }}
+        className={`rounded-lg border bg-slate-950 px-3 py-2 text-sm tabular-nums outline-none transition focus:ring-1 focus:ring-sky-500 ${destacar}`}
+      />
+      {dica ? <p className="text-[10px] text-slate-500">{dica}</p> : null}
+    </div>
+  );
 }
 
 export function PagamentosPage() {
@@ -59,15 +96,14 @@ export function PagamentosPage() {
   const ano = useStoreAno((s) => s.anoSelecionado);
   const mes = useStoreUI((s) => s.mes);
   const setMes = useStoreUI((s) => s.setMes);
+  const dados = useStoreLocal((s) => s.dados);
+  const setSaldoInicial = useStoreLocal((s) => s.setSaldoInicial);
+  const setResumoMes = useStoreLocal((s) => s.setResumoMes);
 
-  // ---- campos digitados pelo usuário, persistidos em localStorage ----
-  const [saldoCaixaTexto, setSaldoCaixaTexto] = useState(localStorage.getItem(LS_SALDO_CAIXA) ?? '');
-
-  const saldoCaixa = parseValor(saldoCaixaTexto) || 0;
-
-  useEffect(() => {
-    if (saldoCaixaTexto !== '') localStorage.setItem(LS_SALDO_CAIXA, saldoCaixaTexto);
-  }, [saldoCaixaTexto]);
+  const { linhas, totais } = useMemo(
+    () => calcularResumo(snapshot ?? { sucesso: true, ano: ano ?? 0, meses: {}, mesesFaltando: [], salario: null, extras: null, resumo: { sucesso: true, ano: ano ?? 0, chaveAgrupamento: 'CATEGORIA', totalGeral: 0, categorias: [], meses: [], abasConsideradas: [] } }, dados.config, ano ?? 0, NOMES_MESES),
+    [snapshot, dados.config, ano],
+  );
 
   if (carregando && !snapshot) {
     return <Carregando texto="Carregando dados de pagamentos…" />;
@@ -86,91 +122,61 @@ export function PagamentosPage() {
     );
   }
 
-  const salarioSnapshot = snapshot.salario;
-
-  /** Salário Total Ganhos por mês (aba Ganhos: SALÁRIO BASE + 13º + FÉRIAS + OUTROS + FREELANCE, sem TICKET). */
-  const salarioPorMes = useMemo(() => {
-    const mapa = new Map<SiglaMes, number>();
-    if (salarioSnapshot) {
-      for (const r of salarioSnapshot.registros) {
-        const m = r.dados['MÊS'];
-        mapa.set(m, arredondar2((mapa.get(m) ?? 0) + totalGanhosSalario(r.dados)));
-      }
-    }
-    return mapa;
-  }, [salarioSnapshot]);
-
-  /** Linhas do resumo mensal — uma por mês do ano selecionado. */
-  const linhas = useMemo<LinhaPagamento[]>(() => {
-    const resultado: LinhaPagamento[] = [];
-    let pixAnterior = 0;
-
-    for (const m of MESES) {
-      const mesSnapshot = snapshot.meses[m];
-      const registros: Registro<LancamentoMensal>[] = mesSnapshot?.registros ?? [];
-      const temDados = registros.length > 0;
-      const divisao = resumirDivisao(registros);
-      const salarioMes = arredondar2(salarioPorMes.get(m) ?? 0);
-
-      const pixMes = arredondar2(
-        registros.reduce(
-          (soma, r) =>
-            // Na planilha, os PIX são lançados com FORMA DE PGTO = 'MP'
-            // (Mercado Pago). O rodapé soma tudo que tiver MP.
-            soma + (r.dados['FORMA DE PGTO'] === 'MP' ? Number(r.dados.VALOR) || 0 : 0),
-          0,
-        ),
-      );
-
-      // Despesas do PRÓPRIO mês (Lançamentos: Meu gasto real) — automático.
-      const despesas = arredondar2(divisao.totalReal);
-      const restante = arredondar2(salarioMes - despesas);
-
-      resultado.push({
-        mes: m,
-        rotulo: NOMES_MESES[m] ?? m,
-        salario: salarioMes,
-        despesas,
-        despesasLivia: arredondar2(divisao.receboLivia),
-        restante,
-        pixMes,
-        pixMesAnterior: pixAnterior,
-        temDados,
-      });
-
-      pixAnterior = pixMes;
-    }
-
-    return resultado;
-  }, [snapshot, salarioPorMes]);
-
-  // Pix do mês selecionado (para a área informativa de reposição)
+  // Pix do mês selecionado (informativo)
   const mesAtualSnapshot = snapshot.meses[mes];
   const registrosMes = mesAtualSnapshot?.registros ?? [];
   const pixMesSelecionado = arredondar2(
     registrosMes.reduce(
-      (soma, r) => soma + (r.dados['FORMA DE PGTO'] === 'MP' ? Number(r.dados.VALOR) || 0 : 0),
+      (soma, r) =>
+        soma + (r.dados['FORMA DE PGTO'] === 'MP' ? Number(r.dados.VALOR) || 0 : 0),
       0,
     ),
   );
+  // Gastos próximo mês (todas as 'Fatura futura' do mês)
+  const gastosProximo = gastosProximoMes(registrosMes);
   const linhaMesSelecionado = linhas.find((l) => l.mes === mes);
-  const restanteMesSelecionado = linhaMesSelecionado?.restante ?? 0;
-  const saldoMesSelecionado =
-    linhaMesSelecionado && saldoCaixaTexto !== ''
-      ? arredondar2(saldoCaixa + restanteMesSelecionado)
-      : null;
+
+  const salvarSaldoInicial = (valor: number | null) => {
+    if (ano == null) return;
+    setSaldoInicial(ano, valor ?? 0);
+  };
+
+  const salvarDespesa = (indiceMes: number, valor: number | null) => {
+    if (ano == null) return;
+    const chave = chaveResumo(ano, indiceMes);
+    const atual = dados.config.resumoMes?.[chave] ?? { despesas: null, recebidoLivia: null };
+    setResumoMes(chave, {
+      despesas: valor,
+      recebidoLivia: atual.recebidoLivia ?? null,
+    });
+  };
+
+  const salvarRecebidoLivia = (indiceMes: number, valor: number | null) => {
+    if (ano == null) return;
+    const chave = chaveResumo(ano, indiceMes);
+    const atual = dados.config.resumoMes?.[chave] ?? { despesas: null, recebidoLivia: null };
+    setResumoMes(chave, {
+      despesas: atual.despesas ?? null,
+      recebidoLivia: valor,
+    });
+  };
+
+  const limparResumoMes = (indiceMes: number) => {
+    if (ano == null) return;
+    setResumoMes(chaveResumo(ano, indiceMes), null);
+  };
 
   return (
     <div className="space-y-5">
-      {/* ---------- cabeçalho com seletor de mês ---------- */}
+      {/* ---------- cabeçalho ---------- */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <MesTabs meses={snapshot.meses} selecionado={mes} aoSelecionar={setMes} />
         <p className="text-xs text-slate-500">
-          Salário do mês − Despesas do mês (Lançamentos) = Restante · Saldo = Caixa (digitado) + Restante
+          Salário do mês − <strong>Despesas</strong> + <strong>Recebido da Lívia</strong> = Restante · Saldo = Saldo inicial do ano + Σ Restante
         </p>
       </div>
 
-      {!ano ? (
+      {ano == null ? (
         <EstadoVazio
           icone={Wallet}
           titulo="Nenhum ano selecionado"
@@ -178,78 +184,31 @@ export function PagamentosPage() {
         />
       ) : (
         <>
-          {/* ---------- campos de entrada do usuário ---------- */}
+          {/* ---------- saldo inicial do ano ---------- */}
           <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <div className="grid gap-3 sm:grid-cols-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                  Saldo em caixa (antes do salário)
-                </label>
-                <input
-                  type="text"
-                  value={saldoCaixaTexto}
-                  onChange={(e) => setSaldoCaixaTexto(e.target.value.replace(/[^0-9,.-]/g, ''))}
-                  placeholder="Ex.: 10.000,00"
-                  className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-sky-500"
-                />
-                <p className="text-[10px] text-slate-600">
-                  O que você tem no banco <strong>antes</strong> do salário cair. Usado no Saldo de cada mês.
+            <div className="grid gap-4 sm:grid-cols-2">
+              <CampoEditavel
+                rotulo="Saldo inicial em 1º de janeiro"
+                valor={dados.config.saldoInicial?.[String(ano)] ?? null}
+                placeholder="Ex.: 10.000,00"
+                dica={`Valor a partir do qual o saldo do ${ano} é calculado. Fica salvo na nuvem, veja Sincronização.`}
+                onSalvar={salvarSaldoInicial}
+              />
+              <div className="flex flex-col justify-end gap-1.5 text-xs text-slate-400">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  Como funciona
                 </p>
+                <ul className="list-disc pl-4 leading-relaxed">
+                  <li>Você define o saldo uma vez por ano.</li>
+                  <li><strong>Salário vem automático</strong> da aba Recebidos (Total Ganhos).</li>
+                  <li><strong>Despesas</strong> e <strong>Recebido da Lívia</strong> você digita à mão todo mês.</li>
+                  <li>O Saldo do mês acumula de janeiro até o mês selecionado.</li>
+                </ul>
               </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                  Despesas do mês (Lançamentos)
-                </label>
-                <span className="text-lg font-semibold tabular-nums text-slate-100">
-                  {formatarMoeda(linhaMesSelecionado?.despesas ?? 0)}
-                </span>
-                <p className="text-[10px] text-slate-600">
-                  Meu gasto real do mesmo mês (automático).
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                  Salário do mês (aba Ganhos)
-                </label>
-                <span className="text-lg font-semibold tabular-nums text-slate-100">
-                  {formatarMoeda(linhaMesSelecionado?.salario ?? 0)}
-                </span>
-                <p className="text-[10px] text-slate-600">
-                  Total ganhos do mês {mes} (base + 13º + férias + outros + freelance).
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                  Restante do mês {mes}
-                </label>
-                <span className="text-lg font-semibold tabular-nums text-emerald-300">
-                  {formatarMoeda(restanteMesSelecionado)}
-                </span>
-                <p className="text-[10px] text-slate-600">
-                  Salário − despesas do mês (Lançamentos).
-                </p>
-              </div>
-
-              {saldoMesSelecionado != null && (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                    Saldo do mês {mes}
-                  </label>
-                  <span className="text-lg font-semibold tabular-nums text-emerald-300">
-                    {formatarMoeda(saldoMesSelecionado)}
-                  </span>
-                  <p className="text-[10px] text-slate-600">
-                    Caixa (digitado) + Restante.
-                  </p>
-                </div>
-              )}
             </div>
           </section>
 
-          {/* ---------- tabela resumo mensal (sem coluna Saldo acumulado) ---------- */}
+          {/* ---------- tabela de todos os meses ---------- */}
           <section className="rounded-xl border border-slate-800 bg-slate-900/60">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-sm border-collapse">
@@ -257,150 +216,137 @@ export function PagamentosPage() {
                   <tr className="border-b border-slate-800 bg-slate-950/60 text-left text-[11px] uppercase tracking-wider text-slate-500">
                     <th className="px-4 py-3 font-semibold">Mês</th>
                     <th className="px-3 py-3 text-right font-semibold">Salário mês</th>
-                    <th className="px-3 py-3 text-right font-semibold" title="Despesas do mês (Meu gasto real, Lançamentos)">
-                      Despesas
-                    </th>
-                    <th className="px-3 py-3 text-right font-semibold" title="Dividido 50/50 ÷ 2 + Livia do mês — informativo">
-                      Despesas Livia
-                    </th>
+                    <th className="px-3 py-3 text-right font-semibold">Despesas</th>
+                    <th className="px-3 py-3 text-right font-semibold">Recebido Lívia</th>
                     <th className="px-3 py-3 text-right font-semibold">Restante</th>
-                    <th className="px-3 py-3 text-right font-semibold" title="Saldo em caixa (digitado) + Restante">
-                      Saldo
-                    </th>
+                    <th className="px-3 py-3 text-right font-semibold" title="Acumulado do ano">Saldo do mês</th>
+                    <th className="px-3 py-3 w-10"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {linhas.map((linha) => {
-                    const temSalario = linha.salario > 0;
-                    const podeCalcular = temSalario && linha.temDados;
+                    const indice = MESES_RESUMO.indexOf(linha.mes) + 1;
+                    const selecionado = linha.mes === mes;
+                    const destaque =
+                      linha.restante > 0 ? 'text-emerald-300' : linha.restante < 0 ? 'text-rose-300' : 'text-slate-300';
                     return (
                       <tr
                         key={linha.mes}
-                        className={`border-b border-slate-800/70 transition hover:bg-slate-800/25 ${
-                          linha.mes === mes ? 'bg-slate-800/30' : ''
+                        className={`border-b border-slate-800/70 transition ${
+                          selecionado ? 'bg-slate-800/30' : 'hover:bg-slate-800/20'
                         }`}
                       >
-                        <td className="px-4 py-2.5">
-                          <span className={`font-semibold ${linha.mes === mes ? 'text-sky-300' : 'text-slate-200'}`}>
+                        <td className="px-4 py-2.5 whitespace-nowrap">
+                          <span className={`font-semibold ${selecionado ? 'text-sky-300' : 'text-slate-200'}`}>
                             {linha.rotulo}
                           </span>
-                          {!linha.temDados && <span className="ml-1.5 text-xs text-slate-600">sem lançamentos</span>}
+                          {!linha.temDados && <span className="ml-1.5 text-xs text-slate-600">sem dados</span>}
                         </td>
-                        <td className="px-3 py-2.5 text-right tabular-nums">
-                          {temSalario ? formatarMoeda(linha.salario) : '—'}
+                        <td className="px-3 py-2.5 text-right tabular-nums text-slate-200">
+                          {linha.salario > 0 ? formatarMoeda(linha.salario) : '—'}
                         </td>
-                        <td className="px-3 py-2.5 text-right tabular-nums">
-                          {podeCalcular ? formatarMoeda(linha.despesas) : '—'}
+                        <td className="px-2 py-1.5">
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            autoComplete="off"
+                            placeholder="—"
+                            defaultValue={linha.despesas !== 0 ? formatarMoeda(linha.despesas).replace(/^R\$\s*/, '') : ''}
+                            onBlur={(e) => {
+                              const n = parseValor(e.currentTarget.value);
+                              salvarDespesa(indice, e.currentTarget.value.trim() === '' ? null : Number.isFinite(n) ? n : null);
+                            }}
+                            onChange={(e) => {
+                              const n = parseValor(e.currentTarget.value);
+                              if (e.currentTarget.value.trim() === '') salvarDespesa(indice, null);
+                              else if (Number.isFinite(n)) salvarDespesa(indice, n);
+                            }}
+                            className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-right text-sm tabular-nums text-slate-200 outline-none focus:border-sky-500"
+                          />
                         </td>
-                        <td className="px-3 py-2.5 text-right tabular-nums text-slate-400">
-                          {linha.temDados ? formatarMoeda(linha.despesasLivia) : '—'}
+                        <td className="px-2 py-1.5">
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            autoComplete="off"
+                            placeholder="—"
+                            defaultValue={linha.recebidoLivia !== 0 ? formatarMoeda(linha.recebidoLivia).replace(/^R\$\s*/, '') : ''}
+                            onBlur={(e) => {
+                              const n = parseValor(e.currentTarget.value);
+                              salvarRecebidoLivia(indice, e.currentTarget.value.trim() === '' ? null : Number.isFinite(n) ? n : null);
+                            }}
+                            onChange={(e) => {
+                              const n = parseValor(e.currentTarget.value);
+                              if (e.currentTarget.value.trim() === '') salvarRecebidoLivia(indice, null);
+                              else if (Number.isFinite(n)) salvarRecebidoLivia(indice, n);
+                            }}
+                            className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-right text-sm tabular-nums text-slate-200 outline-none focus:border-sky-500"
+                          />
                         </td>
-                        <td className="px-3 py-2.5 text-right tabular-nums font-semibold">
-                          {podeCalcular
-                            ? formatarMoeda(linha.restante)
-                            : '—'}
+                        <td className={`px-3 py-2.5 text-right tabular-nums font-semibold ${destaque}`}>
+                          {formatarMoeda(linha.restante)}
                         </td>
-                        <td className="px-3 py-2.5 text-right tabular-nums font-semibold">
-                          {podeCalcular && saldoCaixaTexto !== ''
-                            ? formatarMoeda(arredondar2(saldoCaixa + linha.restante))
-                            : '—'}
-                          {(saldoCaixaTexto === '' || !podeCalcular) && podeCalcular ? (
-                            <span className="ml-1 text-[10px] text-amber-400" title="Digite o saldo em caixa acima">
-                              *
-                            </span>
+                        <td className="px-3 py-2.5 text-right tabular-nums text-slate-100">
+                          {formatarMoeda(linha.saldoFinal)}
+                        </td>
+                        <td className="px-3 py-2.5">
+                          {(linha.despesas !== 0 || linha.recebidoLivia !== 0) ? (
+                            <button
+                              type="button"
+                              onClick={() => limparResumoMes(indice)}
+                              className="rounded-md p-1.5 text-slate-600 transition hover:bg-slate-800 hover:text-rose-400"
+                              title="Apagar despesas e recebido Lívia do mês"
+                              aria-label={`Apagar resumo de ${linha.rotulo}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           ) : null}
                         </td>
                       </tr>
                     );
                   })}
                 </tbody>
-                {linhas.length > 0 && (
+                {totais ? (
                   <tfoot className="bg-slate-950/50 text-sm font-semibold">
                     <tr>
                       <td className="px-4 py-2.5 text-slate-500">Total ano</td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-slate-300">
-                        {formatarMoeda(
-                          arredondar2(linhas.reduce((s, l) => s + l.salario, 0)),
-                        )}
+                        {formatarMoeda(totais.salario)}
                       </td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-slate-300">
-                        {formatarMoeda(
-                          arredondar2(linhas.reduce((s, l) => s + l.despesas, 0)),
-                        )}
+                        {formatarMoeda(totais.despesas)}
                       </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums text-slate-400">
-                        {formatarMoeda(
-                          arredondar2(linhas.reduce((s, l) => s + l.despesasLivia, 0)),
-                        )}
+                      <td className="px-3 py-2.5 text-right tabular-nums text-slate-300">
+                        {formatarMoeda(totais.recebidoLivia)}
                       </td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-emerald-300">
-                        {formatarMoeda(
-                          arredondar2(linhas.reduce((s, l) => s + l.restante, 0)),
-                        )}
+                        {formatarMoeda(totais.restante)}
                       </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums text-emerald-300">
-                        {saldoCaixaTexto !== ''
-                          ? formatarMoeda(
-                            arredondar2(saldoCaixa * 12 + linhas.reduce((s, l) => s + l.restante, 0)),
-                          )
-                          : '—'}
+                      <td colSpan={2} className="px-3 py-2.5 text-right tabular-nums text-emerald-300">
+                        {formatarMoeda(linhas[linhas.length - 1].saldoFinal)}
                       </td>
                     </tr>
                   </tfoot>
-                )}
+                ) : null}
               </table>
             </div>
-            {/* ------- Pix no rodapé (mês atual e anterior) ------- */}
-            <div className="border-t border-slate-800 bg-slate-900/40 px-4 py-3">
-              <div className="flex flex-wrap items-center gap-6 text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">
-                    Pix mês atual ({mes})
-                  </span>
-                  <span className="text-slate-200 tabular-nums font-semibold">
-                    {formatarMoeda(pixMesSelecionado)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">
-                    Pix mês anterior
-                  </span>
-                  <span className="text-slate-200 tabular-nums font-semibold">
-                    {formatarMoeda(linhaMesSelecionado?.pixMesAnterior ?? 0)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">
-                    Total pix ano
-                  </span>
-                  <span className="text-amber-400 tabular-nums font-semibold">
-                    {formatarMoeda(
-                      arredondar2(
-                        linhas.reduce((s, l) => s + l.pixMes, 0),
-                      ),
-                    )}
-                  </span>
-                </div>
-              </div>
-            </div>
-            {saldoCaixaTexto === '' && (
-              <p className="border-t border-slate-800 px-4 py-2.5 text-xs text-amber-400">
-                <CreditCard className="h-3.5 w-3.5 shrink-0" />
-                Digite o <strong>saldo em caixa</strong> acima para ver o <strong>Saldo</strong> do mês selecionado.
+            {(!linhaMesSelecionado || (linhaMesSelecionado.despesas === 0 && linhaMesSelecionado.recebidoLivia === 0)) && (
+              <p className="border-t border-slate-800 px-4 py-2.5 text-xs text-slate-500">
+                <CreditCard className="mr-1 inline h-3.5 w-3.5" />
+                {linhaMesSelecionado?.rotulo ?? 'Mês'}: digite <strong>Despesas</strong> e/ou <strong>Recebido da Lívia</strong> para calcular o restante automaticamente.
               </p>
             )}
           </section>
 
-          {/* ---------- área informativa do Pix ---------- */}
+          {/* ---------- Pix (informativo) ---------- */}
           <section className="rounded-xl border border-amber-800/50 bg-amber-950/20 p-4">
             <div className="flex items-start gap-3">
               <CreditCard className="h-5 w-5 shrink-0 text-amber-400 mt-0.5" />
               <div>
-                <h3 className="text-sm font-semibold text-amber-300">Pix do mês anterior — reposição</h3>
+                <h3 className="text-sm font-semibold text-amber-300">Pix do mês + Gastos próximo mês</h3>
                 <p className="text-xs text-slate-400">
-                  Os gastos com <strong>Pix</strong> já entram no "Meu gasto real" do mês anterior e, por
-                  consequência, já estão descontados do <strong>Restante</strong>. Esta área só mostra quanto
-                  você tirou via Pix para saber quanto precisa repor do caixa guardado.
+                  <strong>Pix</strong>: tudo lançado como MP no mês selecionado.
+                  <strong> Gastos próximo mês</strong>: soma dos lançamentos marcados como "Fatura futura" (o que cai na próxima fatura do cartão).
                 </p>
                 <div className="mt-2 grid gap-2 sm:grid-cols-3 text-xs">
                   <div>
@@ -408,12 +354,12 @@ export function PagamentosPage() {
                     <p className="text-slate-200 tabular-nums">{formatarMoeda(pixMesSelecionado)}</p>
                   </div>
                   <div>
-                    <p className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">Pix mês anterior</p>
-                    <p className="text-slate-200 tabular-nums">{formatarMoeda(linhaMesSelecionado?.pixMesAnterior ?? 0)}</p>
+                    <p className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">Gastos próximo mês ({mes})</p>
+                    <p className="text-slate-200 tabular-nums">{formatarMoeda(gastosProximo)}</p>
                   </div>
                   <div>
-                    <p className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">Disponível para pix (restante)</p>
-                    <p className="text-emerald-300 tabular-nums">{formatarMoeda(restanteMesSelecionado)}</p>
+                    <p className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">Restante do mês ({mes})</p>
+                    <p className="text-emerald-300 tabular-nums">{formatarMoeda(linhaMesSelecionado?.restante ?? 0)}</p>
                   </div>
                 </div>
               </div>
@@ -425,7 +371,7 @@ export function PagamentosPage() {
               Atualizar
             </Botao>
             <span className="text-xs text-slate-600">
-              Salário vem da aba Ganhos (Total ganhos) · Despesas vêm de Lançamentos do mesmo mês (Meu gasto real)
+              Despesas e Recebido Lívia ficam salvos na nuvem (Supabase) · Salário vem de Recebidos
             </span>
           </div>
         </>

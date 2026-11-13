@@ -7,10 +7,13 @@ import { AreaErro, Carregando, EstadoVazio } from '@/components/Estados';
 import { MesTabs } from '@/components/MesTabs';
 import { Modal } from '@/components/Modal';
 import { formatarMoeda, nomeFormaPgto } from '@/lib/formatar';
+import { NOMES_MESES } from '@/lib/meses';
+import { calcularResumo, gastosProximoMes } from '@/lib/resumo';
 import { resumirDivisao } from '@/lib/divisao';
 import { useRegistrosFiltrados } from '@/hooks/useRegistrosFiltrados';
 import { useOpcoes } from '@/hooks/useOpcoes';
 import { useStoreAno } from '@/store/storeAno';
+import { useStoreLocal } from '@/store/storeLocal';
 import { useStoreUI, type Filtros } from '@/store/storeUI';
 import { FormLancamento } from './FormLancamento';
 import { TabelaLancamentos, type OpcoesColunas } from './TabelaLancamentos';
@@ -95,6 +98,16 @@ export function LancamentosPage() {
     'FORMA DE PGTO': opcoesForma.map(nomeFormaPgto),
     'QUEM PAGA': opcoesQuem,
   };
+
+  // ---- Restante do mês (mesmos números do Resumo Pagamentos) ----
+  const dadosLocais = useStoreLocal((s) => s.dados);
+  const resumoMesConfig = useMemo(
+    () =>
+      ano != null && snapshot ? calcularResumo(snapshot, dadosLocais.config, ano, NOMES_MESES) : null,
+    [ano, snapshot, dadosLocais.config],
+  );
+  const linhaRestanteMes = resumoMesConfig?.linhas.find((l) => l.mes === mes) ?? null;
+  const gastosProximoMesValor = gastosProximoMes(mesSnapshot?.registros ?? []);
 
   // valores EXISTENTES no mês (sem filtro algum) — base dos menus multi-seleção
   const opcoesColunas = useMemo<OpcoesColunas>(() => {
@@ -236,6 +249,19 @@ export function LancamentosPage() {
         </div>
       </div>
 
+      {/* ------- restante do mês (mesmos números de Resumo Pagamentos) ------- */}
+      {linhaRestanteMes && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-800/50 bg-sky-950/30 px-4 py-2.5 text-sm">
+          <span className="text-sky-200/80">
+            Restante em <strong>{NOMES_MESES[mes]}</strong>{' '}
+            <span className="hidden sm:inline">— Salário − Despesas + Recebido Lívia (aba Resumo Pagamentos)</span>
+          </span>
+          <span className="font-semibold tabular-nums text-sky-300">
+            {formatarMoeda(linhaRestanteMes.restante)}
+          </span>
+        </div>
+      )}
+
       {/* ------- tabela ------- */}
       {!aba ? (
         <EstadoVazio
@@ -308,6 +334,15 @@ export function LancamentosPage() {
               Total Real:{' '}
               <span className="font-semibold text-emerald-300">
                 {formatarMoeda(divisao.totalReal)}
+              </span>
+            </span>
+            <span
+              className="text-slate-400"
+              title="Soma dos lançamentos marcados como 'Fatura futura' — quanto desta despesa só aparecerá no mês seguinte"
+            >
+              Gastos próximo mês:{' '}
+              <span className="font-semibold text-violet-300">
+                {formatarMoeda(gastosProximoMesValor)}
               </span>
             </span>
           </div>
