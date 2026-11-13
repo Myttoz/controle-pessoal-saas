@@ -1,0 +1,43 @@
+name: Backup Supabase — semanal
+
+# Workflow para o repositório PRIVADO de backups (ex.: Myttoz/controle-pessoal-backups).
+# NÃO coloque este arquivo no repositório público do SaaS.
+
+on:
+  schedule:
+    # todo domingo às 07:00 (Brasília = 10:00 UTC)
+    - cron: '0 10 * * 0'
+  workflow_dispatch:      # botão "Run workflow" para testar na mão
+  push:
+    branches: [main]
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo de backups
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.BACKUPS_REPO_TOKEN }}
+
+      - name: Instalar cliente Postgres
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: pg_dump (custom format, sem owner/privileges)
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          pg_dump "$SUPABASE_DB_URL" --format=custom --no-owner --no-acl --file=backup.dump
+
+      - name: Mover para backups/ com nome datado e commitar
+        run: |
+          mkdir -p backups
+          cp backup.dump "backups/backup-$(date -u +%F).dump"
+          rm backup.dump
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backups/
+          git commit -m "backup automático $(date -u +%F)" || echo "nada a commitar"
+          git push
