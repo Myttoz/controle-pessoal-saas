@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CreditCard, RefreshCw, Trash2, Wallet } from 'lucide-react';
+import { RefreshCw, Trash2, Wallet } from 'lucide-react';
 import { AreaErro, Carregando, EstadoVazio } from '@/components/Estados';
 import { Botao } from '@/components/Botoes';
 import { MesTabs } from '@/components/MesTabs';
-import { arredondar2, formatarMoeda, parseValor } from '@/lib/formatar';
+import { formatarMoeda, parseValor } from '@/lib/formatar';
 import { NOMES_MESES } from '@/lib/meses';
 import { useSnapshot } from '@/hooks/useRegistrosFiltrados';
 import {
   calcularResumo,
   chaveResumo,
-  gastosProximoMes,
   MESES_RESUMO,
 } from '@/lib/resumo';
 import { useStoreAno } from '@/store/storeAno';
@@ -122,18 +121,6 @@ export function PagamentosPage() {
     );
   }
 
-  // Pix do mês selecionado (informativo)
-  const mesAtualSnapshot = snapshot.meses[mes];
-  const registrosMes = mesAtualSnapshot?.registros ?? [];
-  const pixMesSelecionado = arredondar2(
-    registrosMes.reduce(
-      (soma, r) =>
-        soma + (r.dados['FORMA DE PGTO'] === 'MP' ? Number(r.dados.VALOR) || 0 : 0),
-      0,
-    ),
-  );
-  // Gastos próximo mês (todas as 'Fatura futura' do mês)
-  const gastosProximo = gastosProximoMes(registrosMes);
   const linhaMesSelecionado = linhas.find((l) => l.mes === mes);
 
   const salvarSaldoInicial = (valor: number | null) => {
@@ -332,38 +319,10 @@ export function PagamentosPage() {
             </div>
             {(!linhaMesSelecionado || (linhaMesSelecionado.despesas === 0 && linhaMesSelecionado.recebidoLivia === 0)) && (
               <p className="border-t border-slate-800 px-4 py-2.5 text-xs text-slate-500">
-                <CreditCard className="mr-1 inline h-3.5 w-3.5" />
+                <Wallet className="mr-1 inline h-3.5 w-3.5" />
                 {linhaMesSelecionado?.rotulo ?? 'Mês'}: digite <strong>Despesas</strong> e/ou <strong>Recebido da Lívia</strong> para calcular o restante automaticamente.
               </p>
             )}
-          </section>
-
-          {/* ---------- Pix (informativo) ---------- */}
-          <section className="rounded-xl border border-amber-800/50 bg-amber-950/20 p-4">
-            <div className="flex items-start gap-3">
-              <CreditCard className="h-5 w-5 shrink-0 text-amber-400 mt-0.5" />
-              <div>
-                <h3 className="text-sm font-semibold text-amber-300">Pix do mês + Gastos próximo mês</h3>
-                <p className="text-xs text-slate-400">
-                  <strong>Pix</strong>: tudo lançado como MP no mês selecionado.
-                  <strong> Gastos próximo mês</strong>: soma dos lançamentos marcados como "Fatura futura" (o que cai na próxima fatura do cartão).
-                </p>
-                <div className="mt-2 grid gap-2 sm:grid-cols-3 text-xs">
-                  <div>
-                    <p className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">Pix neste mês ({mes})</p>
-                    <p className="text-slate-200 tabular-nums">{formatarMoeda(pixMesSelecionado)}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">Gastos próximo mês ({mes})</p>
-                    <p className="text-slate-200 tabular-nums">{formatarMoeda(gastosProximo)}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">Restante do mês ({mes})</p>
-                    <p className="text-emerald-300 tabular-nums">{formatarMoeda(linhaMesSelecionado?.restante ?? 0)}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
           </section>
 
           <div className="flex items-center justify-between gap-2 pt-2">

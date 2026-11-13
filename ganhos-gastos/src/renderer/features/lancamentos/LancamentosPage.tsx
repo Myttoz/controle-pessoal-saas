@@ -113,17 +113,17 @@ export function LancamentosPage() {
   const opcoesColunas = useMemo<OpcoesColunas>(() => {
     const bruto = mesSnapshot?.registros ?? [];
     const unicos = (pegar: (d: LancamentoMensal) => string | undefined) =>
-      [...new Set(bruto.map((r) => pegar(r.dados) ?? '').filter((v) => v !== ''))].sort((a, b) =>
-        a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }),
-      );
+      [...new Set(bruto.map((r) => pegar(r.dados) ?? '').filter((v) => v !== ''))];
+    // Categoria sempre mostra TODAS as opções (não só as usadas no mês)
+    const existentes = unicos((d) => d.CATEGORIA).filter((v) => !opcoesCategoria.includes(v));
     return {
-      categoria: unicos((d) => d.CATEGORIA),
-      tipo: unicos((d) => d.TIPO),
-      forma: unicos((d) => d['FORMA DE PGTO']).map(nomeFormaPgto),
-      quem: unicos((d) => d['QUEM PAGA']),
-      descricao: unicos((d) => d.DESCRIÇÃO),
+      categoria: [...opcoesCategoria, ...existentes],
+      tipo: unicos((d) => d.TIPO).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })),
+      forma: unicos((d) => d['FORMA DE PGTO']).map(nomeFormaPgto).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })),
+      quem: unicos((d) => d['QUEM PAGA']).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })),
+      descricao: unicos((d) => d.DESCRIÇÃO).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })),
     };
-  }, [mesSnapshot]);
+  }, [mesSnapshot, opcoesCategoria]);
 
   const filtrosColunas = useStoreUI((s) => s.filtrosColunas);
   const temFiltroColunas = useMemo(
