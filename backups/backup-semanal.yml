@@ -21,16 +21,13 @@ jobs:
       - name: Checkout repo de backups
         uses: actions/checkout@v4   # usa o GITHUB_TOKEN padrão do próprio repo — sem secret extra
 
-      - name: Instalar cliente Postgres
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
-
-      - name: pg_dump (custom format, sem owner/privileges)
+      - name: pg_dump (Docker, cliente PG 17 = mesmo servidor)
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          pg_dump "$SUPABASE_DB_URL" --format=custom --no-owner --no-acl --file=backup.dump
+          docker run --rm -e SUPABASE_DB_URL -v "$PWD:/backup" postgres:17-alpine \
+            pg_dump "$SUPABASE_DB_URL" --format=custom --no-owner --no-acl --file=/backup/backup.dump
+          ls -lh backup.dump
 
       - name: Mover para backups/ com nome datado e commitar
         run: |

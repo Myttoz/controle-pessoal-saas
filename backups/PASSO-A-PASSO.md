@@ -31,7 +31,7 @@
 A string tem formato parecido com:
 
 ```
-postgresql://postgres.srojhhwpwfjbotuphoxq:[YOUR-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:5432/postgres
+postgresql://postgres.srojhhwpwfjbotuphoxq:[YOUR-PASSWORD]@aws-1-us-east-1.pooler.supabase.com:5432/postgres
 ```
 
 Troque `[YOUR-PASSWORD]` pela senha do banco. Se não souber, clique em
