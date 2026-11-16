@@ -1,22 +1,19 @@
 /**
- * LEMBRETES — lembretes com envio por e-mail e Google Agenda.
- *
- * O app apenas cadastra/edita os lembretes. O envio é feito por um gatilho
- * diário no Apps Script (mesmo com o app fechado). O campo WhatsApp fica
- * guardado para uso futuro — hoje não envia mensagem.
+ * LEMBRETES — cadastrados no banco/Supabase. O que envia o aviso na data
+ * é o requisito do usuário por e-mail + Google Agenda; aqui o app apenas
+ * salva o lembrete e oferece um clique para ele ir para a Google Agenda
+ * confirmar o evento (o aviso chega por lá, na data marcada).
  */
 import { useEffect, useMemo, useState } from 'react';
 import {
   BellRing,
   CalendarDays,
-  CheckCircle2,
-  Clock,
+  CalendarPlus,
   Mail,
   MessageCircle,
   Pencil,
   Plus,
   RefreshCw,
-  Send,
   Trash2,
 } from 'lucide-react';
 import type { DadosLembrete, Lembrete, StatusLembrete } from '@/types/api-types';
@@ -25,6 +22,7 @@ import { Campo, CLASSES_INPUT, Entrada } from '@/components/Campos';
 import { AreaErro, Carregando, EstadoVazio } from '@/components/Estados';
 import { Modal } from '@/components/Modal';
 import { formatarData, hojeISO } from '@/lib/formatar';
+import { linkGoogleAgenda } from '@/lib/google-agenda';
 import { useStoreLembretes } from '@/store/storeLembretes';
 
 type FiltroStatus = 'TODOS' | StatusLembrete;
@@ -51,7 +49,6 @@ const ROTULO_STATUS: Record<StatusLembrete, string> = {
 
 export function LembretesPage() {
   const lembretes = useStoreLembretes((s) => s.lembretes);
-  const status = useStoreLembretes((s) => s.status);
   const carregado = useStoreLembretes((s) => s.carregado);
   const carregando = useStoreLembretes((s) => s.carregando);
   const salvando = useStoreLembretes((s) => s.salvando);
@@ -60,8 +57,6 @@ export function LembretesPage() {
   const adicionar = useStoreLembretes((s) => s.adicionar);
   const editar = useStoreLembretes((s) => s.editar);
   const remover = useStoreLembretes((s) => s.remover);
-  const testar = useStoreLembretes((s) => s.testar);
-  const instalarGatilho = useStoreLembretes((s) => s.instalarGatilho);
 
   const [filtro, setFiltro] = useState<FiltroStatus>('TODOS');
   const [modalAberto, setModalAberto] = useState(false);
@@ -128,7 +123,16 @@ export function LembretesPage() {
     };
 
     const ok = editando ? await editar(editando.id, dados) : await adicionar(dados);
-    if (ok) setModalAberto(false);
+    if (!ok) {
+      // erro já foi mostrado em toast pelo store
+      return;
+    }
+
+    // Lembretes: só em criação — abre direto a Google Agenda com o evento preenchido.
+    if (!editando) {
+      window.open(linkGoogleAgenda(dados), '_blank', 'noopener,noreferrer');
+    }
+    setModalAberto(false);
   }
 
   async function excluir(lembrete: Lembrete) {
@@ -148,8 +152,8 @@ export function LembretesPage() {
             Lembretes
           </h2>
           <p className="mt-1 max-w-2xl text-sm text-slate-500">
-            Envio automático por e-mail e criação de evento na Google Agenda. O envio
-            acontece todos os dias no horário configurado, mesmo com o app fechado.
+            Crie o lembrete aqui; na hora de criar ele abre a <strong>Google Agenda</strong> com o
+            evento já preenchido — você só clica <em>Salvar</em> e o Google te avisa na data.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -168,50 +172,22 @@ export function LembretesPage() {
         </div>
       </div>
 
-      {/* ---------- cartão de status do envio automático ---------- */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
-            <div className="flex items-center gap-2">
-              <span
-                className={`h-2.5 w-2.5 rounded-full ${
-                  status?.gatilhoAtivo ? 'bg-emerald-400' : 'bg-amber-400'
-                }`}
-              />
-              <span className="text-sm text-slate-300">
-                Envio automático:{' '}
-                <strong className={status?.gatilhoAtivo ? 'text-emerald-300' : 'text-amber-300'}>
-                  {status?.gatilhoAtivo ? 'ativo' : 'desativado'}
-                </strong>
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-              <Clock className="h-4 w-4 text-slate-500" />
-              {status ? `Todos os dias · fuso ${status.fuso}` : 'Horário não consultado'}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-              <Mail className="h-4 w-4 text-slate-500" />
-              {status && status.emailRestante >= 0
-                ? `Cota de e-mails hoje: ${status.emailRestante}`
-                : 'Cota de e-mails indisponível'}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-              <CalendarDays className="h-4 w-4 text-slate-500" />
-              {contagem.pendentes} pendente(s) · {contagem.enviados} enviado(s)
-            </div>
-          </div>
-
-          {status && !status.gatilhoAtivo && (
-            <Botao
-              icone={Clock}
-              variante="secundario"
-              onClick={() => void instalarGatilho()}
-              carregando={salvando}
-            >
-              Ativar envio automático
-            </Botao>
-          )}
-        </div>
+      {/* ---------- como funciona ---------- */}
+      <section className="rounded-xl border border-amber-800/40 bg-amber-950/20 p-4 text-xs leading-relaxed text-amber-200/90">
+        <p className="font-semibold text-amber-200">Como funciona</p>
+        <ol className="mt-2 list-decimal space-y-1 pl-4">
+          <li>
+            Você cria o lembrete aqui → o app abre a <strong>Google Agenda</strong> com o evento já
+            preenchido → você clica <strong>Salvar</strong> (uma vez).
+          </li>
+          <li>
+            O Google envia o aviso na data marcada (e-mail + notificação no celular). O site não
+            envia e-mail — a própria Google Agenda faz isso de graça.
+          </li>
+          <li>
+            O WhatsApp fica salvo para uso futuro; hoje não enviamos mensagens.
+          </li>
+        </ol>
       </section>
 
       {/* ---------- filtros ---------- */}
@@ -252,7 +228,7 @@ export function LembretesPage() {
         <EstadoVazio
           icone={BellRing}
           titulo="Nenhum lembrete cadastrado"
-          descricao="Crie um lembrete para receber um e-mail e um evento na Google Agenda na data escolhida."
+          descricao="Ao criar o lembrete, ele abre o Google Agenda já preenchido — você clica Salvar lá e o Google avisa na data."
           acao={
             <Botao icone={Plus} variante="primario" onClick={abrirNovo}>
               Criar primeiro lembrete
@@ -294,11 +270,6 @@ export function LembretesPage() {
                       <span className="inline-flex items-center gap-1.5">
                         <Mail className="h-3.5 w-3.5" />
                         {lembrete.email}
-                        {lembrete.enviadoEmail ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                        ) : (
-                          <Clock className="h-3.5 w-3.5 text-amber-400" />
-                        )}
                       </span>
                     )}
                     {lembrete.whatsapp && (
@@ -328,14 +299,13 @@ export function LembretesPage() {
 
                 <div className="flex shrink-0 items-center gap-1">
                   <Botao
-                    icone={Send}
+                    icone={CalendarPlus}
                     variante="fantasma"
                     tamanho="sm"
-                    onClick={() => void testar(lembrete.id)}
-                    disabled={salvando}
-                    title="Enviar um teste agora (e-mail + agenda)"
+                    onClick={() => window.open(linkGoogleAgenda(lembrete), '_blank', 'noopener,noreferrer')}
+                    title="Adicionar ao Google Agenda"
                   >
-                    Testar
+                    Agenda
                   </Botao>
                   <Botao
                     icone={Pencil}
