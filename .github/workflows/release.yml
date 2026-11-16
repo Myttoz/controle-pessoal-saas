@@ -1,0 +1,32 @@
+name: Release
+
+# Disparado quando você cria/envia uma tag `v*` (ex.: v1.0.0).
+# Quem cria a tag manda o destravamento.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publicar release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o código (histórico completo, para gerar as notas)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gerar Release nota a partir dos commits
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --generate-notes \
+            --title "${{ github.ref_name }}" \
+            --repo "${{ github.repository }}"

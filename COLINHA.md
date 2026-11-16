@@ -95,11 +95,25 @@ tar --exclude='APP Financas/ganhos-gastos/node_modules' \
 
 ```bash
 cd "/home/infra/Documentos/Pessoal/APP Financas"
-# edite os arquivos (você ou um agente de IA)
 git add -A
-git commit -m "descreva a mudança"
+git commit -m "título da mudança"
 git push       # deploy automático em ~2 min (Actions → "Publicar versão web")
 ```
+
+## 4.1 Publicar release bonitinha (a cada marco, não a cada commit)
+
+Quando você quiser gerar a página de Releases no GitHub
+(`github.com/Myttoz/controle-pessoal-saas/releases`):
+
+```bash
+git tag v1.0.0          # escolha a próxima versão (sempre `v` + semver)
+git push origin v1.0.0
+```
+
+O workflow `.github/workflows/release.yml` roda sozinho: cria a página de
+Release com notas geradas automaticamente a partir dos commits desde a tag
+anterior (`gh release create <tag> --generate-notes`). Uma tag = uma release;
+uma release por marco. Commits isolados **não** criam releases.
 
 > Se o push reclamar de `workflow scope` num arquivo em
 > `.github/workflows/`, seu token não tem permissão para workflows — gere
