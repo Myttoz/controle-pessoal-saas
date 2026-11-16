@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import type { LinhaExtra, Registro, SiglaMes } from '@/types/api-types';
 import { Botao } from '@/components/Botoes';
-import { Campo, Entrada, Selecao } from '@/components/Campos';
+import { Campo, Entrada, EntradaMoeda, Selecao } from '@/components/Campos';
 import { Modal } from '@/components/Modal';
 import { mesAtual } from '@/lib/meses';
-import { parseValor } from '@/lib/formatar';
 import { useOpcoes, useOpcoesMes } from '@/hooks/useOpcoes';
 import { useStoreAno } from '@/store/storeAno';
 
@@ -23,7 +22,7 @@ function paraEstado(dados?: LinhaExtra, mesPadrao?: string): EstadoForm {
     mes: dados?.['MÊS'] ?? mesPadrao ?? '',
     categoria: dados?.CATEGORIA ?? '',
     descricao: dados?.DESCRIÇÃO ?? '',
-    valor: dados ? String(dados.VALOR ?? '') : '',
+    valor: dados ? String(Math.round((dados.VALOR ?? 0) * 100)) : '',
     data: dados?.DATA ?? '',
   };
 }
@@ -65,9 +64,9 @@ export function FormExtra({
     if (!estado.mes) novosErros.mes = 'Informe o mês.';
     if (!estado.categoria.trim()) novosErros.categoria = 'Informe a categoria.';
     if (!estado.descricao.trim()) novosErros.descricao = 'Informe a descrição.';
-    const valor = parseValor(estado.valor);
-    if (!Number.isFinite(valor)) novosErros.valor = 'Valor numérico obrigatório.';
-    else if (valor <= 0) novosErros.valor = 'O valor deve ser maior que zero.';
+    const centavos = Number(String(estado.valor ?? '').replace(/\D/g, '') || '0');
+    if (!estado.valor) novosErros.valor = 'Informe o valor.';
+    else if (centavos <= 0) novosErros.valor = 'O valor deve ser maior que zero.';
 
     setErros(novosErros);
     if (Object.keys(novosErros).length > 0 || ano == null) return;
@@ -76,7 +75,7 @@ export function FormExtra({
       'MÊS': estado.mes as SiglaMes,
       CATEGORIA: estado.categoria.trim(),
       DESCRIÇÃO: estado.descricao.trim(),
-      VALOR: Math.round(valor * 100) / 100,
+      VALOR: centavos / 100,
       DATA: estado.data,
     };
 
@@ -121,11 +120,9 @@ export function FormExtra({
         </Campo>
 
         <Campo rotulo="Valor * (R$)">
-          <Entrada
+          <EntradaMoeda
             value={estado.valor}
-            onChange={(e) => alterar('valor', e.target.value)}
-            placeholder="1.234,56"
-            inputMode="decimal"
+            onChange={(digitos) => alterar('valor', digitos)}
             autoFocus
           />
           {erros.valor && <span className="mt-1 block text-xs text-rose-400">{erros.valor}</span>}

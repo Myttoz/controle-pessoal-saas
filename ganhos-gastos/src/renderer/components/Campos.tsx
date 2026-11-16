@@ -31,6 +31,49 @@ export const Entrada = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInpu
   },
 );
 
+/** Formata dígitos crus como moeda brasileira (ex.: "154950" → "1.549,50"). */
+function formatarDigitosOculto(digitos: string): string {
+  if (!digitos) return '';
+  const n = parseInt(digitos, 10);
+  if (!Number.isFinite(n)) return '';
+  const reais = Math.floor(n / 100);
+  const centavos = n % 100;
+  return `${reais.toLocaleString('pt-BR')},${String(centavos).padStart(2, '0')}`;
+}
+
+/**
+ * Campo de entrada de moeda. O usuário digita só dígitos; o campo
+ * mantém sempre 2 casas decimais e aplica separador de milhar.
+ * O valor chega no formulário como string de dígitos (centavos) — ex.: "154950" = R$ 1.549,50.
+ */
+export const EntradaMoeda = forwardRef<
+  HTMLInputElement,
+  Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type' | 'inputMode'> & {
+    value: string;
+    onChange: (valorDigitos: string) => void;
+  }
+>(function EntradaMoeda({ value, onChange, placeholder, className, ...props }, ref) {
+  const digitos = String(value ?? '').replace(/\D/g, '').slice(0, 12);
+  const formatado = formatarDigitosOculto(digitos);
+
+  return (
+    <input
+      ref={ref}
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      placeholder={placeholder ?? '0,00'}
+      value={formatado}
+      onChange={(e) => {
+        const apenas = e.target.value.replace(/\D/g, '');
+        onChange(apenas);
+      }}
+      {...props}
+      className={`${CLASSES_INPUT} text-right tabular-nums ${className ?? ''}`}
+    />
+  );
+});
+
 export function Selecao(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <div className="relative">

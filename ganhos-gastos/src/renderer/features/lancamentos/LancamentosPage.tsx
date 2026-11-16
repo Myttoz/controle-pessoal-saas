@@ -117,7 +117,9 @@ export function LancamentosPage() {
     // Categoria sempre mostra TODAS as opções (não só as usadas no mês)
     const existentes = unicos((d) => d.CATEGORIA).filter((v) => !opcoesCategoria.includes(v));
     return {
-      categoria: [...opcoesCategoria, ...existentes],
+      categoria: [...opcoesCategoria, ...existentes].sort((a, b) =>
+        a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }),
+      ),
       tipo: unicos((d) => d.TIPO).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })),
       forma: unicos((d) => d['FORMA DE PGTO']).map(nomeFormaPgto).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })),
       quem: unicos((d) => d['QUEM PAGA']).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })),

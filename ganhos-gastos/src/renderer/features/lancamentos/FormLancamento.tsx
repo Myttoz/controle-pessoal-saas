@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import type { LancamentoMensal, Registro } from '@/types/api-types';
 import { Botao } from '@/components/Botoes';
-import { Campo, Entrada, Selecao } from '@/components/Campos';
+import { Campo, EntradaMoeda, Entrada, Selecao } from '@/components/Campos';
 import { Modal } from '@/components/Modal';
-import { parseValor } from '@/lib/formatar';
 import { useOpcoes } from '@/hooks/useOpcoes';
 import { useStoreAno } from '@/store/storeAno';
 
@@ -23,7 +22,7 @@ type Erros = Partial<Record<keyof EstadoForm, string>>;
 function paraEstado(dados?: LancamentoMensal): EstadoForm {
   return {
     categoria: dados?.CATEGORIA ?? '',
-    valor: dados ? String(dados.VALOR ?? '') : '',
+    valor: dados ? String(Math.round((dados.VALOR ?? 0) * 100)) : '',
     descricao: dados?.DESCRIÇÃO ?? '',
     forma: dados?.['FORMA DE PGTO'] ?? '',
     tipo: dados?.TIPO ?? '',
@@ -36,9 +35,9 @@ function paraEstado(dados?: LancamentoMensal): EstadoForm {
 function validar(estado: EstadoForm): Erros {
   const erros: Erros = {};
   if (!estado.categoria) erros.categoria = 'Selecione a categoria.';
-  const valor = parseValor(estado.valor);
-  if (!Number.isFinite(valor)) erros.valor = 'Informe um valor numérico.';
-  else if (valor <= 0) erros.valor = 'O valor deve ser maior que zero.';
+  const centavos = Number(String(estado.valor ?? '').replace(/\D/g, '') || '0');
+  if (!estado.valor) erros.valor = 'Informe o valor.';
+  else if (centavos <= 0) erros.valor = 'O valor deve ser maior que zero.';
   if (!estado.descricao.trim()) erros.descricao = 'Informe a descrição.';
   if (!estado.forma) erros.forma = 'Selecione a forma de pagamento.';
   if (!estado.tipo) erros.tipo = 'Selecione o tipo.';
@@ -83,7 +82,7 @@ export function FormLancamento({ aba, registro, aoFechar }: Props) {
 
     const dados: LancamentoMensal = {
       CATEGORIA: estado.categoria as LancamentoMensal['CATEGORIA'],
-      VALOR: arredondarValor(parseValor(estado.valor)),
+      VALOR: Number(String(estado.valor ?? '').replace(/\D/g, '') || '0') / 100,
       DESCRIÇÃO: estado.descricao.trim(),
       'FORMA DE PGTO': estado.forma as LancamentoMensal['FORMA DE PGTO'],
       TIPO: estado.tipo as LancamentoMensal['TIPO'],
@@ -135,11 +134,9 @@ export function FormLancamento({ aba, registro, aoFechar }: Props) {
         </Campo>
 
         <Campo rotulo="Valor * (R$)">
-          <Entrada
+          <EntradaMoeda
             value={estado.valor}
-            onChange={(e) => alterar('valor', e.target.value)}
-            placeholder="1.234,56"
-            inputMode="decimal"
+            onChange={(digitos) => alterar('valor', digitos)}
             autoFocus
           />
           {erros.valor && <span className="mt-1 block text-xs text-rose-400">{erros.valor}</span>}
@@ -206,8 +203,4 @@ export function FormLancamento({ aba, registro, aoFechar }: Props) {
       </div>
     </Modal>
   );
-}
-
-function arredondarValor(valor: number): number {
-  return Math.round(valor * 100) / 100;
 }

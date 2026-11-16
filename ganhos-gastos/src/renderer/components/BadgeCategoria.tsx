@@ -10,6 +10,7 @@ const CORES_CATEGORIA: Record<string, string> = {
   Assinaturas: 'bg-indigo-500/15 text-indigo-300',
   'Pix/Saldo': 'bg-cyan-500/15 text-cyan-300',
   Outros: 'bg-slate-600/40 text-slate-300',
+  Moradia: 'bg-stone-500/15 text-stone-300',
   Veículos: 'bg-lime-500/15 text-lime-300',
   Doação: 'bg-pink-500/15 text-pink-300',
   Cuidados: 'bg-purple-500/15 text-purple-300',

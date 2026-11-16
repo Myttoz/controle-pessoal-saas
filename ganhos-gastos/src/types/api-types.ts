@@ -29,20 +29,19 @@ export type SiglaMes =
 // ---------------------------------------------------------------------------
 export const LISTAS = {
   CATEGORIA: [
-    'Contas fixas', 'Mercado', 'Compra Conjunta', 'Compra Pessoal',
-    'Transporte', 'Alimentação', 'Saúde', 'Lazer', 'Assinaturas',
-    'Pix/Saldo', 'Outros',
-    'Veículos', 'Doação', 'Cuidados', 'Estudos', 'Vícios',
-    'Viagem',
+    'Alimentação', 'Assinaturas', 'Compra Conjunta', 'Compra Pessoal',
+    'Contas fixas', 'Cuidados', 'Doação', 'Estudos', 'Lazer',
+    'Mercado', 'Moradia', 'Outros', 'Pix/Saldo', 'Saúde',
+    'Transporte', 'Veículos', 'Viagem', 'Vícios',
   ],
   'FORMA DE PGTO': [
-    'XP', 'NU', 'BB', 'MP', 'MPC', 'Boleto', 'Pix',
-    'Dinheiro', 'Folha PGT', 'Livia PG',
+    'BB', 'Boleto', 'Dinheiro', 'Folha PGT', 'Livia PG',
+    'MP', 'MPC', 'NU', 'Pix', 'XP',
   ],
   TIPO: [
-    'Fatura futura', 'PIX', 'Boleto', 'Folha de pagamento',
+    'Boleto', 'Fatura futura', 'Folha de pagamento', 'PIX',
   ],
-  'QUEM PAGA': ['Eu', 'Livia', 'Dividido 50/50'],
+  'QUEM PAGA': ['Dividido 50/50', 'Eu', 'Livia'],
 } as const;
 
 export type Categoria = typeof LISTAS.CATEGORIA[number];

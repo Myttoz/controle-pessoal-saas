@@ -12,9 +12,11 @@ export type CampoLista = keyof typeof LISTAS;
 export function useOpcoes(campo: CampoLista): string[] {
   const listas = useStoreAno((s) => s.listas);
   return useMemo(() => {
+    const ordenar = (lista: string[]) =>
+      [...lista].sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
     const vindas = listas?.[campo];
-    if (vindas && vindas.length > 0) return vindas;
-    return [...LISTAS[campo]];
+    if (vindas && vindas.length > 0) return ordenar(vindas);
+    return ordenar([...LISTAS[campo]]);
   }, [listas, campo]);
 }
 
