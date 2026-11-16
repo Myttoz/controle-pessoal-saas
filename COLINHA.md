@@ -78,11 +78,11 @@ navedador ──► https://myttoz.github.io/controle-pessoal-saas/
 
 ---
 
-## 4. Fluxo normal para mudar qualquer coisa
+## 4. Fluxo de mudanças (sempre que algo muda)
 
 Editar algo no site = editar código no seu PC → commit → push → o site é
-reconstruído sozinho. **Regra de ouro:** antes de qualquer alteração,
-substitua o backup da pasta (fica em `/home/infra/Documentos/Pessoal/`):
+reconstruído sozinho (em ~2 min). **Regra de ouro:** antes de qualquer
+alteração, substitua o backup da pasta:
 
 ```bash
 cd "/home/infra/Documentos/Pessoal"
@@ -93,27 +93,33 @@ tar --exclude='APP Financas/ganhos-gastos/node_modules' \
     -czf APP-Financas-backup.tar.gz "APP Financas"
 ```
 
+Depois de editar:
+
 ```bash
 cd "/home/infra/Documentos/Pessoal/APP Financas"
 git add -A
 git commit -m "título da mudança"
-git push       # deploy automático em ~2 min (Actions → "Publicar versão web")
+git push -u origin master
 ```
 
-## 4.1 Publicar release bonitinha (a cada marco, não a cada commit)
+## 4.1 Release bonitinha (adicional a cada marco)
 
-Quando você quiser gerar a página de Releases no GitHub
-(`github.com/Myttoz/controle-pessoal-saas/releases`):
+Use só quando quiser a página `releases` no GitHub com notas automáticas —
+não é necessária a cada push:
 
 ```bash
+# (1) push normal — publica o site
+git push -u origin master
+
+# (2) criar release bonitinha — opcional, quando quiser marcar
 git tag v1.0.0          # escolha a próxima versão (sempre `v` + semver)
-git push origin v1.0.0
+git push origin v1.0.0  # dispara o workflow "Release" → cria a página + notas
 ```
 
-O workflow `.github/workflows/release.yml` roda sozinho: cria a página de
-Release com notas geradas automaticamente a partir dos commits desde a tag
-anterior (`gh release create <tag> --generate-notes`). Uma tag = uma release;
-uma release por marco. Commits isolados **não** criam releases.
+O workflow `.github/workflows/release.yml` roda sozinho e gera a release
+com notas a partir dos commits desde a tag anterior (`gh release create
+<tag> --generate-notes`). Uma tag = uma release; commits isolados **não**
+criam releases.
 
 > Se o push reclamar de `workflow scope` num arquivo em
 > `.github/workflows/`, seu token não tem permissão para workflows — gere
