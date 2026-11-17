@@ -12,7 +12,7 @@
  *    apenas repete lançamentos que também estão nas colunas de tipo).
  *  - Arrastar um cartão entre colunas altera o TIPO/CATEGORIA do lançamento.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -24,7 +24,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { GripVertical, SquareKanban, type LucideIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, GripVertical, SquareKanban, type LucideIcon } from 'lucide-react';
 import {
   LISTAS,
   type DadosMensais,
@@ -82,6 +82,7 @@ function Cartao({ registro }: { registro: Registro<LancamentoMensal> }) {
       className={`group cursor-grab select-none rounded-lg border border-slate-700/80 bg-slate-800/80 p-2.5 transition hover:border-slate-600 hover:bg-slate-800 active:cursor-grabbing ${
         isDragging ? 'z-10 opacity-40 ring-2 ring-sky-500' : ''
       }`}
+      data-cartao
       title="Arraste para outra coluna"
     >
       <div className="flex items-start justify-between gap-2">
@@ -129,7 +130,7 @@ function Coluna({
 
   return (
     <section
-      className={`flex min-h-[280px] flex-col rounded-xl border bg-slate-900/50 transition-colors ${
+      className={`flex min-h-[280px] w-[232px] shrink-0 flex-col rounded-xl border bg-slate-900/50 transition-colors ${
         isOver ? 'border-sky-500/70 bg-sky-950/20' : destacada ? 'border-slate-700' : 'border-slate-800'
       }`}
     >
@@ -184,7 +185,7 @@ function ColunaDespesasLivia({
 }) {
   return (
     <section
-      className={`flex min-h-[280px] flex-col rounded-xl border bg-slate-900/50 transition-colors ${
+      className={`flex min-h-[280px] w-[232px] shrink-0 flex-col rounded-xl border bg-slate-900/50 transition-colors ${
         destacada ? 'border-amber-500/70 bg-amber-950/20' : 'border-slate-800'
       }`}
     >
@@ -241,13 +242,12 @@ function RodapeColunas({
   totalGeral: number;
 }) {
   return (
-    <div className="overflow-x-auto">
-      <div className="flex min-w-max gap-3 pb-0.5">
-        {espelho && (
-          <div
-            className="w-44 shrink-0 rounded-xl border border-amber-900/60 bg-amber-950/20 px-4 py-3"
-            title="Espelho dos lançamentos 'Dividido 50/50' e 'Livia' — não entra no Total geral"
-          >
+    <div className="flex gap-3">
+      {espelho && (
+        <div
+          className="w-[232px] shrink-0 rounded-xl border border-amber-900/60 bg-amber-950/20 px-4 py-3"
+          title="Espelho dos lançamentos 'Dividido 50/50' e 'Livia' — não entra no Total geral"
+        >
             <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-500">
               Despesas Livia
             </p>
@@ -263,7 +263,7 @@ function RodapeColunas({
         {colunas.map((coluna) => (
           <div
             key={coluna.id}
-            className="w-44 shrink-0 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3"
+            className="w-[232px] shrink-0 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3"
             title={coluna.rotulo}
           >
             <p className="truncate text-[10px] font-semibold uppercase tracking-wider text-slate-500">
@@ -278,7 +278,7 @@ function RodapeColunas({
           </div>
         ))}
 
-        <div className="w-44 shrink-0 rounded-xl border border-emerald-900/60 bg-emerald-950/20 px-4 py-3">
+        <div className="w-[232px] shrink-0 rounded-xl border border-emerald-900/60 bg-emerald-950/20 px-4 py-3">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-500">
             Total geral
           </p>
@@ -287,7 +287,6 @@ function RodapeColunas({
           </p>
           <p className="text-[10px] text-slate-600">soma de todas as colunas</p>
         </div>
-      </div>
     </div>
   );
 }
@@ -321,10 +320,57 @@ export function QuadroResumo({
   const setMes = useStoreUI((s) => s.setMes);
 
   const [arrastando, setArrastando] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const panRef = useRef<{ inicioX: number; scrollInicial: number; ativo: boolean }>({
+    inicioX: 0,
+    scrollInicial: 0,
+    ativo: false,
+  });
+  const [arrastandoScroll, setArrastandoScroll] = useState(false);
 
   const sensores = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
+
+  // arrastar-com-o-mouse no quadro: segura o botão esquerdo em qualquer área
+  // vazia e arrasta para os lados (cartões não entram — eles têm drag próprio)
+  useEffect(() => {
+    const aoMover = (e: MouseEvent) => {
+      if (!panRef.current.ativo) return;
+      const el = scrollRef.current;
+      if (!el) return;
+      el.scrollLeft = panRef.current.scrollInicial - (e.clientX - panRef.current.inicioX);
+    };
+    const aoSoltar = () => {
+      panRef.current.ativo = false;
+      setArrastandoScroll(false);
+    };
+    window.addEventListener('mousemove', aoMover);
+    window.addEventListener('mouseup', aoSoltar);
+    return () => {
+      window.removeEventListener('mousemove', aoMover);
+      window.removeEventListener('mouseup', aoSoltar);
+    };
+  }, []);
+
+  const aoPressionar = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return; // só botão esquerdo
+    const alvo = e.target as HTMLElement;
+    // cartões, botões, campos e links cuidam do próprio clique — não arrastam o quadro
+    if (alvo.closest('[data-cartao], button, a, input, select, textarea, [role="button"]')) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    panRef.current = { inicioX: e.clientX, scrollInicial: el.scrollLeft, ativo: true };
+    setArrastandoScroll(true);
+    e.preventDefault();
+  };
+
+  const deslocar = (direcao: 1 | -1) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    // uma "página" ≈ largura de uma coluna + gap
+    el.scrollBy({ left: direcao * 244 * 2, behavior: 'smooth' });
+  };
 
   const registros = mesSnapshot?.registros ?? [];
 
@@ -405,9 +451,29 @@ export function QuadroResumo({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <MesTabs meses={snapshot.meses} selecionado={mes} aoSelecionar={setMes} />
-        <p className="text-xs text-slate-500">
-          {dica}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="hidden max-w-xs truncate text-xs text-slate-500 xl:block" title={dica}>
+            {dica}
+          </p>
+          <button
+            type="button"
+            onClick={() => deslocar(-1)}
+            title="Rolar as colunas para a esquerda"
+            aria-label="Rolar as colunas para a esquerda"
+            className="rounded-lg border border-slate-800 bg-slate-900 p-2 text-slate-400 transition hover:border-slate-700 hover:text-sky-300"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => deslocar(1)}
+            title="Rolar as colunas para a direita"
+            aria-label="Rolar as colunas para a direita"
+            className="rounded-lg border border-slate-800 bg-slate-900 p-2 text-slate-400 transition hover:border-slate-700 hover:text-sky-300"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {!aba ? (
@@ -423,46 +489,51 @@ export function QuadroResumo({
           descricao={descricaoVazia}
         />
       ) : (
-        <>
-          <DndContext
-            sensors={sensores}
-            collisionDetection={closestCorners}
-            onDragStart={aoIniciar}
-            onDragEnd={aoTerminar}
-            onDragCancel={() => setArrastando(false)}
-          >
-            <div
-              className="grid gap-3"
-              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}
+        <div
+          ref={scrollRef}
+          onMouseDown={aoPressionar}
+          className={`overflow-x-auto overflow-y-hidden pb-1 ${
+            arrastandoScroll ? 'cursor-grabbing select-none' : 'cursor-grab'
+          }`}
+        >
+          <div className="w-max space-y-3">
+            <DndContext
+              sensors={sensores}
+              collisionDetection={closestCorners}
+              onDragStart={aoIniciar}
+              onDragEnd={aoTerminar}
+              onDragCancel={() => setArrastando(false)}
             >
-              {espelho && (
-                <ColunaDespesasLivia
-                  registros={espelho.registros}
-                  destacada={arrastando}
-                  total={espelho.total}
-                />
-              )}
-              {colunas.map((coluna) => (
-                <Coluna
-                  key={coluna.id}
-                  id={coluna.id}
-                  rotulo={coluna.rotulo}
-                  registros={coluna.registros}
-                  destacada={arrastando}
-                  total={totals.get(coluna.id) ?? 0}
-                />
-              ))}
-            </div>
-          </DndContext>
+              <div className="flex gap-3">
+                {espelho && (
+                  <ColunaDespesasLivia
+                    registros={espelho.registros}
+                    destacada={arrastando}
+                    total={espelho.total}
+                  />
+                )}
+                {colunas.map((coluna) => (
+                  <Coluna
+                    key={coluna.id}
+                    id={coluna.id}
+                    rotulo={coluna.rotulo}
+                    registros={coluna.registros}
+                    destacada={arrastando}
+                    total={totals.get(coluna.id) ?? 0}
+                  />
+                ))}
+              </div>
+            </DndContext>
 
-          {/* ------- rodapé: total de cada coluna visível + total geral ------- */}
-          <RodapeColunas
-            colunas={colunas}
-            totals={totals}
-            espelho={espelho}
-            totalGeral={totalGeral}
-          />
-        </>
+            {/* ------- rodapé: total de cada coluna visível + total geral ------- */}
+            <RodapeColunas
+              colunas={colunas}
+              totals={totals}
+              espelho={espelho}
+              totalGeral={totalGeral}
+            />
+          </div>
+        </div>
       )}
 
       {erro && (
