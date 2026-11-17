@@ -8,6 +8,7 @@ import { MesTabs } from '@/components/MesTabs';
 import { Modal } from '@/components/Modal';
 import { formatarMoeda, nomeFormaPgto } from '@/lib/formatar';
 import { NOMES_MESES } from '@/lib/meses';
+import { sugestoesDescricoes, sugestoesObservacoes } from '@/lib/sugestoes';
 import { calcularResumo, gastosProximoMes } from '@/lib/resumo';
 import { resumirDivisao } from '@/lib/divisao';
 import { useRegistrosFiltrados } from '@/hooks/useRegistrosFiltrados';
@@ -126,6 +127,10 @@ export function LancamentosPage() {
       descricao: unicos((d) => d.DESCRIÇÃO).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })),
     };
   }, [mesSnapshot, opcoesCategoria]);
+
+  // ---- sugestões a partir do ano inteiro (para autocomplete do form) ----
+  const opcoesDescricao = useMemo(() => sugestoesDescricoes(snapshot), [snapshot]);
+  const opcoesObservacao = useMemo(() => sugestoesObservacoes(snapshot), [snapshot]);
 
   const filtrosColunas = useStoreUI((s) => s.filtrosColunas);
   const temFiltroColunas = useMemo(
@@ -300,6 +305,7 @@ export function LancamentosPage() {
         <TabelaLancamentos
           registros={registros}
           opcoes={opcoesColunas}
+          sugestoesObservacao={opcoesObservacao}
           aoEditar={aoEditar}
           aoExcluir={aoExcluir}
           aoEditarObservacao={aoEditarObservacao}
@@ -356,6 +362,8 @@ export function LancamentosPage() {
         <FormLancamento
           aba={modal.modo === 'editar' ? modal.aba : aba}
           registro={modal.modo === 'editar' ? modal.registro : null}
+          sugestoesDescricao={opcoesDescricao}
+          sugestoesObservacao={opcoesObservacao}
           aoFechar={fecharModal}
         />
       )}

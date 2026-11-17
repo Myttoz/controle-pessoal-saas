@@ -1,5 +1,5 @@
-import { forwardRef } from 'react';
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react';
+import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
+import type { InputHTMLAttributes, KeyboardEvent, ReactNode, SelectHTMLAttributes } from 'react';
 
 export const CLASSES_INPUT =
   'w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 transition focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 disabled:opacity-50';
@@ -71,6 +71,111 @@ export const EntradaMoeda = forwardRef<
       {...props}
       className={`${CLASSES_INPUT} text-right tabular-nums ${className ?? ''}`}
     />
+  );
+});
+
+/**
+ * Campo de entrada com autocomplete (estilo Excel/Google Sheets):
+ * - Enquanto o usuário digita, aparece uma lista de valores já usados.
+ * - Pressionar <Tab> ou clicar na opção completa o valor.
+ * - Primeira letra toda maiúscula automaticamente (se `primeiraMaiuscula`).
+ */
+export const EntradaSugestoes = forwardRef<
+  HTMLInputElement,
+  Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> & {
+    value: string;
+    onChange: (texto: string) => void;
+    sugestoes?: string[];
+    primeiraMaiuscula?: boolean;
+  }
+>(function EntradaSugestoes(
+  { value, onChange, sugestoes = [], primeiraMaiuscula = true, className, ...props },
+  ref,
+) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [foco, setFoco] = useState(false);
+
+  const normalizar = (t: string) =>
+    primeiraMaiuscula && t.length > 0
+      ? t.charAt(0).toLocaleUpperCase('pt-BR') + t.slice(1)
+      : t;
+
+  const valorAtual = normalizar(value ?? '');
+  const termo = valorAtual.trim().toLowerCase();
+
+  const filtradas = useMemo(() => {
+    if (!foco) return [] as string[];
+    if (!termo) return sugestoes.slice(0, 8);
+    return sugestoes
+      .filter((s) => s.toLowerCase().includes(termo))
+      .sort((a, b) => {
+        const aComeca = a.toLowerCase().startsWith(termo) ? 0 : 1;
+        const bComeca = b.toLowerCase().startsWith(termo) ? 0 : 1;
+        if (aComeca !== bComeca) return aComeca - bComeca;
+        return a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
+      })
+      .slice(0, 8);
+  }, [foco, termo, sugestoes]);
+
+  // Clicar fora fecha o menu de sugestões; clicar na opção seleciona.
+  useEffect(() => {
+    if (!foco) return;
+    const aoClicarFora = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setFoco(false);
+      }
+    };
+    document.addEventListener('mousedown', aoClicarFora);
+    return () => document.removeEventListener('mousedown', aoClicarFora);
+  }, [foco]);
+
+  const selecionar = (texto: string) => {
+    onChange(texto);
+    setFoco(false);
+  };
+
+  const aoTeclar = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Tab' && !e.shiftKey && filtradas.length > 0) {
+      e.preventDefault();
+      selecionar(filtradas[0]);
+    } else if (e.key === 'Escape') {
+      setFoco(false);
+    }
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
+      <input
+        ref={ref}
+        autoComplete="off"
+        value={valorAtual}
+        onChange={(e) => {
+          onChange(normalizar(e.target.value));
+          setFoco(true);
+        }}
+        onFocus={() => setFoco(true)}
+        onKeyDown={aoTeclar}
+        {...props}
+        className={`${CLASSES_INPUT} ${className ?? ''}`}
+      />
+      {foco && filtradas.length > 0 && (
+        <div className="absolute z-50 mt-1 max-h-[220px] w-full overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 shadow-2xl shadow-black/50">
+          {filtradas.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                selecionar(s);
+              }}
+              className="block w-full truncate px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-slate-800"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 });
 

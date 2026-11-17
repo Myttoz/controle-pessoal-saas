@@ -4,6 +4,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 import type { LancamentoMensal, Registro } from '@/types/api-types';
 import { BadgeCategoria } from '@/components/BadgeCategoria';
 import { ThOrdenavel, type DirecaoOrdem } from '@/components/ThOrdenavel';
+import { EntradaSugestoes } from '@/components/Campos';
 import { TooltipTexto } from '@/components/TooltipTexto';
 import { formatarData, formatarMoeda, nomeFormaPgto, valorFormaPgto } from '@/lib/formatar';
 import { useStoreUI } from '@/store/storeUI';
@@ -91,12 +92,13 @@ interface LinhaProps {
   colunas: string;
   /** Número da linha na planilha (usado para editar). */
   linha: number | string;
+  sugestoesObservacao: string[];
   aoEditar: (registro: Registro<LancamentoMensal>) => void;
   aoExcluir: (registro: Registro<LancamentoMensal>) => void;
   aoEditarObservacao: (linha: number | string, novoValor: string) => Promise<void>;
 }
 
-const Linha = memo(function Linha({ registro, colunas, linha, aoEditar, aoExcluir, aoEditarObservacao }: LinhaProps) {
+const Linha = memo(function Linha({ registro, colunas, linha, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao }: LinhaProps) {
   const d = registro.dados;
   const [editandoObs, setEditandoObs] = useState(false);
   const [textoObs, setTextoObs] = useState(d.OBSERVAÇÃO ?? '');
@@ -131,10 +133,11 @@ const Linha = memo(function Linha({ registro, colunas, linha, aoEditar, aoExclui
         {d['QUEM PAGA']}
       </span>
       {editandoObs ? (
-        <input
+        <EntradaSugestoes
           autoFocus
           value={textoObs}
-          onChange={(e) => setTextoObs(e.target.value)}
+          onChange={setTextoObs}
+          sugestoes={sugestoesObservacao}
           onBlur={salvarObs}
           onKeyDown={(e) => {
             if (e.key === 'Enter') salvarObs();
@@ -143,7 +146,7 @@ const Linha = memo(function Linha({ registro, colunas, linha, aoEditar, aoExclui
               setEditandoObs(false);
             }
           }}
-          className="block min-w-0 text-sm italic text-sky-300 bg-slate-950 border border-sky-500/30 px-1 py-0.5 rounded focus:ring-1 focus:ring-sky-500 outline-none"
+          className="block min-w-0 bg-slate-950 px-1 py-0.5 text-sm italic text-sky-300 outline-none border border-sky-500/30 rounded focus:ring-1 focus:ring-sky-500"
         />
       ) : (
         d.OBSERVAÇÃO ? (
@@ -176,6 +179,7 @@ interface DadosVirtuais {
   registros: Registro<LancamentoMensal>[];
   colunas: string;
   linhaInicial: number;
+  sugestoesObservacao: string[];
   aoEditar: (registro: Registro<LancamentoMensal>) => void;
   aoExcluir: (registro: Registro<LancamentoMensal>) => void;
   aoEditarObservacao: (linha: number | string, novoValor: string) => Promise<void>;
@@ -190,6 +194,7 @@ function LinhaVirtual({ index, style, data }: ListChildComponentProps<DadosVirtu
         registro={registro}
         colunas={data.colunas}
         linha={data.linhaInicial + index}
+        sugestoesObservacao={data.sugestoesObservacao}
         aoEditar={data.aoEditar}
         aoExcluir={data.aoExcluir}
         aoEditarObservacao={data.aoEditarObservacao}
@@ -207,12 +212,14 @@ interface Props {
   registros: Registro<LancamentoMensal>[];
   /** Valores existentes no mês, por coluna (para os filtros multi-seleção). */
   opcoes: OpcoesColunas;
+  /** Sugestões de autocomplete para o campo Observação (ano inteiro). */
+  sugestoesObservacao: string[];
   aoEditar: (registro: Registro<LancamentoMensal>) => void;
   aoExcluir: (registro: Registro<LancamentoMensal>) => void;
   aoEditarObservacao: (linha: number | string, novoValor: string) => Promise<void>;
 }
 
-export function TabelaLancamentos({ registros, opcoes, aoEditar, aoExcluir, aoEditarObservacao }: Props) {
+export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao }: Props) {
   const ordem = useStoreUI((s) => s.ordemLancamentos);
   const filtrosColunas = useStoreUI((s) => s.filtrosColunas);
   const alternarOrdem = useStoreUI((s) => s.alternarOrdemLancamentos);
@@ -229,8 +236,9 @@ export function TabelaLancamentos({ registros, opcoes, aoEditar, aoExcluir, aoEd
       aoEditar,
       aoExcluir,
       aoEditarObservacao,
+      sugestoesObservacao,
     }),
-    [registros, colunas, aoEditar, aoExcluir, aoEditarObservacao],
+    [registros, colunas, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao],
   );
 
   const virtualizar = registros.length > LIMITE_VIRTUALIZACAO;
@@ -265,52 +273,52 @@ export function TabelaLancamentos({ registros, opcoes, aoEditar, aoExcluir, aoEd
             className="grid items-center gap-4 border-b border-slate-800 bg-slate-950/60 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500"
           >
             <ThOrdenavel
-              rotulo="Data"
+              rotulo="DATA"
               direcao={direcaoDe('data')}
               primeiraDirecao="desc"
               aoOrdenar={() => alternarOrdem('data', 'desc')}
             />
             <ThOrdenavel
-              rotulo="Categoria"
+              rotulo="CATEGORIA"
               direcao={direcaoDe('categoria')}
               aoOrdenar={() => alternarOrdem('categoria')}
               filtro={filtroDe('categoria')}
             />
             <ThOrdenavel
-              rotulo="Descrição"
+              rotulo="DESCRIÇÃO"
               direcao={direcaoDe('descricao')}
               aoOrdenar={() => alternarOrdem('descricao')}
               filtro={filtroDe('descricao')}
             />
             <ThOrdenavel
-              rotulo="Forma"
+              rotulo="FORMA DE PGTO"
               direcao={direcaoDe('forma')}
               aoOrdenar={() => alternarOrdem('forma')}
               filtro={filtroDe('forma')}
             />
             <ThOrdenavel
-              rotulo="Tipo"
+              rotulo="TIPO"
               direcao={direcaoDe('tipo')}
               aoOrdenar={() => alternarOrdem('tipo')}
               filtro={filtroDe('tipo')}
             />
             <ThOrdenavel
-              rotulo="Quem paga"
+              rotulo="QUEM PAGA"
               direcao={direcaoDe('quem')}
               aoOrdenar={() => alternarOrdem('quem')}
               filtro={filtroDe('quem')}
             />
             <span className="truncate" title="Observação (passe o mouse para ver o conteúdo completo)">
-              Observação
+              OBSERVAÇÃO
             </span>
             <ThOrdenavel
-              rotulo="Valor"
+              rotulo="VALOR"
               alinhamento="right"
               direcao={direcaoDe('valor')}
               primeiraDirecao="asc"
               aoOrdenar={() => alternarOrdem('valor')}
             />
-            <span className="text-right">Ações</span>
+            <span className="text-right">AÇÕES</span>
           </div>
 
           {/* corpo */}
@@ -333,6 +341,7 @@ export function TabelaLancamentos({ registros, opcoes, aoEditar, aoExcluir, aoEd
                   registro={registro}
                   colunas={colunas}
                   linha={registro.linha}
+                  sugestoesObservacao={sugestoesObservacao}
                   aoEditar={aoEditar}
                   aoExcluir={aoExcluir}
                   aoEditarObservacao={aoEditarObservacao}

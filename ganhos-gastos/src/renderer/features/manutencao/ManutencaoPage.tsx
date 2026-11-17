@@ -273,7 +273,7 @@ export function ManutencaoPage() {
                 <tr className="border-b border-slate-800 bg-slate-950/60 text-left text-[11px] uppercase tracking-wider text-slate-500">
                   <th className="p-0 font-semibold">
                     <ThOrdenavel
-                      rotulo="Manutenção"
+                      rotulo="MANUTENÇÃO"
                       direcao={direcaoDe('descricao')}
                       aoOrdenar={() => alternarOrdem('descricao')}
                       className="px-4 py-2.5"
@@ -281,7 +281,7 @@ export function ManutencaoPage() {
                   </th>
                   <th className="p-0 font-semibold">
                     <ThOrdenavel
-                      rotulo="Data"
+                      rotulo="DATA"
                       direcao={direcaoDe('data')}
                       primeiraDirecao="desc"
                       aoOrdenar={() => alternarOrdem('data', 'desc')}
@@ -291,7 +291,7 @@ export function ManutencaoPage() {
                   <th className="px-3 py-2.5 text-right font-semibold">KM</th>
                   <th className="p-0 font-semibold">
                     <ThOrdenavel
-                      rotulo="Valor"
+                      rotulo="VALOR"
                       alinhamento="right"
                       direcao={direcaoDe('valor')}
                       aoOrdenar={() => alternarOrdem('valor')}
@@ -300,7 +300,7 @@ export function ManutencaoPage() {
                   </th>
                   <th className="p-0 font-semibold">
                     <ThOrdenavel
-                      rotulo="Oficina"
+                      rotulo="OFICINA"
                       direcao={direcaoDe('mecanico')}
                       aoOrdenar={() => alternarOrdem('mecanico')}
                       className="px-3 py-2.5"
@@ -314,7 +314,7 @@ export function ManutencaoPage() {
                   </th>
                   <th className="p-0 font-semibold">
                     <ThOrdenavel
-                      rotulo="Peças"
+                      rotulo="PEÇAS"
                       direcao={direcaoDe('lojaPecas')}
                       aoOrdenar={() => alternarOrdem('lojaPecas')}
                       className="px-3 py-2.5"
@@ -328,7 +328,7 @@ export function ManutencaoPage() {
                   </th>
                   <th className="p-0 font-semibold">
                     <ThOrdenavel
-                      rotulo="Próx. revisão"
+                      rotulo="PRÓX. REVISÃO"
                       direcao={direcaoDe('proximaData')}
                       aoOrdenar={() => alternarOrdem('proximaData')}
                       className="px-3 py-2.5"
@@ -336,13 +336,13 @@ export function ManutencaoPage() {
                   </th>
                   <th className="p-0 font-semibold">
                     <ThOrdenavel
-                      rotulo="Status"
+                      rotulo="STATUS"
                       direcao={direcaoDe('status')}
                       aoOrdenar={() => alternarOrdem('status')}
                       className="px-3 py-2.5"
                     />
                   </th>
-                  <th className="px-4 py-2.5 text-right font-semibold">Ações</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">AÇÕES</th>
                 </tr>
               </thead>
               <tbody>

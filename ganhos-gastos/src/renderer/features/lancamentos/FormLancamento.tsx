@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { LancamentoMensal, Registro } from '@/types/api-types';
 import { Botao } from '@/components/Botoes';
-import { Campo, EntradaMoeda, Entrada, Selecao } from '@/components/Campos';
+import { Campo, EntradaMoeda, Entrada, EntradaSugestoes, Selecao } from '@/components/Campos';
 import { Modal } from '@/components/Modal';
 import { useOpcoes } from '@/hooks/useOpcoes';
 import { useStoreAno } from '@/store/storeAno';
@@ -50,10 +50,19 @@ interface Props {
   aba: string;
   /** Presente = modo edição; ausente = modo novo. */
   registro?: Registro<LancamentoMensal> | null;
+  /** Sugestões de autocomplete (ano inteiro). */
+  sugestoesDescricao: string[];
+  sugestoesObservacao: string[];
   aoFechar: () => void;
 }
 
-export function FormLancamento({ aba, registro, aoFechar }: Props) {
+export function FormLancamento({
+  aba,
+  registro,
+  sugestoesDescricao,
+  sugestoesObservacao,
+  aoFechar,
+}: Props) {
   const [estado, setEstado] = useState<EstadoForm>(() => paraEstado(registro?.dados));
   const [erros, setErros] = useState<Erros>({});
   const [enviando, setEnviando] = useState(false);
@@ -143,9 +152,10 @@ export function FormLancamento({ aba, registro, aoFechar }: Props) {
         </Campo>
 
         <Campo rotulo="Descrição *" className="sm:col-span-2">
-          <Entrada
+          <EntradaSugestoes
             value={estado.descricao}
-            onChange={(e) => alterar('descricao', e.target.value)}
+            onChange={(v) => alterar('descricao', v)}
+            sugestoes={sugestoesDescricao}
             placeholder="Ex.: Conta de energia"
           />
           {erros.descricao && (
@@ -194,9 +204,10 @@ export function FormLancamento({ aba, registro, aoFechar }: Props) {
         </Campo>
 
         <Campo rotulo="Observação" className="sm:col-span-2">
-          <Entrada
+          <EntradaSugestoes
             value={estado.observacao}
-            onChange={(e) => alterar('observacao', e.target.value)}
+            onChange={(v) => alterar('observacao', v)}
+            sugestoes={sugestoesObservacao}
             placeholder="Opcional"
           />
         </Campo>
