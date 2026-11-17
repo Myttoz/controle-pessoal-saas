@@ -845,35 +845,48 @@ export function criarApiSupabase(): ApiElectron {
         const r4 = await supabase.from('anos').delete().eq('user_id', uid).eq('ano', ano);
         if (r4.error) return erro(r4.error.message);
 
-        // 2) Limpa entradas de resumo/saldo do ano dentro do config do perfil
-        //   (remover saldoInicial[ano] e qualquer resumoMes["<ano>-MM"])
+        // 2) Limpa entradas de resumo/saldo do ano dentro do config do perfil.
+        //    Sem `profiles.config` no banco, apenas avisa no console e segue.
         const { data: prof, error: profErr } = await supabase
           .from('profiles')
           .select('config')
           .eq('id', uid)
-          .single();
-        if (profErr) return erro(profErr.message);
+          .maybeSingle();
 
-        const config = (prof?.config ?? {}) as Record<string, unknown>;
-        const saldoAtual = (config.saldoInicial as Record<string, number> | undefined) ?? {};
-        const novoSaldo: Record<string, number> = {};
-        for (const [k, v] of Object.entries(saldoAtual)) {
-          if (k !== String(ano)) novoSaldo[k] = v;
-        }
-        const resumoAtual = (config.resumoMes as Record<string, { despesas: number | null; recebidoLivia: number | null }> | undefined) ?? {};
-        const sufixo = `${ano}-`;
-        const novoResumo: Record<string, { despesas: number | null; recebidoLivia: number | null }> = {};
-        for (const [k, v] of Object.entries(resumoAtual)) {
-          if (!k.startsWith(sufixo)) novoResumo[k] = v;
-        }
+        if (profErr) {
+          console.warn('[excluirAno] profiles.config indisponível, ignorado:', profErr.message);
+        } else if (prof) {
+          const config = (prof.config ?? {}) as Record<string, unknown>;
 
-        const { error: confErr } = await supabase
-          .from('profiles')
-          .upsert(
-            { id: uid, config: { ...config, saldoInicial: novoSaldo, resumoMes: novoResumo } },
-            { onConflict: 'id' },
-          );
-        if (confErr) return erro(confErr.message);
+          const saldoAtual = (config.saldoInicial as Record<string, number> | undefined) ?? {};
+          const novoSaldo: Record<string, number> = {};
+          for (const [k, v] of Object.entries(saldoAtual)) {
+            if (k !== String(ano)) novoSaldo[k] = v;
+          }
+
+          const resumoAtual =
+            (config.resumoMes as
+              | Record<string, { despesas: number | null; recebidoLivia: number | null }>
+              | undefined) ?? {};
+          const sufixo = `${ano}-`;
+          const novoResumo: Record<string, { despesas: number | null; recebidoLivia: number | null }> = {};
+          for (const [k, v] of Object.entries(resumoAtual)) {
+            if (!k.startsWith(sufixo)) novoResumo[k] = v;
+          }
+
+          const { error: confErr } = await supabase
+            .from('profiles')
+            .upsert(
+              {
+                id: uid,
+                config: { ...config, saldoInicial: novoSaldo, resumoMes: novoResumo },
+              },
+              { onConflict: 'id' },
+            );
+          if (confErr) {
+            console.warn('[excluirAno] não foi possível limpar config:', confErr.message);
+          }
+        }
 
         return { sucesso: true, ano };
       }
@@ -953,17 +966,21 @@ export function criarApiSupabase(): ApiElectron {
         const uid = await getUserId();
         if (!uid) return erro('Faça login.', 'NAO_AUTORIZADO');
         const [profRes, heRes, ferRes, manRes] = await Promise.all([
-          supabase.from('profiles').select('config').eq('id', uid).single(),
+          supabase.from('profiles').select('config').eq('id', uid).maybeSingle(),
           supabase.from('horas_extras').select('*').eq('user_id', uid),
           supabase.from('ferias').select('*').eq('user_id', uid),
           supabase.from('manutencao').select('*').eq('user_id', uid),
         ]);
-        if (profRes.error) return erro(profRes.error.message);
+        // A coluna pode não existir — apenas usa objeto vazio.
+        const profCfg =
+          !profRes.error && profRes.data
+            ? (profRes.data as { config?: unknown }).config
+            : undefined;
         if (heRes.error) return erro(heRes.error.message);
         if (ferRes.error) return erro(ferRes.error.message);
         if (manRes.error) return erro(manRes.error.message);
 
-        const config = (profRes.data?.config as ConfigLocal | null) ?? { salarioBruto: 0, kmAtual: 0 };
+        const config = (profCfg as ConfigLocal | null) ?? { salarioBruto: 0, kmAtual: 0, saldoInicial: {}, resumoMes: {} };
         const dados: DadosLocais = {
           versao: 1,
           salvoEm: Date.now(),
@@ -979,10 +996,16 @@ export function criarApiSupabase(): ApiElectron {
         const uid = await getUserId();
         if (!uid) return erro('Faça login.', 'NAO_AUTORIZADO');
 
-        const { error: profErr } = await supabase
+        // Upsert parcial: não falha quando `profiles.config` não existe (apenas loga).
+        const tentativaEscrita = await supabase
           .from('profiles')
           .upsert({ id: uid, config: dados.config }, { onConflict: 'id' });
-        if (profErr) return erro(profErr.message);
+        if (tentativaEscrita.error) {
+          console.warn(
+            '[salvarDadosLocais] profiles.config indisponível, mantendo dados no localStorage do dispositivo:',
+            tentativaEscrita.error.message,
+          );
+        }
 
         await supabase.from('horas_extras').delete().eq('user_id', uid);
         await supabase.from('ferias').delete().eq('user_id', uid);
