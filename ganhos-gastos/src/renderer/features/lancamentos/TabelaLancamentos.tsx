@@ -21,10 +21,9 @@ export interface OpcoesColunas {
 }
 
 /**
- * Largura DINÂMICA das colunas: cada coluna recebe um peso (fr) proporcional
- * ao maior texto presente nela (limitado por `cap`), então o espaço em branco
- * fica proporcional ao conteúdo em vez de igual para tudo.
- * Colunas de largura fixa (data/valor/ações) não variam.
+ * Largura DINÂMICA das colunas: o maior texto x aproximadamente 0.52rem/char
+ * define `fit-content(Nrem)` para cada coluna — a tabela fica do tamanho do
+ * conteúdo (com um pouco de respiro) e cedeon overflow-x quando necessário.
  */
 function calcularColunas(registros: Registro<LancamentoMensal>[]): string {
   const maiorLen = (pegar: (d: LancamentoMensal) => string, min: number, cap: number) => {
@@ -36,23 +35,24 @@ function calcularColunas(registros: Registro<LancamentoMensal>[]): string {
     return Math.min(cap, Math.max(min, maior));
   };
 
-  const categoria = maiorLen((d) => d.CATEGORIA, 14, 26);
-  const descricao = maiorLen((d) => d.DESCRIÇÃO, 24, 64);
-  const forma = maiorLen((d) => d['FORMA DE PGTO'], 11, 20);
-  const tipo = maiorLen((d) => d.TIPO, 13, 26);
-  const quem = maiorLen((d) => d['QUEM PAGA'], 12, 22);
-  const obs = maiorLen((d) => d.OBSERVAÇÃO, 15, 40);
+  const categoria = maiorLen((d) => d.CATEGORIA, 10, 50);
+  const descricao = maiorLen((d) => d.DESCRIÇÃO, 10, 60);
+  const forma = maiorLen((d) => d['FORMA DE PGTO'], 8, 30);
+  const tipo = maiorLen((d) => d.TIPO, 11, 30);
+  const quem = maiorLen((d) => d['QUEM PAGA'], 8, 24);
+  const obs = maiorLen((d) => d.OBSERVAÇÃO, 10, 60);
 
+  const rem = (chars: number) => Math.ceil(chars * 0.42 + 1.5); // ~0.42rem/char + padding
   return [
-    '96px',
-    `minmax(112px,${categoria}fr)`,
-    `minmax(176px,${descricao}fr)`,
-    `minmax(88px,${forma}fr)`,
-    `minmax(104px,${tipo}fr)`,
-    `minmax(96px,${quem}fr)`,
-    `minmax(120px,${obs}fr)`,
-    '112px',
-    '72px',
+    '5.5rem',
+    `minmax(5rem, fit-content(${rem(categoria)}rem))`,
+    `minmax(7rem, fit-content(${rem(descricao)}rem))`,
+    `minmax(4.5rem, fit-content(${rem(forma)}rem))`,
+    `minmax(5rem, fit-content(${rem(tipo)}rem))`,
+    `minmax(4.5rem, fit-content(${rem(quem)}rem))`,
+    `minmax(5rem, fit-content(${rem(obs)}rem))`,
+    '7rem',
+    '4.5rem',
   ].join(' ');
 }
 
@@ -266,7 +266,7 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
   return (
     <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60">
       <div className="overflow-x-auto">
-        <div className="min-w-[1160px]">
+        <div className="w-max">
           {/* cabeçalho */}
           <div
             style={{ gridTemplateColumns: colunas }}
