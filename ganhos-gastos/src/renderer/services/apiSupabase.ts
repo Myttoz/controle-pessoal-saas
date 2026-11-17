@@ -832,6 +832,52 @@ export function criarApiSupabase(): ApiElectron {
         return { sucesso: true, aba: payload.aba, linha: payload.linha, removido: true };
       }
 
+      if (acao === 'removerAno') {
+        const ano = (payload as { ano: number }).ano;
+
+        // 1) Apaga APENAS registros vinculados ao ano (nunca afeta outros anos)
+        const r1 = await supabase.from('lancamentos').delete().eq('user_id', uid).eq('ano', ano);
+        if (r1.error) return erro(r1.error.message);
+        const r2 = await supabase.from('salarios').delete().eq('user_id', uid).eq('ano', ano);
+        if (r2.error) return erro(r2.error.message);
+        const r3 = await supabase.from('extras').delete().eq('user_id', uid).eq('ano', ano);
+        if (r3.error) return erro(r3.error.message);
+        const r4 = await supabase.from('anos').delete().eq('user_id', uid).eq('ano', ano);
+        if (r4.error) return erro(r4.error.message);
+
+        // 2) Limpa entradas de resumo/saldo do ano dentro do config do perfil
+        //   (remover saldoInicial[ano] e qualquer resumoMes["<ano>-MM"])
+        const { data: prof, error: profErr } = await supabase
+          .from('profiles')
+          .select('config')
+          .eq('id', uid)
+          .single();
+        if (profErr) return erro(profErr.message);
+
+        const config = (prof?.config ?? {}) as Record<string, unknown>;
+        const saldoAtual = (config.saldoInicial as Record<string, number> | undefined) ?? {};
+        const novoSaldo: Record<string, number> = {};
+        for (const [k, v] of Object.entries(saldoAtual)) {
+          if (k !== String(ano)) novoSaldo[k] = v;
+        }
+        const resumoAtual = (config.resumoMes as Record<string, { despesas: number | null; recebidoLivia: number | null }> | undefined) ?? {};
+        const sufixo = `${ano}-`;
+        const novoResumo: Record<string, { despesas: number | null; recebidoLivia: number | null }> = {};
+        for (const [k, v] of Object.entries(resumoAtual)) {
+          if (!k.startsWith(sufixo)) novoResumo[k] = v;
+        }
+
+        const { error: confErr } = await supabase
+          .from('profiles')
+          .upsert(
+            { id: uid, config: { ...config, saldoInicial: novoSaldo, resumoMes: novoResumo } },
+            { onConflict: 'id' },
+          );
+        if (confErr) return erro(confErr.message);
+
+        return { sucesso: true, ano };
+      }
+
       if (acao === 'criarAno') {
         const ano = (payload as { ano: number }).ano;
         const { error } = await supabase
@@ -1011,6 +1057,7 @@ export function criarApiSupabase(): ApiElectron {
         case 'editar':
         case 'remover':
         case 'criarAno':
+        case 'removerAno':
         case 'atualizarDashboard': {
           const resto = { ...payload };
           delete resto.acao;

@@ -62,7 +62,7 @@ export function registrarIpc(): void {
   // Escritas via proxy entram na MESMA fila sequencial das escritas diretas:
   // duas gravacoes simultaneas podem provocar LOCK na planilha.
   const ACOES_ESCRITA = new Set([
-    'adicionar', 'editar', 'remover', 'criarAno', 'atualizarDashboard',
+    'adicionar', 'editar', 'remover', 'criarAno', 'removerAno', 'atualizarDashboard',
     'adicionarLembrete', 'editarLembrete', 'removerLembrete',
     'testarLembrete', 'instalarLembretes', 'salvarDadosLocais',
   ]);

@@ -122,6 +122,7 @@ export function PagamentosPage() {
   }
 
   const linhaMesSelecionado = linhas.find((l) => l.mes === mes);
+  const ehManual = linhas.length > 0 ? linhas[0].ehManualAno : (ano ?? 2026) <= 2026;
 
   const salvarSaldoInicial = (valor: number | null) => {
     if (ano == null) return;
@@ -183,12 +184,30 @@ export function PagamentosPage() {
               />
               <div className="flex flex-col justify-end gap-1.5 text-xs text-slate-400">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                  Como funciona
+                  Como funciona {ehManual ? '(entrada manual)' : '(automático)'}
                 </p>
                 <ul className="list-disc pl-4 leading-relaxed">
                   <li>Você define o saldo uma vez por ano.</li>
-                  <li><strong>Salário vem automático</strong> da aba Recebidos (Total Ganhos).</li>
-                  <li><strong>Despesas</strong> e <strong>Recebido da Lívia</strong> você digita à mão todo mês.</li>
+                  <li>
+                    <strong>Salário vem automático</strong> da aba Recebidos (Total Ganhos).
+                  </li>
+                  {ehManual ? (
+                    <li>
+                      <strong>Despesas</strong> e <strong>Recebido da Lívia</strong> você digita à mão
+                      todo mês.
+                    </li>
+                  ) : (
+                    <li>
+                      <strong>Despesas</strong> = soma automática dos lançamentos do mês
+                      (Total Gasto do Lançamentos).
+                    </li>
+                  )}
+                  {!ehManual && (
+                    <li>
+                      <strong>Recebido da Lívia</strong> = metade do que está em
+                      &quot;Dividido 50/50&quot; + tudo que está como &quot;Livia&quot; nos Lançamentos.
+                    </li>
+                  )}
                   <li>O Saldo do mês acumula de janeiro até o mês selecionado.</li>
                 </ul>
               </div>
@@ -233,42 +252,54 @@ export function PagamentosPage() {
                           {linha.salario > 0 ? formatarMoeda(linha.salario) : '—'}
                         </td>
                         <td className="px-2 py-1.5">
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            autoComplete="off"
-                            placeholder="—"
-                            defaultValue={linha.despesas !== 0 ? formatarMoeda(linha.despesas).replace(/^R\$\s*/, '') : ''}
-                            onBlur={(e) => {
-                              const n = parseValor(e.currentTarget.value);
-                              salvarDespesa(indice, e.currentTarget.value.trim() === '' ? null : Number.isFinite(n) ? n : null);
-                            }}
-                            onChange={(e) => {
-                              const n = parseValor(e.currentTarget.value);
-                              if (e.currentTarget.value.trim() === '') salvarDespesa(indice, null);
-                              else if (Number.isFinite(n)) salvarDespesa(indice, n);
-                            }}
-                            className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-right text-sm tabular-nums text-slate-200 outline-none focus:border-sky-500"
-                          />
+                          {ehManual ? (
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              autoComplete="off"
+                              placeholder="—"
+                              defaultValue={linha.despesas !== 0 ? formatarMoeda(linha.despesas).replace(/^R\$\s*/, '') : ''}
+                              onBlur={(e) => {
+                                const n = parseValor(e.currentTarget.value);
+                                salvarDespesa(indice, e.currentTarget.value.trim() === '' ? null : Number.isFinite(n) ? n : null);
+                              }}
+                              onChange={(e) => {
+                                const n = parseValor(e.currentTarget.value);
+                                if (e.currentTarget.value.trim() === '') salvarDespesa(indice, null);
+                                else if (Number.isFinite(n)) salvarDespesa(indice, n);
+                              }}
+                              className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-right text-sm tabular-nums text-slate-200 outline-none focus:border-sky-500"
+                            />
+                          ) : (
+                            <span className="block w-full px-2 py-1.5 text-right text-sm tabular-nums text-slate-200">
+                              {linha.despesas !== 0 ? formatarMoeda(linha.despesas) : '—'}
+                            </span>
+                          )}
                         </td>
                         <td className="px-2 py-1.5">
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            autoComplete="off"
-                            placeholder="—"
-                            defaultValue={linha.recebidoLivia !== 0 ? formatarMoeda(linha.recebidoLivia).replace(/^R\$\s*/, '') : ''}
-                            onBlur={(e) => {
-                              const n = parseValor(e.currentTarget.value);
-                              salvarRecebidoLivia(indice, e.currentTarget.value.trim() === '' ? null : Number.isFinite(n) ? n : null);
-                            }}
-                            onChange={(e) => {
-                              const n = parseValor(e.currentTarget.value);
-                              if (e.currentTarget.value.trim() === '') salvarRecebidoLivia(indice, null);
-                              else if (Number.isFinite(n)) salvarRecebidoLivia(indice, n);
-                            }}
-                            className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-right text-sm tabular-nums text-slate-200 outline-none focus:border-sky-500"
-                          />
+                          {ehManual ? (
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              autoComplete="off"
+                              placeholder="—"
+                              defaultValue={linha.recebidoLivia !== 0 ? formatarMoeda(linha.recebidoLivia).replace(/^R\$\s*/, '') : ''}
+                              onBlur={(e) => {
+                                const n = parseValor(e.currentTarget.value);
+                                salvarRecebidoLivia(indice, e.currentTarget.value.trim() === '' ? null : Number.isFinite(n) ? n : null);
+                              }}
+                              onChange={(e) => {
+                                const n = parseValor(e.currentTarget.value);
+                                if (e.currentTarget.value.trim() === '') salvarRecebidoLivia(indice, null);
+                                else if (Number.isFinite(n)) salvarRecebidoLivia(indice, n);
+                              }}
+                              className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-right text-sm tabular-nums text-slate-200 outline-none focus:border-sky-500"
+                            />
+                          ) : (
+                            <span className="block w-full px-2 py-1.5 text-right text-sm tabular-nums text-slate-200">
+                              {linha.recebidoLivia !== 0 ? formatarMoeda(linha.recebidoLivia) : '—'}
+                            </span>
+                          )}
                         </td>
                         <td className={`px-3 py-2.5 text-right tabular-nums font-semibold ${destaque}`}>
                           {formatarMoeda(linha.restante)}
@@ -277,7 +308,7 @@ export function PagamentosPage() {
                           {formatarMoeda(linha.saldoFinal)}
                         </td>
                         <td className="px-3 py-2.5">
-                          {(linha.despesas !== 0 || linha.recebidoLivia !== 0) ? (
+                          {ehManual && (linha.despesas !== 0 || linha.recebidoLivia !== 0) ? (
                             <button
                               type="button"
                               onClick={() => limparResumoMes(indice)}
@@ -317,10 +348,16 @@ export function PagamentosPage() {
                 ) : null}
               </table>
             </div>
-            {(!linhaMesSelecionado || (linhaMesSelecionado.despesas === 0 && linhaMesSelecionado.recebidoLivia === 0)) && (
+            {ehManual && (!linhaMesSelecionado || (linhaMesSelecionado.despesas === 0 && linhaMesSelecionado.recebidoLivia === 0)) && (
               <p className="border-t border-slate-800 px-4 py-2.5 text-xs text-slate-500">
                 <Wallet className="mr-1 inline h-3.5 w-3.5" />
                 {linhaMesSelecionado?.rotulo ?? 'Mês'}: digite <strong>Despesas</strong> e/ou <strong>Recebido da Lívia</strong> para calcular o restante automaticamente.
+              </p>
+            )}
+            {!ehManual && (
+              <p className="border-t border-slate-800 px-4 py-2.5 text-xs text-slate-500">
+                <Wallet className="mr-1 inline h-3.5 w-3.5" />
+                Automático — Despesas e Recebido Lívia são calculados pela soma dos Lançamentos do mês.
               </p>
             )}
           </section>
@@ -330,7 +367,9 @@ export function PagamentosPage() {
               Atualizar
             </Botao>
             <span className="text-xs text-slate-600">
-              Despesas e Recebido Lívia ficam salvos na nuvem (Supabase) · Salário vem de Recebidos
+              {ehManual
+                ? 'Despesas e Recebido Lívia ficam salvos na nuvem (Supabase) · Salário vem de Recebidos'
+                : 'Despesas e Recebido Lívia calculados a partir dos Lançamentos Mensais · Salário vem de Recebidos'}
             </span>
           </div>
         </>

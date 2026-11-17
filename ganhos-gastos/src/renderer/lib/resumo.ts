@@ -11,6 +11,7 @@
 import type { LinhaSalario, Registro, SiglaMes, SnapshotAno } from '@/types/api-types';
 import type { ConfigLocal, ResumoMesConfig } from '@/types/dados-locais';
 import { arredondar2 } from '@/lib/formatar';
+import { resumirDivisao } from '@/lib/divisao';
 
 export const MESES_RESUMO: SiglaMes[] = [
   'JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN',
@@ -53,15 +54,17 @@ export interface LinhaResumo {
   ano: number;
   /** Salário do mês (aba Ganhos). null = sem aba salário. */
   salario: number;
-  /** Despesas digitadas pelo usuário. */
+  /** Despesas do mês. */
   despesas: number;
-  /** Recebido da Lívia digitado pelo usuário. */
+  /** Recebido da Lívia no mês. */
   recebidoLivia: number;
   /** Salário − Despesas + Recebido da Lívia. */
   restante: number;
   /** Saldo em caixa ao final do mês (acúmulo anual a partir do saldo inicial). */
   saldoFinal: number;
   temDados: boolean;
+  /** `true` = entrada manual (2026); `false` = automático (2027+). */
+  ehManualAno: boolean;
 }
 
 export interface ResultadoResumo {
@@ -78,6 +81,11 @@ export interface ResultadoResumo {
 /**
  * Calcula o resumo inteiro do ano (12 linhas) acumulando o saldo
  * mês a mês a partir do saldo inicial informado (default 0).
+ *
+ * Modo de cálculo:
+ *   - Anos ≤ 2026: Despesas e Recebido Lívia digitados à mão.
+ *   - Anos ≥ 2027: Despesas e Recebido Lívia calculados automaticamente a partir dos
+ *     Lançamentos Mensais (Total Gasto e receboLivia) — nada é digitado à mão.
  */
 export function calcularResumo(
   snapshot: SnapshotAno,
@@ -88,6 +96,7 @@ export function calcularResumo(
   const mapaSalario = salarioPorMes(snapshot);
   const saldoInicial = Number(config.saldoInicial?.[String(ano)] ?? 0) || 0;
   const resumoMes = config.resumoMes ?? {};
+  const ehManualAno = ano <= 2026;
 
   const linhas: LinhaResumo[] = [];
   let saldoAcumulado = saldoInicial;
@@ -99,16 +108,26 @@ export function calcularResumo(
     const entrada: ResumoMesConfig = resumoMes[chave] ?? { despesas: null, recebidoLivia: null };
 
     const salario = arredondar2(mapaSalario.get(mes) ?? 0);
-    const despesas = Number(entrada.despesas ?? 0) || 0;
-    const recebidoLivia = Number(entrada.recebidoLivia ?? 0) || 0;
+
+    // Resolve Despesas / Recebido Lívia:
+    //   - 2026 e anteriores: usa o que foi digitado à mão (manual)
+    //   - 2027+: calcula automático a partir dos Lançamentos Mensais
+    const registrosMes = snapshot.meses?.[mes]?.registros ?? [];
+    const divisao = resumirDivisao(registrosMes);
+
+    const despesas = ehManualAno
+      ? Number(entrada.despesas ?? 0) || 0
+      : divisao.totalGasto;
+    const recebidoLivia = ehManualAno
+      ? Number(entrada.recebidoLivia ?? 0) || 0
+      : divisao.receboLivia;
     const restante = arredondar2(salario - despesas + recebidoLivia);
 
     saldoAcumulado = arredondar2(saldoAcumulado + restante);
 
     // "temDados" = há lançamentos no mês (ou há salário/manuais preenchidos)
-    const mesSnap = snapshot.meses[mes];
     const temDados =
-      (mesSnap?.registros.length ?? 0) > 0 ||
+      (registrosMes.length > 0) ||
       (salario ?? 0) > 0 ||
       despesas > 0 ||
       recebidoLivia > 0;
@@ -124,6 +143,7 @@ export function calcularResumo(
       restante,
       saldoFinal: saldoAcumulado,
       temDados,
+      ehManualAno,
     });
   }
 

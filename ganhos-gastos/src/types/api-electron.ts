@@ -28,6 +28,7 @@ import type {
   RespostaListarSalario,
   RespostaListas,
   RespostaRemover,
+  RespostaRemoverAno,
   SnapshotAno,
   TokenResposta,
 } from './api-types';
@@ -45,12 +46,13 @@ export interface CachePersistido {
   listas: Record<string, string[]> | null;
 }
 
-/** Resposta de qualquer escrita (adicionar/editar/remover/criarAno/atualizarDashboard). */
+/** Resposta de qualquer escrita (adicionar/editar/remover/criarAno/removerAno/atualizarDashboard). */
 export type RespostaEscrita =
   | RespostaAdicionar<LancamentoMensal | LinhaSalario | LinhaExtra>
   | RespostaEditar<LancamentoMensal | LinhaSalario | LinhaExtra>
   | RespostaRemover
   | RespostaCriarAno
+  | RespostaRemoverAno
   | RespostaAtualizarDashboard;
 
 export type PayloadAdicionarMensal = PayloadAdicionar<LancamentoMensal>;

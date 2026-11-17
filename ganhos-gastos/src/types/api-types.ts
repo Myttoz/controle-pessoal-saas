@@ -285,6 +285,9 @@ export type RespostaAtualizarDashboard = Resposta<{
   categorias: number;
 }>;
 
+/** acao=removerAno */
+export type RespostaRemoverAno = Resposta<{ ano: number }>;
+
 /** acao=teste */
 export type RespostaTeste = Resposta<{
   mensagem: string;
@@ -326,6 +329,11 @@ export interface PayloadCriarAno extends BasePayload {
   ano: number;
 }
 
+export interface PayloadRemoverAno extends BasePayload {
+  acao: 'removerAno';
+  ano: number;
+}
+
 export interface PayloadDashboard extends BasePayload {
   acao: 'atualizarDashboard';
   ano: number;
@@ -337,6 +345,7 @@ export type PayloadEscrita =
   | PayloadEditar<DadosMensais | DadosSalario | DadosExtra>
   | PayloadRemover
   | PayloadCriarAno
+  | PayloadRemoverAno
   | PayloadDashboard;
 
 // ---------------------------------------------------------------------------

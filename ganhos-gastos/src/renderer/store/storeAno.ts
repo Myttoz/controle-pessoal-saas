@@ -78,6 +78,7 @@ export interface EstadoAno {
   removerExtra(ano: number, tabela: TabelaExtra, linha: number | string): Promise<boolean>;
 
   criarNovoAno(ano: number): Promise<boolean>;
+  excluirAno(ano: number): Promise<boolean>;
   gerarDashboard(ano: number): Promise<boolean>;
 }
 
@@ -607,6 +608,56 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
       ui().toast('sucesso', `Ano ${ano} criado${detalhe}.`);
       await get().atualizarAnos();
       persistir();
+      return true;
+    } catch (e) {
+      ui().toast('erro', msgDeErro(e));
+      return false;
+    } finally {
+      set({ escritasPendentes: Math.max(0, get().escritasPendentes - 1) });
+    }
+  },
+
+  excluirAno: async (ano) => {
+    const snapshotsAtuais = { ...get().snapshots };
+    const atualizadoEmAtuais = { ...get().atualizadoEm };
+    const anosAtuais = get().anos;
+
+    useStoreAno.setState({ escritasPendentes: get().escritasPendentes + 1 });
+    try {
+      await servicoApi.escrita({ acao: 'removerAno', ano });
+
+      // limpa cache local deste ano — os outros ficam intactos
+      const snapshotsNovos = { ...snapshotsAtuais };
+      delete snapshotsNovos[ano];
+
+      const atualizadoEmNovos = { ...atualizadoEmAtuais };
+      delete atualizadoEmNovos[ano];
+
+      const anosNovos = anosAtuais.filter((a) => a !== ano);
+
+      // troca de ano selecionado para o maior ano restante (nunca para o excluído)
+      let selecionado = get().anoSelecionado;
+      if (selecionado === ano) {
+        const candidatos = anosNovos.filter((a) => a !== ano);
+        selecionado = candidatos.length > 0
+          ? candidatos.reduce((maior, atual) => (atual > maior ? atual : maior), candidatos[0])
+          : null;
+      }
+
+      set({
+        anos: anosNovos,
+        snapshots: snapshotsNovos,
+        atualizadoEm: atualizadoEmNovos,
+        anoSelecionado: selecionado,
+      });
+
+      persistir();
+
+      if (selecionado != null && selecionado !== ano) {
+        void get().selecionarAno(selecionado);
+      }
+
+      ui().toast('sucesso', `Ano ${ano} excluído com sucesso.`);
       return true;
     } catch (e) {
       ui().toast('erro', msgDeErro(e));
