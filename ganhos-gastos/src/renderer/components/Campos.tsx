@@ -94,6 +94,8 @@ export const EntradaSugestoes = forwardRef<
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [foco, setFoco] = useState(false);
+  const [indiceAtivo, setIndiceAtivo] = useState(-1);
+  const listaRef = useRef<HTMLDivElement>(null);
 
   const normalizar = (t: string) =>
     primeiraMaiuscula && t.length > 0
@@ -129,17 +131,44 @@ export const EntradaSugestoes = forwardRef<
     return () => document.removeEventListener('mousedown', aoClicarFora);
   }, [foco]);
 
+  // Quando a filtragem muda, o índice ativo volta ao topo (senão o item selecionado some).
+  useEffect(() => {
+    setIndiceAtivo(-1);
+  }, [termo, sugestoes]);
+
+  // Mantém o item destacado visível na lista.
+  useEffect(() => {
+    const el = listaRef.current?.querySelector('[data-active="true"]');
+    if (el instanceof HTMLElement) el.scrollIntoView({ block: 'nearest' });
+  }, [indiceAtivo]);
+
   const selecionar = (texto: string) => {
     onChange(texto);
+    setIndiceAtivo(-1);
     setFoco(false);
   };
 
   const aoTeclar = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Tab' && !e.shiftKey && filtradas.length > 0) {
-      e.preventDefault();
-      selecionar(filtradas[0]);
+    if (!foco) setFoco(true);
+    if (e.key === 'Tab' && !e.shiftKey) {
+      const alvo = filtradas[indiceAtivo] ?? filtradas[0];
+      if (alvo) {
+        e.preventDefault();
+        selecionar(alvo);
+      }
     } else if (e.key === 'Escape') {
       setFoco(false);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setIndiceAtivo((atual) => Math.min(atual + 1, filtradas.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setIndiceAtivo((atual) => Math.max(atual - 1, 0));
+    } else if (e.key === 'Enter') {
+      if (indiceAtivo >= 0 && filtradas[indiceAtivo]) {
+        e.preventDefault();
+        selecionar(filtradas[indiceAtivo]);
+      }
     }
   };
 
@@ -159,20 +188,36 @@ export const EntradaSugestoes = forwardRef<
         className={`${CLASSES_INPUT} ${className ?? ''}`}
       />
       {foco && filtradas.length > 0 && (
-        <div className="absolute z-50 mt-1 max-h-[220px] w-full overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 shadow-2xl shadow-black/50">
-          {filtradas.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                selecionar(s);
-              }}
-              className="block w-full truncate px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-slate-800"
-            >
-              {s}
-            </button>
-          ))}
+        <div
+          ref={listaRef}
+          className="absolute z-50 mt-1 max-h-[220px] w-full overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 shadow-2xl shadow-black/50"
+          role="listbox"
+          aria-label="Sugestões"
+        >
+          {filtradas.map((s, i) => {
+            const ativo = i === indiceAtivo;
+            return (
+              <button
+                key={s}
+                type="button"
+                role="option"
+                aria-selected={ativo}
+                data-active={ativo || undefined}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  selecionar(s);
+                }}
+                onMouseMove={() => setIndiceAtivo(i)}
+                className={`block w-full truncate px-3 py-2 text-left text-sm transition ${
+                  ativo
+                    ? 'bg-sky-600/30 text-sky-100 ring-1 ring-inset ring-sky-500/40'
+                    : 'text-slate-200 hover:bg-slate-800'
+                }`}
+              >
+                {s}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

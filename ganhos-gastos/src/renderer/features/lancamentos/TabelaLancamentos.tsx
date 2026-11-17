@@ -325,7 +325,8 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
           {virtualizar ? (
             <FixedSizeList
               height={Math.min(ALTURA_MAXIMA, registros.length * ALTURA_LINHA)}
-              width="100%"
+              width="max-content"
+              style={{ width: 'max-content' }}
               itemCount={registros.length}
               itemSize={ALTURA_LINHA}
               itemData={dadosVirtuais}
@@ -334,7 +335,7 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
               {LinhaVirtual}
             </FixedSizeList>
           ) : (
-            <div>
+            <div className="w-max">
               {registros.map((registro) => (
                 <Linha
                   key={registro.linha}

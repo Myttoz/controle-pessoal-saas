@@ -3,7 +3,7 @@ import type { RegistroHoraExtra } from '@/types/dados-locais';
 import { Botao } from '@/components/Botoes';
 import { Campo, Entrada } from '@/components/Campos';
 import { Modal } from '@/components/Modal';
-import { formatarMoeda, hojeISO } from '@/lib/formatar';
+import { formatarMoeda, hojeISO, parseValor } from '@/lib/formatar';
 import { calcularHoraExtra } from '@/lib/calculos';
 import { useStoreLocal } from '@/store/storeLocal';
 
@@ -50,9 +50,14 @@ export function FormHoraExtra({ registro, aoFechar }: Props) {
   const [erros, setErros] = useState<Partial<Record<keyof Estado, string>>>({});
   const [enviando, setEnviando] = useState(false);
 
-  const salarioBruto = useStoreLocal((s) => s.dados.config.salarioBruto);
+  const salarioBrutoGlobal = useStoreLocal((s) => s.dados.config.salarioBruto);
+  const setConfig = useStoreLocal((s) => s.setConfig);
   const adicionar = useStoreLocal((s) => s.adicionarHoraExtra);
   const editar = useStoreLocal((s) => s.editarHoraExtra);
+
+  const [salarioTexto, setSalarioTexto] = useState(
+    salarioBrutoGlobal > 0 ? String(salarioBrutoGlobal) : '',
+  );
 
   const modoEdicao = !!registro;
 
@@ -61,17 +66,34 @@ export function FormHoraExtra({ registro, aoFechar }: Props) {
     setErros((atual) => ({ ...atual, [campo]: undefined }));
   };
 
+  const alterarSalario = (texto: string) => {
+    setSalarioTexto(texto);
+    const n = parseValor(texto);
+    setConfig({ salarioBruto: Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : 0 });
+  };
+
+  // Reconstrói claramente o salário com base no que o usuário digitou agora
+  const salarioBruto = salarioTexto.trim() === ''
+    ? 0
+    : Number.isFinite(parseValor(salarioTexto))
+      ? Math.round(parseValor(salarioTexto) * 100) / 100
+      : 0;
+
   // prévia de cálculo ao vivo
   const previa = calcularHoraExtra(estado, salarioBruto);
 
   const enviar = async () => {
     const novos: Partial<Record<keyof Estado, string>> = {};
+    if (salarioBruto <= 0) {
+      novos.data = 'Informe o salário bruto no campo acima.';
+      setErros(novos);
+      return;
+    }
     if (!estado.data) novos.data = 'Informe a data.';
     if (!estado.chegada) novos.chegada = 'Informe a chegada.';
     if (!estado.saidaEmpresa) novos.saidaEmpresa = 'Informe a saída da empresa.';
     if (estado.almocoInicio && !estado.almocoFim) novos.almocoFim = 'Complete o fim do almoço.';
     if (!estado.almocoInicio && estado.almocoFim) novos.almocoInicio = 'Complete o início do almoço.';
-    if (salarioBruto <= 0) novos.data = 'Informe o salário bruto no painel acima.';
     setErros(novos);
     if (Object.keys(novos).length > 0) return;
 
@@ -109,6 +131,26 @@ export function FormHoraExtra({ registro, aoFechar }: Props) {
       }
     >
       <div className="grid gap-4 sm:grid-cols-3">
+        <Campo
+          rotulo="Salário bruto mensal (R$) *"
+          className="sm:col-span-3"
+          dica="Deste salário o app calcula o valor-hora, hora-extra (×2) e hora de plantão (×1,5). Fica salvo na nuvem."
+        >
+          <Entrada
+            type="text"
+            inputMode="decimal"
+            value={salarioTexto}
+            onChange={(e) => alterarSalario(e.target.value)}
+            onBlur={() => undefined}
+            placeholder="Ex.: 2830"
+          />
+          {salarioBruto <= 0 && (
+            <span className="mt-1 block text-xs text-amber-400">
+              Obrigatório para calcular os valores deste lançamento.
+            </span>
+          )}
+        </Campo>
+
         <Campo rotulo="Data *" className="sm:col-span-3">
           <Entrada type="date" value={estado.data} onChange={(e) => alterar('data', e.target.value)} />
           {erros.data && <span className="mt-1 block text-xs text-rose-400">{erros.data}</span>}
@@ -161,12 +203,6 @@ export function FormHoraExtra({ registro, aoFechar }: Props) {
           <p className="text-xs text-slate-500">Hora = {formatarMoeda(previa.valorHora)}</p>
         </div>
       </div>
-
-      {salarioBruto <= 0 && (
-        <p className="mt-3 text-xs text-amber-400">
-          Informe o salário bruto no painel de configuração para que os valores sejam calculados.
-        </p>
-      )}
     </Modal>
   );
 }

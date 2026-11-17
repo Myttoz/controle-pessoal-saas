@@ -44,12 +44,13 @@ export const MAX_DIAS_VENDIDOS = 10;
 
 /** "07:30" → 7.5 (decimais). Aceita "HH:MM". Retorna 0 se inválido. */
 export function horasDeHHMM(texto: string): number {
-  const m = /^(\d{1,2}):(\d{2})$/.exec((texto ?? '').trim());
+  // Aceita "HH:MM", "H:MM" e "HH:MM:SS" ("05:40:00" → 5.67h)
+  const m = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec((texto ?? '').trim());
   if (!m) return 0;
   const h = Number(m[1]);
   const min = Number(m[2]);
   if (!Number.isFinite(h) || !Number.isFinite(min)) return 0;
-  return h + min / 60;
+  return h + min / 60 + (m[3] ? Number(m[3]) / 3600 : 0);
 }
 
 /**
