@@ -20,6 +20,7 @@ import { EstadoVazio } from '@/components/Estados';
 import { Modal } from '@/components/Modal';
 import { formatarData, formatarMoeda } from '@/lib/formatar';
 import { agruparPorMes, arred, calcularHoraExtra, type TotalMes } from '@/lib/calculos';
+import { useStoreAno } from '@/store/storeAno';
 import { useStoreLocal } from '@/store/storeLocal';
 import { FormHoraExtra } from './FormHoraExtra';
 
@@ -46,6 +47,18 @@ export function HorasExtrasPage() {
   const dados = useStoreLocal((s) => s.dados);
   const salarioBruto = dados.config.salarioBruto;
   const remover = useStoreLocal((s) => s.removerHoraExtra);
+  const anoSelecionado = useStoreAno((s) => s.anoSelecionado);
+
+  // Os plantões só aparecem para o ANO selecionado no topo do app —
+  // assim um ano novo nasce "zerado" nesta aba (nada é apagado:
+  // os plantões de outros anos continuam salvos e reaparecem ao trocar de ano).
+  const doAno = useMemo(
+    () =>
+      anoSelecionado
+        ? dados.horasExtras.filter((r) => r.data.startsWith(String(anoSelecionado)))
+        : dados.horasExtras,
+    [dados.horasExtras, anoSelecionado],
+  );
 
   const [modal, setModal] = useState<{ modo: 'novo' } | { modo: 'editar'; registro: RegistroHoraExtra } | null>(null);
   const [paraExcluir, setParaExcluir] = useState<RegistroHoraExtra | null>(null);
@@ -53,17 +66,17 @@ export function HorasExtrasPage() {
 
   // cálculo memoizado por registro
   const linhas = useMemo<LinhaTabela[]>(() => {
-    return dados.horasExtras
+    return doAno
       .map((registro) => {
         const c = calcularHoraExtra(registro, salarioBruto);
         return { registro, h100: c.horas100, h50: c.horas50, v100: arred(c.valor100), v50: arred(c.valor50), total: arred(c.total) };
       })
       .sort((a, b) => b.registro.data.localeCompare(a.registro.data));
-  }, [dados.horasExtras, salarioBruto]);
+  }, [doAno, salarioBruto]);
 
   const porMes = useMemo<TotalMes[]>(
-    () => agruparPorMes(dados.horasExtras, (r) => r.data, (r) => calcularHoraExtra(r, salarioBruto)),
-    [dados.horasExtras, salarioBruto],
+    () => agruparPorMes(doAno, (r) => r.data, (r) => calcularHoraExtra(r, salarioBruto)),
+    [doAno, salarioBruto],
   );
 
   const visiveis = useMemo(
@@ -143,6 +156,14 @@ export function HorasExtrasPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <label className="text-xs text-slate-400">Mês:</label>
+          {anoSelecionado && (
+            <span
+              className="rounded-md bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-400"
+              title="Os plantões exibidos são apenas os do ano selecionado no topo do app."
+            >
+              Ano {anoSelecionado}
+            </span>
+          )}
           <select
             value={mesFiltro}
             onChange={(e) => setMesFiltro(e.target.value)}
@@ -165,7 +186,13 @@ export function HorasExtrasPage() {
       {visiveis.length === 0 ? (
         <EstadoVazio
           icone={Timer}
-          titulo={mesFiltro ? 'Sem plantões neste mês' : 'Nenhum plantão registrado'}
+          titulo={
+            mesFiltro
+              ? 'Sem plantões neste mês'
+              : anoSelecionado
+                ? `Nenhum plantão em ${anoSelecionado}`
+                : 'Nenhum plantão registrado'
+          }
           descricao="Registre os horários de cada dia de plantão para calcular automaticamente o valor a 100% e a 50%."
           acao={
             <Botao variante="primario" icone={Plus} onClick={() => setModal({ modo: 'novo' })}>
