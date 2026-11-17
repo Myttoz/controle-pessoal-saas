@@ -21,12 +21,16 @@ export interface OpcoesColunas {
 }
 
 /**
- * Largura DINÂMICA das colunas calculada em pixels fixos com base no maior
- * texto presente. Essa abordagem é mais robusta que `fit-content` do CSS
- * Grid porque não depende de contenedores/w-max e funciona igual em todas
- * as linhas virtuais e não virtuais.
+ * Largura das colunas: mínimos fixos (cabe em qualquer tela) + distribuição
+ * proporcional do espaço livre em unidades `fr`, com peso no maior texto de
+ * cada coluna. Assim a tabela usa 100% da largura disponível e as sobras
+ * vão para as colunas que têm mais conteúdo (ex.: Descrição e Observação).
+ * Também devolve a largura mínima somada (para overflow-x em telas estreitas).
  */
-function calcularColunas(registros: Registro<LancamentoMensal>[]): string {
+function calcularColunas(registros: Registro<LancamentoMensal>[]): {
+  colunas: string;
+  larguraMinima: number;
+} {
   const maiorLen = (pegar: (d: LancamentoMensal) => string, min: number, cap: number) => {
     let maior = min;
     for (const { dados } of registros) {
@@ -36,26 +40,48 @@ function calcularColunas(registros: Registro<LancamentoMensal>[]): string {
     return Math.min(cap, Math.max(min, maior));
   };
 
-  const toPx = (chars: number, extra = 32) => `${Math.ceil(chars * 7.5 + extra)}px`;
+  const GAP = 16; // gap-4 entre colunas
+  const PADDING = 24; // px-3 nas laterais
+  const DATA = 96;
+  const VALOR = 112;
+  const ACOES = 72;
 
-  const categoria = maiorLen((d) => d.CATEGORIA, 10, 50);
+  const categoria = maiorLen((d) => d.CATEGORIA, 10, 40);
   const descricao = maiorLen((d) => d.DESCRIÇÃO, 10, 60);
   const forma = maiorLen((d) => d['FORMA DE PGTO'], 10, 30);
   const tipo = maiorLen((d) => d.TIPO, 13, 30);
   const quem = maiorLen((d) => d['QUEM PAGA'], 8, 24);
   const obs = maiorLen((d) => d.OBSERVAÇÃO, 10, 60);
 
-  return [
-    '96px',
-    toPx(categoria, 36),
-    toPx(descricao, 28),
-    toPx(forma, 32),
-    toPx(tipo, 32),
-    toPx(quem, 32),
-    toPx(obs, 28),
-    '112px',
-    '72px',
+  const piso = (chars: number, extra = 32) => Math.ceil(chars * 7.5 + extra);
+  const col = (chars: number, extra = 32) => `minmax(${piso(chars, extra)}px, ${chars}fr)`;
+
+  const colunas = [
+    `${DATA}px`,
+    col(categoria, 40),
+    col(descricao, 28),
+    col(forma, 32),
+    col(tipo, 32),
+    col(quem, 32),
+    col(obs, 28),
+    `${VALOR}px`,
+    `${ACOES}px`,
   ].join(' ');
+
+  const larguraMinima =
+    DATA +
+    piso(categoria, 40) +
+    piso(descricao, 28) +
+    piso(forma, 32) +
+    piso(tipo, 32) +
+    piso(quem, 32) +
+    piso(obs, 28) +
+    VALOR +
+    ACOES +
+    GAP * 8 +
+    PADDING;
+
+  return { colunas, larguraMinima };
 }
 
 interface AcoesProps {
@@ -124,14 +150,14 @@ const Linha = memo(function Linha({ registro, colunas, linha, sugestoesObservaca
       <span className="min-w-0">
         <BadgeCategoria categoria={d.CATEGORIA} />
       </span>
-      <span className="truncate text-slate-200" title={d.DESCRIÇÃO}>
+      <span className="min-w-0 truncate text-slate-200" title={d.DESCRIÇÃO}>
         {d.DESCRIÇÃO || '—'}
       </span>
-      <span className="truncate text-slate-400">{nomeFormaPgto(d['FORMA DE PGTO'])}</span>
-      <span className="truncate text-sm text-slate-400" title={d.TIPO}>
+      <span className="min-w-0 truncate text-slate-400">{nomeFormaPgto(d['FORMA DE PGTO'])}</span>
+      <span className="min-w-0 truncate text-sm text-slate-400" title={d.TIPO}>
         {d.TIPO}
       </span>
-      <span className="truncate text-sm text-slate-400" title={d['QUEM PAGA']}>
+      <span className="min-w-0 truncate text-sm text-slate-400" title={d['QUEM PAGA']}>
         {d['QUEM PAGA']}
       </span>
       {editandoObs ? (
@@ -228,7 +254,7 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
   const alternarFiltro = useStoreUI((s) => s.alternarFiltroColuna);
   const limparFiltro = useStoreUI((s) => s.limparFiltroColuna);
 
-  const colunas = useMemo(() => calcularColunas(registros), [registros]);
+  const { colunas, larguraMinima } = useMemo(() => calcularColunas(registros), [registros]);
 
   const dadosVirtuais = useMemo(
     () => ({
@@ -268,7 +294,7 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
   return (
     <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60">
       <div className="overflow-x-auto">
-        <div className="w-max">
+        <div className="w-full" style={{ minWidth: larguraMinima }}>
           {/* cabeçalho */}
           <div
             style={{ gridTemplateColumns: colunas }}
@@ -327,8 +353,7 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
           {virtualizar ? (
             <FixedSizeList
               height={Math.min(ALTURA_MAXIMA, registros.length * ALTURA_LINHA)}
-              width="max-content"
-              style={{ width: 'max-content' }}
+              width="100%"
               itemCount={registros.length}
               itemSize={ALTURA_LINHA}
               itemData={dadosVirtuais}
@@ -337,7 +362,7 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
               {LinhaVirtual}
             </FixedSizeList>
           ) : (
-            <div className="w-max">
+            <div className="w-full">
               {registros.map((registro) => (
                 <Linha
                   key={registro.linha}
