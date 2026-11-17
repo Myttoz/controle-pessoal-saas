@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import type { DadosSalario, LinhaSalario, Registro } from '@/types/api-types';
 import { Botao } from '@/components/Botoes';
-import { Campo, Entrada } from '@/components/Campos';
+import { Campo, Entrada, EntradaMoeda } from '@/components/Campos';
 import { Modal } from '@/components/Modal';
-import { parseValor } from '@/lib/formatar';
 import { useStoreAno } from '@/store/storeAno';
 
 type CamposNumericos =
@@ -40,9 +39,9 @@ const CAMPOS: { campo: CamposNumericos; rotulo: string; informativo?: boolean; d
   },
 ];
 
-function paraTexto(valor: number | undefined | null): string {
+function paraDigitos(valor: number | undefined | null): string {
   if (valor === undefined || valor === null || !Number.isFinite(Number(valor))) return '';
-  return String(valor);
+  return String(Math.round(Number(valor) * 100));
 }
 
 /**
@@ -59,7 +58,7 @@ export function FormSalario({
 }) {
   const [valores, setValores] = useState<Record<CamposNumericos, string>>(() => {
     const inicial = {} as Record<CamposNumericos, string>;
-    for (const { campo } of CAMPOS) inicial[campo] = paraTexto(registro.dados[campo]);
+    for (const { campo } of CAMPOS) inicial[campo] = paraDigitos(registro.dados[campo]);
     return inicial;
   });
   const [observacao, setObservacao] = useState(registro.dados.OBSERVAÇÃO ?? '');
@@ -73,7 +72,7 @@ export function FormSalario({
     const dados: DadosSalario = {};
     for (const { campo } of CAMPOS) {
       const bruto = valores[campo].trim();
-      const numero = bruto === '' ? 0 : parseValor(bruto);
+      const numero = bruto === '' ? 0 : Math.round((Number(bruto) / 100) * 100) / 100;
       if (!Number.isFinite(numero)) {
         setErros(`"${campo}" precisa ser numérico.`);
         return;
@@ -82,7 +81,7 @@ export function FormSalario({
         setErros(`"${campo}" não pode ser negativo.`);
         return;
       }
-      dados[campo] = Math.round(numero * 100) / 100;
+      dados[campo] = numero;
     }
     dados.OBSERVAÇÃO = observacao.trim();
     setErros(null);
@@ -116,13 +115,12 @@ export function FormSalario({
             rotulo={`${rotulo}${informativo ? '' : ' (R$)'}`}
             dica={dica}
           >
-            <Entrada
+            <EntradaMoeda
               value={valores[campo]}
-              onChange={(e) =>
-                setValores((atual) => ({ ...atual, [campo]: e.target.value }))
+              onChange={(digitos) =>
+                setValores((atual) => ({ ...atual, [campo]: digitos }))
               }
-              inputMode="decimal"
-              placeholder="0"
+              placeholder="0,00"
             />
           </Campo>
         ))}

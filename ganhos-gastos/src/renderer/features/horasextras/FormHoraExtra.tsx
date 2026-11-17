@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { RegistroHoraExtra } from '@/types/dados-locais';
 import { Botao } from '@/components/Botoes';
-import { Campo, Entrada } from '@/components/Campos';
+import { Campo, Entrada, EntradaMoeda } from '@/components/Campos';
 import { Modal } from '@/components/Modal';
-import { formatarMoeda, hojeISO, parseValor } from '@/lib/formatar';
+import { formatarMoeda, hojeISO } from '@/lib/formatar';
 import { calcularHoraExtra } from '@/lib/calculos';
 import { useStoreLocal } from '@/store/storeLocal';
 
@@ -56,8 +56,15 @@ export function FormHoraExtra({ registro, aoFechar }: Props) {
   const editar = useStoreLocal((s) => s.editarHoraExtra);
 
   const [salarioTexto, setSalarioTexto] = useState(
-    salarioBrutoGlobal > 0 ? String(salarioBrutoGlobal) : '',
+    salarioBrutoGlobal > 0 ? String(Math.round(salarioBrutoGlobal * 100)) : '',
   );
+
+  useEffect(() => {
+    if (salarioBrutoGlobal > 0 && salarioTexto === '') {
+      setSalarioTexto(String(Math.round(salarioBrutoGlobal * 100)));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [salarioBrutoGlobal]);
 
   const modoEdicao = !!registro;
 
@@ -66,18 +73,17 @@ export function FormHoraExtra({ registro, aoFechar }: Props) {
     setErros((atual) => ({ ...atual, [campo]: undefined }));
   };
 
-  const alterarSalario = (texto: string) => {
-    setSalarioTexto(texto);
-    const n = parseValor(texto);
-    setConfig({ salarioBruto: Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : 0 });
+  const alterarSalario = (digitos: string) => {
+    setSalarioTexto(digitos);
+    const centavos = Number(digitos || '0');
+    const n = Math.round((Number.isFinite(centavos) && centavos >= 0 ? centavos / 100 : 0) * 100) / 100;
+    setConfig({ salarioBruto: n });
   };
 
   // Reconstrói claramente o salário com base no que o usuário digitou agora
   const salarioBruto = salarioTexto.trim() === ''
     ? 0
-    : Number.isFinite(parseValor(salarioTexto))
-      ? Math.round(parseValor(salarioTexto) * 100) / 100
-      : 0;
+    : Math.round((Number(salarioTexto || '0') / 100) * 100) / 100;
 
   // prévia de cálculo ao vivo
   const previa = calcularHoraExtra(estado, salarioBruto);
@@ -136,11 +142,9 @@ export function FormHoraExtra({ registro, aoFechar }: Props) {
           className="sm:col-span-3"
           dica="Deste salário o app calcula o valor-hora, hora-extra (×2) e hora de plantão (×1,5). Fica salvo na nuvem."
         >
-          <Entrada
-            type="text"
-            inputMode="decimal"
+          <EntradaMoeda
             value={salarioTexto}
-            onChange={(e) => alterarSalario(e.target.value)}
+            onChange={alterarSalario}
             onBlur={() => undefined}
             placeholder="Ex.: 2830"
           />

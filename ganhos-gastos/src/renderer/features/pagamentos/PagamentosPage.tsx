@@ -3,7 +3,8 @@ import { RefreshCw, Trash2, Wallet } from 'lucide-react';
 import { AreaErro, Carregando, EstadoVazio } from '@/components/Estados';
 import { Botao } from '@/components/Botoes';
 import { MesTabs } from '@/components/MesTabs';
-import { formatarMoeda, parseValor } from '@/lib/formatar';
+import { Campo, EntradaMoeda } from '@/components/Campos';
+import { formatarMoeda } from '@/lib/formatar';
 import { NOMES_MESES } from '@/lib/meses';
 import { useSnapshot } from '@/hooks/useRegistrosFiltrados';
 import {
@@ -15,12 +16,6 @@ import { useStoreAno } from '@/store/storeAno';
 import { useStoreLocal } from '@/store/storeLocal';
 import { useStoreUI } from '@/store/storeUI';
 
-/** Formata o valor digitado pelo usuário em "R$ X.XXX,XX" (ou vazio). */
-function formatarParaInput(valor: number | null | undefined): string {
-  if (valor == null || !Number.isFinite(valor) || valor === 0) return valor === 0 ? '0,00' : '';
-  return formatarMoeda(valor).replace(/^R\$\s*/, '').replace(/\./g, '.');
-}
-
 /**
  * Campo digitado pelo usuário, com persistência local controlada.
  */
@@ -29,61 +24,76 @@ function CampoEditavel({
   valor,
   placeholder,
   dica,
-  comDestaque,
   onSalvar,
 }: {
   rotulo: string;
   valor: number | null | undefined;
   placeholder?: string;
   dica?: string;
-  comDestaque?: 'positivo' | 'negativo';
   onSalvar: (valor: number | null) => void;
 }) {
-  const [texto, setTexto] = useState(() =>
-    valor == null ? '' : formatarParaInput(valor),
-  );
+  const [texto, setTexto] = useState(valor == null ? '' : String(Math.round(valor * 100)));
   const [emEdicao, setEmEdicao] = useState(false);
 
   // Reseta o texto quando o valor remoto muda (ex.: após sync) e a campo não está em edição.
   useEffect(() => {
-    if (!emEdicao) setTexto(valor == null ? '' : formatarParaInput(valor));
+    if (!emEdicao) setTexto(valor == null ? '' : String(Math.round(valor * 100)));
   }, [valor, emEdicao]);
 
-  const destacar =
-    comDestaque === 'positivo'
-      ? 'text-emerald-300 border-emerald-800/60 focus:border-emerald-600'
-      : comDestaque === 'negativo'
-        ? 'text-rose-300 border-rose-800/60 focus:border-rose-600'
-        : 'text-slate-200 border-slate-700 focus:border-sky-600';
-
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-        {rotulo}
-      </label>
-      <input
-        type="text"
-        inputMode="decimal"
-        autoComplete="off"
-        placeholder={placeholder ?? '0,00'}
+    <Campo rotulo={rotulo}>
+      <EntradaMoeda
         value={texto}
+        onChange={(digitos) => {
+          setTexto(digitos);
+          if (digitos.trim() === '') onSalvar(null);
+          else onSalvar(Math.round((Number(digitos) / 100) * 100) / 100);
+        }}
         onFocus={() => setEmEdicao(true)}
         onBlur={() => {
           setEmEdicao(false);
-          const n = parseValor(texto);
-          onSalvar(texto.trim() === '' ? null : Number.isFinite(n) ? n : null);
+          onSalvar(
+            texto.trim() === '' ? null : Math.round((Number(texto) / 100) * 100) / 100,
+          );
         }}
-        onChange={(e) => {
-          setTexto(e.target.value);
-          // salva enquanto o valor for interpretável
-          const n = parseValor(e.target.value);
-          if (e.target.value.trim() === '') onSalvar(null);
-          else if (Number.isFinite(n)) onSalvar(n);
-        }}
-        className={`rounded-lg border bg-slate-950 px-3 py-2 text-sm tabular-nums outline-none transition focus:ring-1 focus:ring-sky-500 ${destacar}`}
+        placeholder={placeholder ?? '0,00'}
       />
-      {dica ? <p className="text-[10px] text-slate-500">{dica}</p> : null}
-    </div>
+      {dica ? <p className="mt-1 text-[10px] text-slate-500">{dica}</p> : null}
+    </Campo>
+  );
+}
+
+function EntradaMoedaInline({
+  valor,
+  onChange,
+}: {
+  valor: number;
+  onChange: (valor: number) => void;
+}) {
+  const [texto, setTexto] = useState(valor !== 0 ? String(Math.round(valor * 100)) : '');
+  const [editando, setEditando] = useState(false);
+
+  useEffect(() => {
+    if (editando) return;
+    setTexto(valor !== 0 ? String(Math.round(valor * 100)) : '');
+  }, [valor, editando]);
+
+  const handleChange = (digitos: string) => {
+    setTexto(digitos);
+    const centavos = Number(digitos);
+    if (!Number.isFinite(centavos)) return;
+    onChange(Math.round((centavos / 100) * 100) / 100);
+  };
+
+  return (
+    <EntradaMoeda
+      value={texto}
+      onChange={handleChange}
+      onFocus={() => setEditando(true)}
+      onBlur={() => setEditando(false)}
+      placeholder="—"
+      className="!rounded-md !border !border-slate-700 !bg-slate-950 !px-2 !py-1.5 !text-right !text-sm !tabular-nums !text-slate-200 focus:border-sky-500"
+    />
   );
 }
 
@@ -253,22 +263,9 @@ export function PagamentosPage() {
                         </td>
                         <td className="px-2 py-1.5">
                           {ehManual ? (
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              autoComplete="off"
-                              placeholder="—"
-                              defaultValue={linha.despesas !== 0 ? formatarMoeda(linha.despesas).replace(/^R\$\s*/, '') : ''}
-                              onBlur={(e) => {
-                                const n = parseValor(e.currentTarget.value);
-                                salvarDespesa(indice, e.currentTarget.value.trim() === '' ? null : Number.isFinite(n) ? n : null);
-                              }}
-                              onChange={(e) => {
-                                const n = parseValor(e.currentTarget.value);
-                                if (e.currentTarget.value.trim() === '') salvarDespesa(indice, null);
-                                else if (Number.isFinite(n)) salvarDespesa(indice, n);
-                              }}
-                              className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-right text-sm tabular-nums text-slate-200 outline-none focus:border-sky-500"
+                            <EntradaMoedaInline
+                              valor={linha.despesas}
+                              onChange={(v) => salvarDespesa(indice, v === 0 ? null : v)}
                             />
                           ) : (
                             <span className="block w-full px-2 py-1.5 text-right text-sm tabular-nums text-slate-200">
@@ -278,22 +275,9 @@ export function PagamentosPage() {
                         </td>
                         <td className="px-2 py-1.5">
                           {ehManual ? (
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              autoComplete="off"
-                              placeholder="—"
-                              defaultValue={linha.recebidoLivia !== 0 ? formatarMoeda(linha.recebidoLivia).replace(/^R\$\s*/, '') : ''}
-                              onBlur={(e) => {
-                                const n = parseValor(e.currentTarget.value);
-                                salvarRecebidoLivia(indice, e.currentTarget.value.trim() === '' ? null : Number.isFinite(n) ? n : null);
-                              }}
-                              onChange={(e) => {
-                                const n = parseValor(e.currentTarget.value);
-                                if (e.currentTarget.value.trim() === '') salvarRecebidoLivia(indice, null);
-                                else if (Number.isFinite(n)) salvarRecebidoLivia(indice, n);
-                              }}
-                              className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-right text-sm tabular-nums text-slate-200 outline-none focus:border-sky-500"
+                            <EntradaMoedaInline
+                              valor={linha.recebidoLivia}
+                              onChange={(v) => salvarRecebidoLivia(indice, v === 0 ? null : v)}
                             />
                           ) : (
                             <span className="block w-full px-2 py-1.5 text-right text-sm tabular-nums text-slate-200">

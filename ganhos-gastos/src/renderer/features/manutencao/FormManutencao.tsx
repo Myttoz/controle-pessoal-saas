@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type { RegistroManutencao } from '@/types/dados-locais';
 import { Botao } from '@/components/Botoes';
-import { Campo, Entrada, Selecao } from '@/components/Campos';
+import { Campo, Entrada, EntradaMoeda, Selecao } from '@/components/Campos';
 import { Modal } from '@/components/Modal';
-import { parseValor } from '@/lib/formatar';
+// ...parseValor removed — valores em centavos
 import { avaliarManutencao, hojeISO, PRESETS_REVISAO } from '@/lib/calculos';
 import { useStoreLocal } from '@/store/storeLocal';
 
@@ -37,7 +37,7 @@ function paraEstado(r?: RegistroManutencao | null): Estado {
     descricao: r.descricao,
     data: r.data,
     km: r.km != null ? String(r.km) : '',
-    valor: String(r.valor ?? ''),
+    valor: r.valor != null ? String(Math.round(r.valor * 100)) : '',
     mecanico: r.mecanico ?? '',
     lojaPecas: r.lojaPecas ?? '',
     observacao: r.observacao ?? '',
@@ -80,8 +80,8 @@ export function FormManutencao({ registro, aoFechar }: Props) {
   };
 
   // prévia do status
-  const kmNum = estado.km.trim() === '' ? undefined : parseValor(estado.km);
-  const intervaloKmNum = estado.intervaloKm.trim() === '' ? undefined : parseValor(estado.intervaloKm);
+  const kmNum = estado.km.trim() === '' ? undefined : Number(estado.km.replace(/\D/g, ''));
+  const intervaloKmNum = estado.intervaloKm.trim() === '' ? undefined : Number(estado.intervaloKm.replace(/\D/g, ''));
   const avaliacao = avaliarManutencao(
     {
       data: estado.data,
@@ -96,8 +96,9 @@ export function FormManutencao({ registro, aoFechar }: Props) {
     const novos: Partial<Record<keyof Estado, string>> = {};
     if (!estado.descricao.trim()) novos.descricao = 'Descreva a manutenção.';
     if (!estado.data) novos.data = 'Informe a data.';
-    const valor = parseValor(estado.valor);
-    if (!Number.isFinite(valor) || valor < 0) novos.valor = 'Informe o valor.';
+    const valorNum = Number(estado.valor || '0') / 100;
+    if (!estado.valor) novos.valor = 'Informe o valor.';
+    else if (!Number.isFinite(valorNum) || valorNum < 0) novos.valor = 'Informe o valor.';
     if (!estado.mecanico.trim()) novos.mecanico = 'Informe a mecânica/loja.';
     setErros(novos);
     if (Object.keys(novos).length > 0) return;
@@ -106,7 +107,7 @@ export function FormManutencao({ registro, aoFechar }: Props) {
       descricao: estado.descricao.trim(),
       data: estado.data,
       km: kmNum,
-      valor: Math.round(valor * 100) / 100,
+      valor: Math.round(valorNum * 100) / 100,
       mecanico: estado.mecanico.trim(),
       lojaPecas: estado.lojaPecas.trim() || undefined,
       observacao: estado.observacao.trim() || undefined,
@@ -153,7 +154,7 @@ export function FormManutencao({ registro, aoFechar }: Props) {
         </Campo>
 
         <Campo rotulo="Valor (R$) *">
-          <Entrada value={estado.valor} onChange={(e) => alterar('valor', e.target.value)} inputMode="decimal" placeholder="0,00" />
+          <EntradaMoeda value={estado.valor} onChange={(digitos) => alterar('valor', digitos)} placeholder="0,00" />
           {erros.valor && <span className="mt-1 block text-xs text-rose-400">{erros.valor}</span>}
         </Campo>
 

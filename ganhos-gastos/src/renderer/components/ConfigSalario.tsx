@@ -1,48 +1,45 @@
 import { useEffect, useState } from 'react';
 import { Info } from 'lucide-react';
-import { Campo, Entrada } from './Campos';
-import { formatarMoeda, parseValor } from '@/lib/formatar';
+import { Campo, EntradaMoeda } from './Campos';
+import { formatarMoeda } from '@/lib/formatar';
 import { HORAS_MES } from '@/lib/calculos';
 import { useStoreLocal } from '@/store/storeLocal';
 
 /**
  * Painel de configuração do SALÁRIO BRUTO — base de todos os cálculos de
- * hora extra e férias. Editável inline; salva automaticamente no disco local.
+ * hora extra e férias. Editável inline; salva automaticamente (nuvem via Supabase).
  * Mostra o valor de hora derivado (bruto ÷ 220) para conferência.
  */
 export function ConfigSalario() {
   const salarioBruto = useStoreLocal((s) => s.dados.config.salarioBruto);
   const setConfig = useStoreLocal((s) => s.setConfig);
 
-  const [texto, setTexto] = useState(salarioBruto ? String(salarioBruto) : '');
+  const [texto, setTexto] = useState(
+    salarioBruto > 0 ? String(Math.round(salarioBruto * 100)) : '',
+  );
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
-    setTexto(salarioBruto ? String(salarioBruto) : '');
+    setTexto(salarioBruto > 0 ? String(Math.round(salarioBruto * 100)) : '');
   }, [salarioBruto]);
 
-  const aplicar = (bruto: string) => {
-    const v = parseValor(bruto);
-    if (bruto.trim() === '') {
+  const aplicar = (digitos: string) => {
+    if (digitos.trim() === '') {
       setConfig({ salarioBruto: 0 });
       setErro(null);
       return;
     }
-    if (!Number.isFinite(v) || v < 0) {
+    const centavos = Number(digitos);
+    if (!Number.isFinite(centavos) || centavos < 0) {
       setErro('Informe um valor numérico.');
       return;
     }
     setErro(null);
-    setConfig({ salarioBruto: Math.round(v * 100) / 100 });
+    setConfig({ salarioBruto: Math.round((centavos / 100) * 100) / 100 });
   };
 
-  const brutoDigitado = parseValor(texto);
   const brutoBase =
-    texto.trim() === ''
-      ? 0
-      : Number.isFinite(brutoDigitado) && brutoDigitado >= 0
-        ? brutoDigitado
-        : salarioBruto;
+    texto.trim() === '' ? 0 : Math.round((Number(texto) / 100) * 100) / 100;
   const valorHora = brutoBase > 0 ? brutoBase / HORAS_MES : 0;
   const valorHora50 = valorHora * 1.5;
   const valorHora100 = valorHora * 2;
@@ -51,15 +48,14 @@ export function ConfigSalario() {
     <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5">
       <div className="flex flex-wrap items-end gap-4">
         <Campo rotulo="Salário bruto mensal (R$)" className="w-52">
-          <Entrada
+          <EntradaMoeda
             value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            onBlur={(e) => aplicar(e.target.value)}
+            onChange={(digitos) => setTexto(digitos)}
+            onBlur={() => aplicar(texto)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
             }}
             placeholder="Ex.: 2830"
-            inputMode="decimal"
           />
         </Campo>
 
