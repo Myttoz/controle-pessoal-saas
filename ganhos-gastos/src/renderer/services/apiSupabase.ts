@@ -392,16 +392,19 @@ async function opEditarLembrete(
   id: string,
   dados: DadosLembrete,
 ): Promise<RespostaEditarLembrete> {
+  const atualizacao: Record<string, unknown> = {
+    titulo: dados.titulo,
+    descricao: dados.mensagem,
+    data: dados.dataLembrete || null,
+    mensagem: dados.mensagem,
+    email: dados.email,
+    whatsapp: dados.whatsapp,
+  };
+  if (dados.status) atualizacao.status = dados.status;
+
   const { data, error } = await supabase
     .from('lembretes')
-    .update({
-      titulo: dados.titulo,
-      descricao: dados.mensagem,
-      data: dados.dataLembrete || null,
-      mensagem: dados.mensagem,
-      email: dados.email,
-      whatsapp: dados.whatsapp,
-    })
+    .update(atualizacao)
     .eq('id', id)
     .select()
     .single();

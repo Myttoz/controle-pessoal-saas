@@ -27,6 +27,8 @@ interface EstadoLembretes {
   carregar(forcar?: boolean): Promise<void>;
   adicionar(dados: DadosLembrete): Promise<boolean>;
   editar(id: string, dados: DadosLembrete): Promise<boolean>;
+  /** Marca o lembrete como ENVIADO (usado ao abrir/clicar na Google Agenda). */
+  marcarEnviado(id: string): Promise<void>;
   remover(id: string): Promise<boolean>;
   testar(id: string): Promise<boolean>;
   instalarGatilho(): Promise<boolean>;
@@ -87,11 +89,45 @@ export const useStoreLembretes = create<EstadoLembretes>((set, get) => ({
         salvando: false,
       });
       toast('sucesso', 'Lembrete criado.');
+      // A criação abre a Google Agenda automaticamente: o lembrete é
+      // considerado agendado → já sai como Enviado.
+      void get().marcarEnviado(resposta.lembrete.id);
       return true;
     } catch (e) {
       set({ salvando: false });
       toast('erro', msgDeErro(e));
       return false;
+    }
+  },
+
+  marcarEnviado: async (id) => {
+    const atual = get().lembretes.find((l) => l.id === id);
+    if (!atual || atual.status === 'ENVIADO') return;
+    const anterior = atual;
+    // otimista: reflete na lista na hora
+    set({
+      lembretes: ordenar(
+        get().lembretes.map((l) => (l.id === id ? { ...l, status: 'ENVIADO' as const } : l)),
+      ),
+    });
+    try {
+      const resposta = await servicoApi.editarLembrete(id, {
+        titulo: atual.titulo,
+        dataLembrete: atual.dataLembrete,
+        email: atual.email,
+        whatsapp: atual.whatsapp,
+        mensagem: atual.mensagem,
+        status: 'ENVIADO',
+      });
+      set({
+        lembretes: ordenar(
+          get().lembretes.map((l) => (l.id === id ? resposta.lembrete : l)),
+        ),
+      });
+    } catch {
+      // falhou: volta a ficar Pendente (o usuário ainda não agendou)
+      set({ lembretes: ordenar(get().lembretes.map((l) => (l.id === id ? anterior : l))) });
+      toast('erro', 'Não foi possível marcar o lembrete como Enviado.');
     }
   },
 

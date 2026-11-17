@@ -416,6 +416,8 @@ export interface DadosLembrete {
   email: string;
   whatsapp: string;
   mensagem: string;
+  /** Opcional — só o fluxo "clicou em Agenda / abriu na criação" envia ENVIADO. */
+  status?: StatusLembrete;
 }
 
 export type RespostaLembretes = Resposta<{ lembretes: Lembrete[] }>;

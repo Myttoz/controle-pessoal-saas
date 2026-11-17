@@ -56,6 +56,7 @@ export function LembretesPage() {
   const carregar = useStoreLembretes((s) => s.carregar);
   const adicionar = useStoreLembretes((s) => s.adicionar);
   const editar = useStoreLembretes((s) => s.editar);
+  const marcarEnviado = useStoreLembretes((s) => s.marcarEnviado);
   const remover = useStoreLembretes((s) => s.remover);
 
   const [filtro, setFiltro] = useState<FiltroStatus>('TODOS');
@@ -181,6 +182,11 @@ export function LembretesPage() {
             preenchido → você clica <strong>Salvar</strong> (uma vez).
           </li>
           <li>
+            Ao abrir a Google Agenda — tanto na criação quanto pelo botão <strong>Agenda</strong> do
+            cartão — o lembrete é marcado como <strong>Enviado</strong>. Sem abrir a agenda, ele
+            fica como <strong>Pendente</strong>.
+          </li>
+          <li>
             O Google envia o aviso na data marcada (e-mail + notificação no celular). O site não
             envia e-mail — a própria Google Agenda faz isso de graça.
           </li>
@@ -302,8 +308,12 @@ export function LembretesPage() {
                     icone={CalendarPlus}
                     variante="fantasma"
                     tamanho="sm"
-                    onClick={() => window.open(linkGoogleAgenda(lembrete), '_blank', 'noopener,noreferrer')}
-                    title="Adicionar ao Google Agenda"
+                    onClick={() => {
+                      // clicou em Agenda: considera agendado → Enviado
+                      void marcarEnviado(lembrete.id);
+                      window.open(linkGoogleAgenda(lembrete), '_blank', 'noopener,noreferrer');
+                    }}
+                    title="Adicionar ao Google Agenda (marca como Enviado)"
                   >
                     Agenda
                   </Botao>
