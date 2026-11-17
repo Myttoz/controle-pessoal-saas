@@ -5,7 +5,7 @@ import { Botao } from '@/components/Botoes';
 import { ConfigSalario } from '@/components/ConfigSalario';
 import { EstadoVazio } from '@/components/Estados';
 import { Modal } from '@/components/Modal';
-import { formatarMoeda } from '@/lib/formatar';
+import { formatarMoeda, hojeISO } from '@/lib/formatar';
 import { arred, calcularFerias, saldoPeriodo } from '@/lib/calculos';
 import { useStoreLocal } from '@/store/storeLocal';
 import { FormFerias } from './FormFerias';
@@ -36,11 +36,17 @@ export function FeriasPage() {
   const totalRecebido = useMemo(() => arred(linhas.reduce((s, l) => s + l.calc.total, 0)), [linhas]);
 
   const periodos = useMemo(() => {
-    const mapa = new Map<string, { gozados: number; vendidos: number }>();
+    const hoje = hojeISO();
+    const mapa = new Map<
+      string,
+      { gozados: number; vendidos: number; aGozar: boolean }
+    >();
     for (const r of dados.ferias) {
-      const atual = mapa.get(r.periodo) ?? { gozados: 0, vendidos: 0 };
+      const atual = mapa.get(r.periodo) ?? { gozados: 0, vendidos: 0, aGozar: false };
       atual.gozados += r.diasRetirados;
       atual.vendidos += r.diasVendidos;
+      // "a gozar": existe retirada com início hoje ou no futuro
+      if ((r.inicio ?? '') >= hoje) atual.aGozar = true;
       mapa.set(r.periodo, atual);
     }
     return [...mapa.entries()].sort((a, b) => b[0].localeCompare(a[0]));
@@ -78,7 +84,7 @@ export function FeriasPage() {
         <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
           <h2 className="mb-3 text-sm font-semibold text-slate-200">Saldo por período aquisitivo</h2>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {periodos.map(([periodo, { gozados, vendidos }]) => {
+            {periodos.map(([periodo, { gozados, vendidos, aGozar }]) => {
               const usados = gozados + vendidos;
               const saldo = 30 - usados;
               return (
@@ -87,6 +93,13 @@ export function FeriasPage() {
                   <p className="mt-1 text-xs text-slate-500">
                     {gozados} gozados + {vendidos} vendidos = {usados} de 30 dias ·{' '}
                     <span className={saldo > 0 ? 'text-amber-300' : 'text-emerald-300'}>{saldo} restantes</span>
+                  </p>
+                  <p className="mt-1 text-[11px] font-semibold">
+                    {aGozar ? (
+                      <span className="text-amber-400">Status: Férias a gozar</span>
+                    ) : (
+                      <span className="text-emerald-300">Status: Férias já gozadas</span>
+                    )}
                   </p>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-800">
                     <span className="block h-full rounded-full bg-sky-500/80" style={{ width: `${Math.min(100, (usados / 30) * 100)}%` }} />
