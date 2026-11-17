@@ -161,7 +161,7 @@ export function Layout({ children, usuario, aoLogout }: Props) {
                 className={classesNavegacao(ativo, elemento.destaque)}
               >
                 <Icone className="h-5 w-5 shrink-0" />
-                <span className="hidden md:block">{rotulo}</span>
+                <span className="hidden whitespace-nowrap md:block">{rotulo}</span>
               </button>
             );
           })}
