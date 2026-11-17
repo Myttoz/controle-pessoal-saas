@@ -21,9 +21,10 @@ export interface OpcoesColunas {
 }
 
 /**
- * Largura DINÂMICA das colunas: o maior texto x aproximadamente 0.52rem/char
- * define `fit-content(Nrem)` para cada coluna — a tabela fica do tamanho do
- * conteúdo (com um pouco de respiro) e cedeon overflow-x quando necessário.
+ * Largura DINÂMICA das colunas calculada em pixels fixos com base no maior
+ * texto presente. Essa abordagem é mais robusta que `fit-content` do CSS
+ * Grid porque não depende de contenedores/w-max e funciona igual em todas
+ * as linhas virtuais e não virtuais.
  */
 function calcularColunas(registros: Registro<LancamentoMensal>[]): string {
   const maiorLen = (pegar: (d: LancamentoMensal) => string, min: number, cap: number) => {
@@ -35,24 +36,25 @@ function calcularColunas(registros: Registro<LancamentoMensal>[]): string {
     return Math.min(cap, Math.max(min, maior));
   };
 
+  const toPx = (chars: number, extra = 32) => `${Math.ceil(chars * 7.5 + extra)}px`;
+
   const categoria = maiorLen((d) => d.CATEGORIA, 10, 50);
   const descricao = maiorLen((d) => d.DESCRIÇÃO, 10, 60);
-  const forma = maiorLen((d) => d['FORMA DE PGTO'], 8, 30);
-  const tipo = maiorLen((d) => d.TIPO, 11, 30);
+  const forma = maiorLen((d) => d['FORMA DE PGTO'], 10, 30);
+  const tipo = maiorLen((d) => d.TIPO, 13, 30);
   const quem = maiorLen((d) => d['QUEM PAGA'], 8, 24);
   const obs = maiorLen((d) => d.OBSERVAÇÃO, 10, 60);
 
-  const rem = (chars: number) => Math.ceil(chars * 0.42 + 1.5); // ~0.42rem/char + padding
   return [
-    '5.5rem',
-    `minmax(5rem, fit-content(${rem(categoria)}rem))`,
-    `minmax(7rem, fit-content(${rem(descricao)}rem))`,
-    `minmax(4.5rem, fit-content(${rem(forma)}rem))`,
-    `minmax(5rem, fit-content(${rem(tipo)}rem))`,
-    `minmax(4.5rem, fit-content(${rem(quem)}rem))`,
-    `minmax(5rem, fit-content(${rem(obs)}rem))`,
-    '7rem',
-    '4.5rem',
+    '96px',
+    toPx(categoria, 36),
+    toPx(descricao, 28),
+    toPx(forma, 32),
+    toPx(tipo, 32),
+    toPx(quem, 32),
+    toPx(obs, 28),
+    '112px',
+    '72px',
   ].join(' ');
 }
 
