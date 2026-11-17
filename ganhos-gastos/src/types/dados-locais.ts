@@ -33,6 +33,12 @@ export interface ConfigLocal {
   saldoInicial?: Record<string, number>;
   /** Resumo manual por mês, com chave "AAAA-MM" (ex.: "2026-01"). */
   resumoMes?: Record<string, ResumoMesConfig>;
+  /**
+   * Total de horas extras (a 50%) informado manualmente pelo ponto
+   * eletrônico, com chave "AAAA-MM" (ex.: "2026-11": 12.5).
+   * Entra no gráfico de ganhos por mês para o mês correspondente.
+   */
+  pontoEletronico?: Record<string, number>;
 }
 
 // ---------------------------------------------------------------------------
@@ -114,6 +120,7 @@ export const CONFIG_PADRAO: ConfigLocal = {
   kmAtual: 0,
   saldoInicial: {},
   resumoMes: {},
+  pontoEletronico: {},
 };
 
 export function dadosLocaisVazios(): DadosLocais {

@@ -12,14 +12,14 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Pencil, Plus, Timer, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Timer, Trash2, ClipboardSignature } from 'lucide-react';
 import type { RegistroHoraExtra } from '@/types/dados-locais';
 import { Botao } from '@/components/Botoes';
 import { ConfigSalario } from '@/components/ConfigSalario';
 import { EstadoVazio } from '@/components/Estados';
 import { Modal } from '@/components/Modal';
-import { formatarData, formatarMoeda } from '@/lib/formatar';
-import { agruparPorMes, arred, calcularHoraExtra, type TotalMes } from '@/lib/calculos';
+import { formatarData, formatarMoeda, hojeISO } from '@/lib/formatar';
+import { agruparPorMes, arred, calcularHoraExtra, HORAS_MES, type TotalMes } from '@/lib/calculos';
 import { useStoreAno } from '@/store/storeAno';
 import { useStoreLocal } from '@/store/storeLocal';
 import { FormHoraExtra } from './FormHoraExtra';
@@ -41,6 +41,121 @@ interface LinhaTabela {
   v100: number;
   v50: number;
   total: number;
+}
+
+const MESES_CURTO = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+];
+
+/**
+ * LINHA "PONTO ELETRÔNICO" — primeira linha, logo acima da tabela.
+ * O usuário informa o mês e o total de horas extras do ponto (a 50%),
+ * digitado manualmente; o valor em R$ é calculado na hora e entra no
+ * gráfico de ganhos por mês.
+ */
+function LinhaPontoEletronico() {
+  const ponto = useStoreLocal((s) => s.dados.config.pontoEletronico ?? {});
+  const setPonto = useStoreLocal((s) => s.setPontoEletronico);
+  const salarioBruto = useStoreLocal((s) => s.dados.config.salarioBruto);
+
+  const hojeMes = hojeISO().slice(0, 7);
+  const [mes, setMes] = useState(hojeMes);
+  const [horas, setHoras] = useState(() =>
+    ponto[hojeMes] != null ? String(ponto[hojeMes]).replace('.', ',') : '',
+  );
+
+  // troca de mês: recarrega o valor salvo daquele mês
+  const aoTrocarMes = (novoMes: string) => {
+    setMes(novoMes);
+    setHoras(ponto[novoMes] != null ? String(ponto[novoMes]).replace('.', ',') : '');
+  };
+
+  const hora50 = salarioBruto > 0 ? (salarioBruto / HORAS_MES) * 1.5 : 0;
+  const horasNum = (() => {
+    const n = Number(String(horas).replace(',', '.'));
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  })();
+  const valor = arred(horasNum * hora50);
+  const salvo = ponto[mes] != null;
+
+  const commit = () => {
+    setPonto(mes, horas.trim() === '' || horasNum <= 0 ? null : horasNum);
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-sky-800/40 bg-sky-950/20 px-4 py-2.5">
+      <span className="flex items-center gap-2">
+        <ClipboardSignature className="h-5 w-5 shrink-0 text-sky-400" />
+        <span className="min-w-0">
+          <span className="block text-xs font-semibold uppercase tracking-wide text-sky-200">
+            Ponto eletrônico
+          </span>
+          <span className="block text-[10px] text-slate-500">
+            total de HE do mês · sempre a 50%
+          </span>
+        </span>
+      </span>
+
+      <label className="flex items-center gap-1.5 text-xs text-slate-400">
+        Mês
+        <input
+          type="month"
+          value={mes}
+          onChange={(e) => aoTrocarMes(e.target.value)}
+          className="appearance-none rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-100 focus:border-sky-500 focus:outline-none [color-scheme:dark]"
+        />
+      </label>
+
+      <label className="flex items-center gap-1.5 text-xs text-slate-400">
+        Horas extras
+        <input
+          type="text"
+          inputMode="decimal"
+          autoComplete="off"
+          placeholder="0,0"
+          value={horas}
+          onChange={(e) => setHoras(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+          }}
+          className="w-20 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-right text-sm tabular-nums text-slate-100 focus:border-sky-500 focus:outline-none"
+        />
+        <span className="text-slate-500">h</span>
+      </label>
+
+      <span className="flex items-center gap-2">
+        <span className="text-slate-600">→</span>
+        <span className="tabular-nums text-base font-semibold text-sky-300">
+          {formatarMoeda(valor)}
+        </span>
+        <span className="hidden text-[10px] leading-tight text-slate-500 sm:block">
+          {horasNum > 0 ? `${horasNum.toFixed(2).replace('.', ',')} h × ${formatarMoeda(hora50)}` : ''}
+        </span>
+      </span>
+
+      {salvo && (
+        <button
+          type="button"
+          onClick={() => {
+            setPonto(mes, null);
+            setHoras('');
+          }}
+          title="Remover o valor salvo deste mês"
+          aria-label="Remover o ponto eletrônico deste mês"
+          className="rounded-md p-1.5 text-slate-500 transition hover:bg-rose-900/40 hover:text-rose-300"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      )}
+      {salarioBruto <= 0 && (
+        <span className="text-[11px] text-amber-400">
+          Informe o salário bruto no painel acima para calcular o valor.
+        </span>
+      )}
+    </div>
+  );
 }
 
 export function HorasExtrasPage() {
@@ -74,10 +189,52 @@ export function HorasExtrasPage() {
       .sort((a, b) => b.registro.data.localeCompare(a.registro.data));
   }, [doAno, salarioBruto]);
 
-  const porMes = useMemo<TotalMes[]>(
+  const pontoEletronico = useMemo(
+    () => dados.config.pontoEletronico ?? {},
+    [dados.config.pontoEletronico],
+  );
+
+  const porMesBase = useMemo<TotalMes[]>(
     () => agruparPorMes(doAno, (r) => r.data, (r) => calcularHoraExtra(r, salarioBruto)),
     [doAno, salarioBruto],
   );
+
+  // Gráfico inclui também as horas do ponto eletrônico (sempre a 50%), mês a mês
+  const porMes = useMemo<TotalMes[]>(() => {
+    const mapa = new Map<string, TotalMes>();
+    for (const m of porMesBase) mapa.set(m.chave, { ...m });
+    const hora50 = salarioBruto > 0 ? (salarioBruto / HORAS_MES) * 1.5 : 0;
+    if (hora50 > 0) {
+      for (const [chave, horas] of Object.entries(pontoEletronico)) {
+        if (!Number.isFinite(horas) || horas <= 0) continue;
+        if (anoSelecionado && !chave.startsWith(String(anoSelecionado))) continue;
+        const v = arred(horas * hora50);
+        const atual = mapa.get(chave);
+        if (atual) {
+          mapa.set(chave, {
+            ...atual,
+            valor50: arred(atual.valor50 + v),
+            total: arred(atual.total + v),
+            horas50: arred(atual.horas50 + horas),
+          });
+        } else {
+          const [anoChave, mesNum] = chave.split('-');
+          const nome = MESES_CURTO[Number(mesNum) - 1] ?? mesNum;
+          mapa.set(chave, {
+            chave,
+            rotulo: `${nome.slice(0, 3)}/${anoChave}`,
+            total: v,
+            valor100: 0,
+            valor50: v,
+            horas100: 0,
+            horas50: horas,
+            quantidade: 0,
+          });
+        }
+      }
+    }
+    return [...mapa.values()].sort((a, b) => a.chave.localeCompare(b.chave));
+  }, [porMesBase, pontoEletronico, salarioBruto, anoSelecionado]);
 
   const visiveis = useMemo(
     () => (mesFiltro ? linhas.filter((l) => l.registro.data.startsWith(mesFiltro)) : linhas),
@@ -181,6 +338,9 @@ export function HorasExtrasPage() {
           Novo plantão
         </Botao>
       </div>
+
+      {/* ------- ponto eletrônico: primeira linha, acima da tabela ------- */}
+      <LinhaPontoEletronico />
 
       {/* ------- lista ------- */}
       {visiveis.length === 0 ? (

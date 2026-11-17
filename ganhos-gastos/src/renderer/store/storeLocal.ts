@@ -49,6 +49,8 @@ interface EstadoLocal {
   setSaldoInicial(ano: number, valor: number): void;
   /** Define/apaga o resumo de um mês (chave "AAAA-MM"). */
   setResumoMes(chave: string, valores: ResumoMesConfig | null): void;
+  /** Define/apaga o total de horas extras (a 50%) do ponto eletrônico de um mês (chave "AAAA-MM"). */
+  setPontoEletronico(chave: string, horas: number | null): void;
 
   adicionarHoraExtra(registro: Omit<RegistroHoraExtra, 'id'>): void;
   editarHoraExtra(id: string, parcial: Partial<RegistroHoraExtra>): void;
@@ -97,6 +99,10 @@ function normalizar(carregado: DadosLocais | null | undefined): DadosLocais | nu
         configDaVez.resumoMes && typeof configDaVez.resumoMes === 'object'
           ? configDaVez.resumoMes
           : {},
+      pontoEletronico:
+        configDaVez.pontoEletronico && typeof configDaVez.pontoEletronico === 'object'
+          ? configDaVez.pontoEletronico
+          : {},
     },
     horasExtras: Array.isArray(carregado.horasExtras) ? carregado.horasExtras : [],
     ferias: Array.isArray(carregado.ferias) ? carregado.ferias : [],
@@ -113,7 +119,8 @@ function estaVazio(dados: DadosLocais): boolean {
     !dados.config.salarioBruto &&
     !dados.config.kmAtual &&
     Object.keys(dados.config.saldoInicial ?? {}).length === 0 &&
-    Object.keys(dados.config.resumoMes ?? {}).length === 0
+    Object.keys(dados.config.resumoMes ?? {}).length === 0 &&
+    Object.keys(dados.config.pontoEletronico ?? {}).length === 0
   );
 }
 
@@ -308,6 +315,15 @@ export const useStoreLocal = create<EstadoLocal>((set, get) => {
           },
         },
       })),
+
+    setPontoEletronico: (chave, horas) =>
+      mutar((d) => {
+        const mapa = { ...(d.config.pontoEletronico ?? {}) };
+        const n = horas != null && Number.isFinite(horas) && horas > 0 ? horas : null;
+        if (n == null) delete mapa[chave];
+        else mapa[chave] = Math.round(n * 100) / 100;
+        return { ...d, config: { ...d.config, pontoEletronico: mapa } };
+      }),
 
     setResumoMes: (chave, valores) =>
       mutar((d) => {
