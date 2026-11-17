@@ -5,6 +5,7 @@ import {
   CalendarRange,
   Car,
   LayoutDashboard,
+  LayoutGrid,
   LogOut,
   Palmtree,
   Receipt,
@@ -25,7 +26,8 @@ import { useStoreUI, type Pagina } from '@/store/storeUI';
 const PAGINAS: Record<Pagina, { rotulo: string; icone: LucideIcon }> = {
   dashboard: { rotulo: 'Dashboard', icone: LayoutDashboard },
   lancamentos: { rotulo: 'Lançamentos Mensais', icone: Receipt },
-  kanban: { rotulo: 'Resumo Mensal', icone: Trello },
+  kanban: { rotulo: 'Resumo Mensal Tipo', icone: Trello },
+  kanbanCategoria: { rotulo: 'Resumo Mensal Categoria', icone: LayoutGrid },
   pagamentos: { rotulo: 'Resumo Pagamentos', icone: CalendarRange },
   ganhos: { rotulo: 'Recebidos', icone: Wallet },
   horasextras: { rotulo: 'Horas Extras', icone: Timer },
@@ -60,6 +62,7 @@ const NAVEGACAO: ElementoNavegacao[] = [
   { tipo: 'separador' },
   { tipo: 'subtitulo', rotulo: 'Conferência' },
   { tipo: 'item', id: 'anos' },
+  { tipo: 'item', id: 'kanbanCategoria' },
   { tipo: 'item', id: 'kanban' },
   { tipo: 'item', id: 'pagamentos' },
 

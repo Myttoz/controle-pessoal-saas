@@ -10,6 +10,7 @@ export type Pagina =
   | 'dashboard'
   | 'lancamentos'
   | 'kanban'
+  | 'kanbanCategoria'
   | 'pagamentos'
   | 'ganhos'
   | 'horasextras'

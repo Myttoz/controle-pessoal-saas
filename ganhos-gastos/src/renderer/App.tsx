@@ -16,6 +16,7 @@ import { FeriasPage } from '@/features/ferias/FeriasPage';
 import { GanhosPage } from '@/features/ganhos/GanhosPage';
 import { HorasExtrasPage } from '@/features/horasextras/HorasExtrasPage';
 import { KanbanPage } from '@/features/kanban/KanbanPage';
+import { KanbanCategoriaPage } from '@/features/kanban/KanbanCategoriaPage';
 import { LancamentosPage } from '@/features/lancamentos/LancamentosPage';
 import { LembretesPage } from '@/features/lembretes/LembretesPage';
 import { LoginPage } from '@/features/auth/LoginPage';
@@ -98,6 +99,7 @@ export default function App() {
       dashboard: <DashboardPage />,
       lancamentos: <LancamentosPage />,
       kanban: <KanbanPage />,
+      kanbanCategoria: <KanbanCategoriaPage />,
       pagamentos: <PagamentosPage />,
       ganhos: <GanhosPage />,
       horasextras: <HorasExtrasPage />,
