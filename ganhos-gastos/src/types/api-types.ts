@@ -80,9 +80,7 @@ export interface LinhaSalario {
   TICKET: number;
   /** CALCULADA (freelance vindo de Extras ganhos) — não editar. */
   FREELANCE: number;
-  /** CALCULADA — não editar. */
-  'TOTAL SALÁRIO': number;
-  /** CALCULADA — não editar. */
+  /** CALCULADA (base + 13º + férias + outros + freelance) — não editar. */
   'TOTAL GANHOS': number;
   OBSERVAÇÃO: string;
 }

@@ -43,8 +43,8 @@ function paraDigitos(valor: number | undefined | null): string {
 
 /**
  * Edição da linha do mês na aba Salário.
- * Envia SOMENTE colunas editáveis — FREELANCE, TOTAL SALÁRIO e TOTAL GANHOS
- * são calculadas e nunca saem daqui.
+ * Envia SOMENTE colunas editáveis — FREELANCE e TOTAL GANHOS
+ * são calculados automaticamente e nunca saem daqui.
  */
 export function FormSalario({
   registro,
@@ -160,7 +160,7 @@ export function FormSalario({
       <p className="mt-4 rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2 text-xs text-slate-500">
         O <strong>TICKET</strong> e a <strong>HORA EXTRA (info)</strong> são informativos: a hora
         extra é calculada automaticamente (plantões + ponto eletrônico do mês, sempre a 50%) e não
-        entra no TOTAL SALÁRIO nem no TOTAL GANHOS. A coluna <strong>FREELANCE</strong> vem dos
+        entra no TOTAL GANHOS. A coluna <strong>FREELANCE</strong> vem dos
         Serviços lançados na aba <strong>Extras</strong> (mesmo mês) e também não é editada.
       </p>
     </Modal>

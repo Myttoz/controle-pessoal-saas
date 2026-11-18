@@ -49,11 +49,10 @@ function numero(valor: number | undefined | null): number {
 /**
  * Totais recalculados PELO APP (informativo não entra na conta:
  * TICKET, HORA EXTRA e AJUDA DE CUSTO):
- *   TOTAL SALÁRIO = base + 13º + férias + outros + freelance
- *   TOTAL GANHOS  = TOTAL SALÁRIO
- *   HORA EXTRA    = plantões do mês + ponto eletrônico do mês (soma à parte)
+ *   TOTAL GANHOS = base + 13º + férias + outros + freelance
+ *   HORA EXTRA   = plantões do mês + ponto eletrônico do mês (soma à parte)
  */
-function totalSalarioDe(d: LinhaSalario): number {
+function totalGanhosDe(d: LinhaSalario): number {
   return arredondar2(
     numero(d['SALÁRIO BASE']) +
       numero(d['13º']) +
@@ -61,10 +60,6 @@ function totalSalarioDe(d: LinhaSalario): number {
       numero(d.OUTROS) +
       numero(d.FREELANCE),
   );
-}
-
-function totalGanhosDe(d: LinhaSalario): number {
-  return totalSalarioDe(d);
 }
 
 export function GanhosPage() {
@@ -123,8 +118,7 @@ export function GanhosPage() {
       outros: soma('OUTROS'),
       ticket: soma('TICKET'),
       freelance: soma('FREELANCE'),
-      // recalculados pelo app (TICKET fica de fora — informativo)
-      totalSalario: arredondar2(registros.reduce((acc, r) => acc + totalSalarioDe(r.dados), 0)),
+      // recalculado pelo app (TICKET fica de fora — informativo)
       totalGanhos: arredondar2(registros.reduce((acc, r) => acc + totalGanhosDe(r.dados), 0)),
     };
   }, [registros, horaExtraMes]);
@@ -197,9 +191,6 @@ export function GanhosPage() {
                     Freelance
                   </th>
                   <th className="px-3 py-2.5 text-right font-semibold text-slate-600">
-                    Total salário
-                  </th>
-                  <th className="px-3 py-2.5 text-right font-semibold text-slate-600">
                     Total ganhos
                   </th>
                   <th className="px-4 py-2.5 text-right font-semibold">Ações</th>
@@ -227,7 +218,6 @@ export function GanhosPage() {
                       <td className="px-3 py-2.5 text-right tabular-nums"><Num valor={d['OUTROS']} /></td>
                       <td className="px-3 py-2.5 text-right tabular-nums"><Num valor={d['TICKET']} dica={DICA_INFORMATIVA} /></td>
                       <td className="px-3 py-2.5 text-right tabular-nums"><Num valor={d['FREELANCE']} dica={DICA_CALCULADA} /></td>
-                      <td className="px-3 py-2.5 text-right font-medium tabular-nums"><Num valor={totalSalarioDe(d)} dica={DICA_TOTAL_APP} /></td>
                       <td className="px-3 py-2.5 text-right font-semibold tabular-nums"><Num valor={totalGanhosDe(d)} dica={DICA_TOTAL_APP} /></td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center justify-end">
@@ -258,7 +248,6 @@ export function GanhosPage() {
                     <td className="px-3 py-2.5 text-right tabular-nums text-slate-300">{formatarMoeda(totais.outros)}</td>
                     <td className="px-3 py-2.5 text-right tabular-nums text-slate-500">{formatarMoeda(totais.ticket)}</td>
                     <td className="px-3 py-2.5 text-right tabular-nums text-slate-500">{formatarMoeda(totais.freelance)}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-slate-300">{formatarMoeda(totais.totalSalario)}</td>
                     <td className="px-3 py-2.5 text-right tabular-nums text-emerald-300">{formatarMoeda(totais.totalGanhos)}</td>
                     <td />
                   </tr>
@@ -267,7 +256,7 @@ export function GanhosPage() {
             </table>
           </div>
           <p className="border-t border-slate-800 px-4 py-2.5 text-xs text-slate-600">
-            * <strong>TOTAL SALÁRIO</strong> e <strong>TOTAL GANHOS</strong> são recalculados pelo
+            * <strong>TOTAL GANHOS</strong> é recalculado pelo
             app a partir da base + 13º + férias + outros + freelance — TICKET, AJUDA DE CUSTO e
             HORA EXTRA são informativos e não entram na conta. <strong>FREELANCE</strong> vem dos
             Serviços lançados na aba <strong>Extras</strong> (mesmo mês); <strong>HORA EXTRA</strong>{' '}

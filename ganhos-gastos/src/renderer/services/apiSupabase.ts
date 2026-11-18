@@ -166,7 +166,8 @@ function rowToSalario(r: Record<string, unknown>, freelanceCalculado?: number): 
   const outros = num(r.outros) ?? 0;
   const ticket = num(r.ticket) ?? 0;
   const freelance = freelanceCalculado ?? num(r.freelance) ?? 0;
-  const totalSalario = base + decimo + ferias + outros + freelance;
+  // TOTAL GANHOS = base + 13º + férias + outros + freelance (informativos ficam de fora)
+  const totalGanhos = base + decimo + ferias + outros + freelance;
   return {
     'MÊS': siglaMes(inteiro(r.mes) ?? 1),
     'SALÁRIO BASE': base,
@@ -177,8 +178,7 @@ function rowToSalario(r: Record<string, unknown>, freelanceCalculado?: number): 
     OUTROS: outros,
     TICKET: ticket,
     FREELANCE: freelance,
-    'TOTAL SALÁRIO': totalSalario,
-    'TOTAL GANHOS': totalSalario,
+    'TOTAL GANHOS': totalGanhos,
     OBSERVAÇÃO: String(r.observacao ?? ''),
   };
 }
@@ -657,8 +657,8 @@ export function criarApiSupabase(): ApiElectron {
           sucesso: true,
           aba,
           tipo: 'SALARIO',
-          cabecalhos: ['MÊS', 'SALÁRIO BASE', '13º', 'FÉRIAS', 'AJUDA CUSTO (info)', 'HORA EXTRA (info)', 'OUTROS', 'TICKET', 'FREELANCE', 'TOTAL SALÁRIO', 'TOTAL GANHOS', 'OBSERVAÇÃO'],
-          total: regs.reduce((s, r) => s + (r.dados['TOTAL SALÁRIO'] || 0), 0),
+          cabecalhos: ['MÊS', 'SALÁRIO BASE', '13º', 'FÉRIAS', 'AJUDA CUSTO (info)', 'HORA EXTRA (info)', 'OUTROS', 'TICKET', 'FREELANCE', 'TOTAL GANHOS', 'OBSERVAÇÃO'],
+          total: regs.reduce((s, r) => s + (r.dados['TOTAL GANHOS'] || 0), 0),
           registros: regs,
         };
         return resp;

@@ -231,19 +231,18 @@ function recalcularFreelanceNosSalarios(ano: number): void {
             registros: snapshot.salario.registros.map((r) => {
               const idx = SIGLAS.indexOf(r.dados['MÊS']) + 1;
               const freelance = arredondar2(porMes.get(idx > 0 ? idx : 1) ?? 0);
-              const totalSalario = arredondar2(
+              const totalGanhos = arredondar2(
                 (Number(r.dados['SALÁRIO BASE']) || 0) +
                   (Number(r.dados['13º']) || 0) +
                   (Number(r.dados['FÉRIAS']) || 0) +
+                  (Number(r.dados['OUTROS']) || 0) +
                   freelance,
               );
-              const totalGanhos = arredondar2((Number(r.dados['OUTROS']) || 0) + freelance + totalSalario);
               return {
                 ...r,
                 dados: {
                   ...r.dados,
                   FREELANCE: freelance,
-                  'TOTAL SALÁRIO': totalSalario,
                   'TOTAL GANHOS': totalGanhos,
                 },
               };
