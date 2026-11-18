@@ -9,6 +9,8 @@ import { horaExtraPorMes } from '@/lib/calculos';
 import { useSnapshot } from '@/hooks/useRegistrosFiltrados';
 import { useStoreAno } from '@/store/storeAno';
 import { useStoreLocal } from '@/store/storeLocal';
+import { useStoreUI } from '@/store/storeUI';
+import { usePedidoNovo } from '@/hooks/usePedidoNovo';
 import { ExtrasArea } from './ExtrasArea';
 import { FormSalario } from './FormSalario';
 
@@ -45,19 +47,24 @@ function numero(valor: number | undefined | null): number {
 }
 
 /**
- * Totais recalculados PELO APP para que o TICKET (informativo, como a ajuda de
- * custo) fique fora da conta — igual à planilha, menos o ticket:
- *   TOTAL SALÁRIO = base + 13º + férias + freelance
- *   TOTAL GANHOS  = outros + freelance + total salário   (planilha: G+H+I+J, sem H)
+ * Totais recalculados PELO APP (informativo não entra na conta:
+ * TICKET, HORA EXTRA e AJUDA DE CUSTO):
+ *   TOTAL SALÁRIO = base + 13º + férias + outros + freelance
+ *   TOTAL GANHOS  = TOTAL SALÁRIO
+ *   HORA EXTRA    = plantões do mês + ponto eletrônico do mês (soma à parte)
  */
 function totalSalarioDe(d: LinhaSalario): number {
   return arredondar2(
-    numero(d['SALÁRIO BASE']) + numero(d['13º']) + numero(d['FÉRIAS']) + numero(d['FREELANCE']),
+    numero(d['SALÁRIO BASE']) +
+      numero(d['13º']) +
+      numero(d['FÉRIAS']) +
+      numero(d.OUTROS) +
+      numero(d.FREELANCE),
   );
 }
 
 function totalGanhosDe(d: LinhaSalario): number {
-  return arredondar2(numero(d['OUTROS']) + numero(d['FREELANCE']) + totalSalarioDe(d));
+  return totalSalarioDe(d);
 }
 
 export function GanhosPage() {
@@ -73,6 +80,13 @@ export function GanhosPage() {
   const salarioBruto = useStoreLocal((s) => s.dados.config.salarioBruto);
 
   const [abaInterna, setAbaInterna] = useState<AbaInterna>('salario');
+
+  // Ctrl+O → na aba Salário não há "novo" (as 12 linhas do ano já existem)
+  usePedidoNovo(() => {
+    if (abaInterna !== 'extras') {
+      useStoreUI.getState().toast('info', 'A aba Salário não tem novo registro — os 12 meses do ano já existem.');
+    }
+  });
   const [paraEditar, setParaEditar] = useState<Registro<LinhaSalario> | null>(null);
 
   const salario = snapshot?.salario ?? null;
@@ -254,10 +268,10 @@ export function GanhosPage() {
           </div>
           <p className="border-t border-slate-800 px-4 py-2.5 text-xs text-slate-600">
             * <strong>TOTAL SALÁRIO</strong> e <strong>TOTAL GANHOS</strong> são recalculados pelo
-            app: o <strong>TICKET</strong> é informativo e não entra na conta (assim como a ajuda de
-            custo e a hora extra). <strong>FREELANCE</strong> vem dos Serviços lançados na aba{' '}
-            <strong>Extras</strong> (mesmo mês). <strong>HORA EXTRA</strong> vem da soma dos
-            plantões e do ponto eletrônico do mês — tudo automático.
+            app a partir da base + 13º + férias + outros + freelance — TICKET, AJUDA DE CUSTO e
+            HORA EXTRA são informativos e não entram na conta. <strong>FREELANCE</strong> vem dos
+            Serviços lançados na aba <strong>Extras</strong> (mesmo mês); <strong>HORA EXTRA</strong>{' '}
+            vem da soma dos plantões e do ponto eletrônico do mês.
           </p>
         </div>
       )}

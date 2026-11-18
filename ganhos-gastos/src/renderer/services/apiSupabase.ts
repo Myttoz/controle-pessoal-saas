@@ -166,7 +166,7 @@ function rowToSalario(r: Record<string, unknown>, freelanceCalculado?: number): 
   const outros = num(r.outros) ?? 0;
   const ticket = num(r.ticket) ?? 0;
   const freelance = freelanceCalculado ?? num(r.freelance) ?? 0;
-  const totalSalario = base + decimo + ferias + ajuda + horaExtra + outros + ticket + freelance;
+  const totalSalario = base + decimo + ferias + outros + freelance;
   return {
     'MÊS': siglaMes(inteiro(r.mes) ?? 1),
     'SALÁRIO BASE': base,
