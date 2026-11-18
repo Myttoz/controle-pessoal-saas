@@ -22,7 +22,7 @@ import type {
 } from '@/types/api-types';
 import type { CachePersistido, RespostaEscrita } from '@/types/api-electron';
 import { arredondar2 } from '@/lib/formatar';
-import { siglaDeAba } from '@/lib/meses';
+import { SIGLAS, siglaDeAba } from '@/lib/meses';
 import { msgDeErro, servicoApi } from '@/services/api';
 import { useStoreAuth } from './storeAuth';
 import { useStoreUI } from './storeUI';
@@ -197,6 +197,61 @@ function restaurarExtras(ano: number, anterior: ExtrasSnapshot | null): void {
     const snapshot = estado.snapshots[ano];
     if (!snapshot) return estado;
     return { snapshots: { ...estado.snapshots, [ano]: { ...snapshot, extras: anterior } } };
+  });
+}
+
+/**
+ * Recalcula o FREELANCE e os totais de CADA mês na aba Salário a partir
+ * dos extras GANHOS do snapshot (soma dos totais de Serviços por mês).
+ * Chamado após qualquer escrita em extras, para a aba Salário refletir
+ * na hora — sem esperar novo fetch.
+ */
+function recalcularFreelanceNosSalarios(ano: number): void {
+  useStoreAno.setState((estado) => {
+    const snapshot = estado.snapshots[ano];
+    if (!snapshot?.salario) return estado;
+
+    const porMes = new Map<number, number>(); // mês (1-12) → R$
+    for (const reg of snapshot.extras?.ganhos ?? []) {
+      const data = reg.dados.DATA ?? '';
+      const mNum = /^\d{4}-(\d{2})-\d{2}$/.exec(data)?.[1];
+      let m = mNum ? Number(mNum) : SIGLAS.indexOf(reg.dados['MÊS']) + 1;
+      if (!m || m < 1 || m > 12) m = 1;
+      const valor = Number(reg.dados.VALOR) || 0;
+      porMes.set(m, arredondar2((porMes.get(m) ?? 0) + valor));
+    }
+
+    return {
+      snapshots: {
+        ...estado.snapshots,
+        [ano]: {
+          ...snapshot,
+          salario: {
+            ...snapshot.salario,
+            registros: snapshot.salario.registros.map((r) => {
+              const idx = SIGLAS.indexOf(r.dados['MÊS']) + 1;
+              const freelance = arredondar2(porMes.get(idx > 0 ? idx : 1) ?? 0);
+              const totalSalario = arredondar2(
+                (Number(r.dados['SALÁRIO BASE']) || 0) +
+                  (Number(r.dados['13º']) || 0) +
+                  (Number(r.dados['FÉRIAS']) || 0) +
+                  freelance,
+              );
+              const totalGanhos = arredondar2((Number(r.dados['OUTROS']) || 0) + freelance + totalSalario);
+              return {
+                ...r,
+                dados: {
+                  ...r.dados,
+                  FREELANCE: freelance,
+                  'TOTAL SALÁRIO': totalSalario,
+                  'TOTAL GANHOS': totalGanhos,
+                },
+              };
+            }),
+          },
+        },
+      },
+    };
   });
 }
 
@@ -539,7 +594,7 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
       dados: dados as LinhaExtra,
     };
 
-    return executarEscrita({
+    const ok = await executarEscrita({
       ano,
       payload: { acao: 'adicionar', aba: extras.aba, tabela, dados },
       otimizar: () => patchExtras(ano, tabela, (lista) => [...lista, registroTemporario]),
@@ -557,6 +612,8 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
       },
       mensagemSucesso: 'Registro de extra adicionado.',
     });
+    recalcularFreelanceNosSalarios(ano);
+    return ok;
   },
 
   editarExtra: async (ano, tabela, linha, dados) => {
@@ -567,7 +624,7 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
     }
     const anterior = clonar(extras);
 
-    return executarEscrita({
+    const ok = await executarEscrita({
       ano,
       payload: { acao: 'editar', aba: extras.aba, linha, dados, tabela },
       otimizar: () =>
@@ -577,6 +634,8 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
       reverter: () => restaurarExtras(ano, anterior),
       mensagemSucesso: 'Registro de extra atualizado.',
     });
+    recalcularFreelanceNosSalarios(ano);
+    return ok;
   },
 
   removerExtra: async (ano, tabela, linha) => {
@@ -587,13 +646,15 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
     }
     const anterior = clonar(extras);
 
-    return executarEscrita({
+    const ok = await executarEscrita({
       ano,
       payload: { acao: 'remover', aba: extras.aba, linha, tabela },
       otimizar: () => patchExtras(ano, tabela, (lista) => lista.filter((r) => r.linha !== linha)),
       reverter: () => restaurarExtras(ano, anterior),
       mensagemSucesso: 'Registro de extra removido.',
     });
+    recalcularFreelanceNosSalarios(ano);
+    return ok;
   },
 
   // -------------------------------------------------------------------------
