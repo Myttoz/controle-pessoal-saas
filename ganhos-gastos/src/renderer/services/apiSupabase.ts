@@ -224,7 +224,8 @@ function rowToHoraExtra(r: Record<string, unknown>): RegistroHoraExtra {
     almocoInicio: String(r.almoco_inicio ?? ''),
     almocoFim: String(r.almoco_fim ?? ''),
     saidaEmpresa: String(r.saida ?? ''),
-    fimPlantao: '',
+    // Sem coluna no banco (migração 006 não rodada) → vazio, igual ao comportamento atual.
+    fimPlantao: r.fim_plantao == null ? '' : String(r.fim_plantao).slice(0, 5),
     observacao: '',
   };
 }
@@ -236,7 +237,8 @@ function rowToFerias(r: Record<string, unknown>): RegistroFerias {
     inicio: String(r.inicio ?? ''),
     fim: String(r.fim ?? ''),
     diasRetirados: inteiro(r.dias) ?? 0,
-    diasVendidos: 0,
+    // Sem coluna no banco (migração 005 não rodada) → 0, igual ao comportamento atual.
+    diasVendidos: r.dias_vendidos == null ? 0 : inteiro(r.dias_vendidos) ?? 0,
     observacao: String(r.observacao ?? ''),
   };
 }
@@ -1093,6 +1095,7 @@ export function criarApiSupabase(): ApiElectron {
           almoco_inicio: h.almocoInicio || null,
           almoco_fim: h.almocoFim || null,
           saida: h.saidaEmpresa || null,
+          fim_plantao: h.fimPlantao || null,
         }));
         const ferRows = dados.ferias.map((f) => ({
           user_id: uid,
@@ -1100,6 +1103,7 @@ export function criarApiSupabase(): ApiElectron {
           inicio: f.inicio || null,
           fim: f.fim || null,
           dias: f.diasRetirados,
+          dias_vendidos: f.diasVendidos ?? 0,
           valor_recebido: 0,
           status: 'Registrado',
           observacao: f.observacao || '',
@@ -1117,11 +1121,28 @@ export function criarApiSupabase(): ApiElectron {
 
         if (heRows.length) {
           const { error } = await supabase.from('horas_extras').insert(heRows);
-          if (error) return erro(error.message);
+          if (error) {
+            // Coluna fim_plantao ausente (migração 006 não rodada)
+            if (/fim_plantao|column .* does not exist/i.test(error.message)) {
+              return erro(
+                'Sua base precisa da migração sql/006-horas-fim-plantao.sql (coluna fim_plantao na tabela horas_extras). Rode-a no SQL Editor do Supabase. Seus dados foram preservados localmente.',
+              );
+            }
+            return erro(error.message);
+          }
         }
         if (ferRows.length) {
           const { error } = await supabase.from('ferias').insert(ferRows);
-          if (error) return erro(error.message);
+          if (error) {
+            // Coluna dias_vendidos ausente (migração 005 não rodada): não
+            // apaga nem altera nada; avisa com a solução exata.
+            if (/dias_vendidos|column .* does not exist/i.test(error.message)) {
+              return erro(
+                'Sua base precisa da migração sql/005-ferias-vendidos.sql (coluna dias_vendidos na tabela ferias). Rode-a no SQL Editor do Supabase. Seus dados de férias foram preservados localmente.',
+              );
+            }
+            return erro(error.message);
+          }
         }
         if (manRows.length) {
           const { error } = await supabase.from('manutencao').insert(manRows);
