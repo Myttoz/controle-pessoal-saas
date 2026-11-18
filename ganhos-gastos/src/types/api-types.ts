@@ -96,6 +96,16 @@ export interface LinhaExtra {
   VALOR: number;
   /** Data em ISO 'yyyy-MM-dd'. */
   DATA: string;
+  /** Serviços: cliente do serviço (opcional). */
+  CLIENTE?: string;
+  /** Serviços: compras para o cliente — INFORMATIVO, não entra em cálculos. */
+  DESPESAS_CLIENTE?: number;
+  /** Serviços: venda de produtos/peças para o cliente. */
+  GANHOS_PECAS?: number;
+  /** Serviços: receita do serviço prestado. */
+  GANHOS_SERVICOS?: number;
+  /** Serviços: despesas suas para realizar o serviço. */
+  MINHAS_DESPESAS?: number;
 }
 
 /** Abas mensais: colunas de digitação (nenhuma é fórmula). */

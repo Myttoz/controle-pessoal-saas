@@ -86,7 +86,10 @@ create table if not exists salarios (
 );
 
 -- ---------------------------------------------------------------------------
--- Extras (ganhos/gastos freelance)
+-- Extras (ganhos/gastos freelance — inclui os Serviços)
+-- Serviços: cliente/despesas_cliente (informativo)/ganhos_pecas/
+-- ganhos_servicos/minhas_despesas; `valor` guarda o total do serviço
+-- (ganhos_pecas + ganhos_servicos − minhas_despesas).
 -- ---------------------------------------------------------------------------
 create table if not exists extras (
   id uuid primary key default uuid_generate_v4(),
@@ -98,6 +101,11 @@ create table if not exists extras (
   descricao text,
   valor numeric(12,2),
   data date,
+  cliente text,
+  despesas_cliente numeric(12,2),
+  ganhos_pecas numeric(12,2),
+  ganhos_servicos numeric(12,2),
+  minhas_despesas numeric(12,2),
   created_at timestamptz default now()
 );
 
