@@ -1,12 +1,14 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { FixedSizeList, type ListChildComponentProps } from 'react-window';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Copy, Pencil, Trash2 } from 'lucide-react';
 import type { LancamentoMensal, Registro } from '@/types/api-types';
 import { BadgeCategoria } from '@/components/BadgeCategoria';
 import { ThOrdenavel, type DirecaoOrdem } from '@/components/ThOrdenavel';
 import { EntradaSugestoes } from '@/components/Campos';
 import { TooltipTexto } from '@/components/TooltipTexto';
 import { formatarData, formatarMoeda, nomeFormaPgto, valorFormaPgto } from '@/lib/formatar';
+import { createPortal } from 'react-dom';
+import { ehUltimaParcela } from '@/lib/parcelas';
 import { useStoreUI } from '@/store/storeUI';
 
 /** Campos com ordenação/filtro nas colunas da tabela. */
@@ -124,9 +126,11 @@ interface LinhaProps {
   aoEditar: (registro: Registro<LancamentoMensal>) => void;
   aoExcluir: (registro: Registro<LancamentoMensal>) => void;
   aoEditarObservacao: (linha: number | string, novoValor: string) => Promise<void>;
+  /** Abre o menu de contexto (botão direito) — duplicar etc. */
+  aoAbrirMenu: (e: React.MouseEvent, registro: Registro<LancamentoMensal>) => void;
 }
 
-const Linha = memo(function Linha({ registro, colunas, linha, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao }: LinhaProps) {
+const Linha = memo(function Linha({ registro, colunas, linha, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao, aoAbrirMenu }: LinhaProps) {
   const d = registro.dados;
   const [editandoObs, setEditandoObs] = useState(false);
   const [textoObs, setTextoObs] = useState(d.OBSERVAÇÃO ?? '');
@@ -145,6 +149,10 @@ const Linha = memo(function Linha({ registro, colunas, linha, sugestoesObservaca
     <div
       style={{ gridTemplateColumns: colunas }}
       className="grid h-full items-center gap-4 border-b border-slate-800/70 px-3 text-[15px] hover:bg-slate-800/25"
+      onContextMenu={(e) => {
+        e.preventDefault();
+        aoAbrirMenu(e, registro);
+      }}
     >
       <span className="tabular-nums text-slate-400">{formatarData(d.DATA)}</span>
       <span className="min-w-0">
@@ -211,6 +219,7 @@ interface DadosVirtuais {
   aoEditar: (registro: Registro<LancamentoMensal>) => void;
   aoExcluir: (registro: Registro<LancamentoMensal>) => void;
   aoEditarObservacao: (linha: number | string, novoValor: string) => Promise<void>;
+  aoAbrirMenu: (e: React.MouseEvent, registro: Registro<LancamentoMensal>) => void;
 }
 
 function LinhaVirtual({ index, style, data }: ListChildComponentProps<DadosVirtuais>) {
@@ -226,6 +235,7 @@ function LinhaVirtual({ index, style, data }: ListChildComponentProps<DadosVirtu
         aoEditar={data.aoEditar}
         aoExcluir={data.aoExcluir}
         aoEditarObservacao={data.aoEditarObservacao}
+        aoAbrirMenu={data.aoAbrirMenu}
       />
     </div>
   );
@@ -245,14 +255,53 @@ interface Props {
   aoEditar: (registro: Registro<LancamentoMensal>) => void;
   aoExcluir: (registro: Registro<LancamentoMensal>) => void;
   aoEditarObservacao: (linha: number | string, novoValor: string) => Promise<void>;
+  /** Duplicar a linha para o mês seguinte (menu de botão direito). */
+  aoDuplicar?: (registro: Registro<LancamentoMensal>) => void;
 }
 
-export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao }: Props) {
+export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao, aoDuplicar }: Props) {
   const ordem = useStoreUI((s) => s.ordemLancamentos);
   const filtrosColunas = useStoreUI((s) => s.filtrosColunas);
   const alternarOrdem = useStoreUI((s) => s.alternarOrdemLancamentos);
   const alternarFiltro = useStoreUI((s) => s.alternarFiltroColuna);
   const limparFiltro = useStoreUI((s) => s.limparFiltroColuna);
+
+  const [menu, setMenu] = useState<{ x: number; y: number; registro: Registro<LancamentoMensal> } | null>(null);
+
+  // Fecha o menu de contexto clicando fora, Esc, scroll ou redimensionando a tela
+  useEffect(() => {
+    if (!menu) return;
+    const fechar = () => setMenu(null);
+    const aoClicarFora = (e: MouseEvent) => {
+      const alvo = e.target as HTMLElement | null;
+      if (alvo?.closest('[data-menu-contexto]')) return;
+      fechar();
+    };
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') fechar();
+    };
+    document.addEventListener('mousedown', aoClicarFora);
+    document.addEventListener('keydown', aoTeclar);
+    window.addEventListener('scroll', fechar, true);
+    window.addEventListener('resize', fechar);
+    return () => {
+      document.removeEventListener('mousedown', aoClicarFora);
+      document.removeEventListener('keydown', aoTeclar);
+      window.removeEventListener('scroll', fechar, true);
+      window.removeEventListener('resize', fechar);
+    };
+  }, [menu]);
+
+  // Botão direito numa linha: abre o menu onde o usuário clicou
+  // (na última parcela ("12/12") não oferece — o usuário optou por ocultar)
+  const aoAbrirMenu = useCallback((e: React.MouseEvent, registro: Registro<LancamentoMensal>) => {
+    if (ehUltimaParcela(registro.dados.OBSERVAÇÃO)) return;
+    setMenu({
+      x: Math.min(e.clientX, window.innerWidth - 296),
+      y: Math.min(e.clientY, window.innerHeight - 178),
+      registro,
+    });
+  }, []);
 
   const { colunas, larguraMinima } = useMemo(() => calcularColunas(registros), [registros]);
 
@@ -265,8 +314,9 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
       aoExcluir,
       aoEditarObservacao,
       sugestoesObservacao,
+      aoAbrirMenu,
     }),
-    [registros, colunas, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao],
+    [registros, colunas, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao, aoAbrirMenu],
   );
 
   const virtualizar = registros.length > LIMITE_VIRTUALIZACAO;
@@ -373,12 +423,44 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
                   aoEditar={aoEditar}
                   aoExcluir={aoExcluir}
                   aoEditarObservacao={aoEditarObservacao}
+                  aoAbrirMenu={aoAbrirMenu}
                 />
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* ------- menu de contexto (botão direito): duplicar p/ mês seguinte ------- */}
+      {menu && typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            data-menu-contexto
+            role="menu"
+            style={{ left: menu.x, top: menu.y }}
+            className="fixed z-50 min-w-[260px] overflow-hidden rounded-lg border border-slate-700 bg-slate-900 py-1 shadow-2xl shadow-black/60"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                const registro = menu.registro;
+                setMenu(null);
+                aoDuplicar?.(registro);
+              }}
+              className="flex w-full items-start gap-3 px-3 py-2.5 text-left text-sm text-slate-200 transition hover:bg-sky-600/15 hover:text-sky-200"
+              role="menuitem"
+            >
+              <Copy className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
+              <span className="min-w-0">
+                <span className="block font-medium">Duplicar para o mês seguinte</span>
+                <span className="mt-0.5 block text-[11px] leading-snug text-slate-500">
+                  Mesmo lançamento, DATA +1 mês; parcela “N/12” vira “N+1/12”.
+                </span>
+              </span>
+            </button>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

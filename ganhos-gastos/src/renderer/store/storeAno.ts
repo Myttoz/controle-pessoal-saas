@@ -22,7 +22,9 @@ import type {
 } from '@/types/api-types';
 import type { CachePersistido, RespostaEscrita } from '@/types/api-electron';
 import { arredondar2 } from '@/lib/formatar';
-import { SIGLAS, siglaDeAba } from '@/lib/meses';
+import { SIGLAS, siglaDeAba, nomeAbaMensal, NOMES_MESES } from '@/lib/meses';
+import { addMeses } from '@/lib/calculos';
+import { detectarParcela, observacaoAposDuplicar } from '@/lib/parcelas';
 import { msgDeErro, servicoApi } from '@/services/api';
 import { useStoreAuth } from './storeAuth';
 import { useStoreUI } from './storeUI';
@@ -65,6 +67,12 @@ export interface EstadoAno {
     dados: DadosMensais,
   ): Promise<boolean>;
   removerLancamento(ano: number, aba: string, linha: number | string): Promise<boolean>;
+  /**
+   * Duplica um lançamento do mês em foco para o mês seguinte: mesmo conteúdo;
+   * a DATA avança 1 mês (mesmo dia); a OBSERVAÇÃO tem a parcela incrementada
+   * em 1 ("7/12" → "8/12"). Na última parcela ("12/12") não duplica.
+   */
+  duplicarLancamento(ano: number, aba: string, linha: number | string): Promise<boolean>;
 
   editarSalario(ano: number, linha: number | string, dados: DadosSalario): Promise<boolean>;
 
@@ -549,6 +557,63 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
       reverter: () => restaurarMes(ano, sigla, anterior),
       mensagemSucesso: 'Registro removido.',
     });
+  },
+
+  // -------------------------------------------------------------------------
+  //  DUPLICAR para o mês seguinte (contas fixas / parceladas)
+  // -------------------------------------------------------------------------
+  duplicarLancamento: async (ano, aba, linha) => {
+    const sigla = siglaDeAba(aba);
+    const mes = get().snapshots[ano]?.meses[sigla];
+    const registro = mes?.registros.find((r) => r.linha === linha);
+    if (!registro) {
+      ui().toast('erro', 'Lançamento não encontrado.');
+      return false;
+    }
+    const d = registro.dados;
+
+    // Regra: não duplicar a última parcela ("12/12").
+    const parcela = detectarParcela(d.OBSERVAÇÃO);
+    if (parcela && parcela.atual >= parcela.total) {
+      ui().toast('info', `A observação marca a última parcela (${parcela.atual}/${parcela.total}) — não duplicado.`);
+      return false;
+    }
+
+    // Data-alvo = mês seguinte à DATA do próprio lançamento; fallback: a aba.
+    const hojeMesAba = `${ano}-${String(SIGLAS.indexOf(sigla) + 1).padStart(2, '0')}`;
+    const baseData = d.DATA && d.DATA.length >= 10 ? d.DATA : `${hojeMesAba}-01`;
+    const [a0, m0] = baseData.slice(0, 7).split('-').map(Number);
+    const mesAlvoNum = m0 === 12 ? 1 : m0 + 1;
+    const anoAlvo = m0 === 12 ? a0 + 1 : a0;
+    const siglaAlvo = SIGLAS[mesAlvoNum - 1];
+    const abaAlvo = nomeAbaMensal(mesAlvoNum, anoAlvo);
+
+    if (!get().snapshots[anoAlvo]?.meses[siglaAlvo]) {
+      ui().toast(
+        'info',
+        `${NOMES_MESES[siglaAlvo]} de ${anoAlvo} não existe ainda — crie o ano ${anoAlvo} na Gestão Anual para duplicar.`,
+      );
+      return false;
+    }
+
+    const dados: DadosMensais = {
+      CATEGORIA: d.CATEGORIA,
+      VALOR: d.VALOR,
+      DESCRIÇÃO: d.DESCRIÇÃO,
+      'FORMA DE PGTO': d['FORMA DE PGTO'],
+      TIPO: d.TIPO,
+      'QUEM PAGA': d['QUEM PAGA'],
+      OBSERVAÇÃO: observacaoAposDuplicar(d.OBSERVAÇÃO),
+      DATA: addMeses(baseData, 1) ?? '',
+    };
+
+    const ok = await get().adicionarLancamento(anoAlvo, abaAlvo, dados);
+    if (ok) {
+      // leva o usuário para onde o lançamento caiu
+      if (anoAlvo !== ano) await get().selecionarAno(anoAlvo);
+      useStoreUI.getState().setMes(siglaAlvo);
+    }
+    return ok;
   },
 
   // -------------------------------------------------------------------------

@@ -70,6 +70,7 @@ export function LancamentosPage() {
   const revalidar = useStoreAno((s) => s.revalidar);
   const removerLancamento = useStoreAno((s) => s.removerLancamento);
   const editarLancamento = useStoreAno((s) => s.editarLancamento);
+  const duplicarLancamento = useStoreAno((s) => s.duplicarLancamento);
 
   const setMes = useStoreUI((s) => s.setMes);
   const busca = useStoreUI((s) => s.busca);
@@ -319,6 +320,7 @@ export function LancamentosPage() {
           aoEditar={aoEditar}
           aoExcluir={aoExcluir}
           aoEditarObservacao={aoEditarObservacao}
+          aoDuplicar={(registro) => void duplicarLancamento(ano ?? 0, aba ?? '', registro.linha)}
         />
       )}
 
