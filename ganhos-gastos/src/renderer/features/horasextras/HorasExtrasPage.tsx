@@ -12,14 +12,16 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Check, Eye, EyeOff, Pencil, Plus, Timer, Trash2, ClipboardSignature } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, Eye, EyeOff, Pencil, Plus, Timer, Trash2, ClipboardSignature } from 'lucide-react';
 import type { RegistroHoraExtra } from '@/types/dados-locais';
 import { Botao } from '@/components/Botoes';
 import { ConfigSalario } from '@/components/ConfigSalario';
 import { EstadoVazio } from '@/components/Estados';
 import { Modal } from '@/components/Modal';
 import { formatarData, formatarMoeda, hojeISO } from '@/lib/formatar';
-import { agruparPorMes, arred, calcularHoraExtra, HORAS_MES, type TotalMes } from '@/lib/calculos';
+import { HORAS_MES, agruparPorMes, arred, calcularHoraExtra, type TotalMes } from '@/lib/calculos';
+import { EntradaHoras } from '@/components/Campos';
+import { usePedidoNovo } from '@/hooks/usePedidoNovo';
 import { useStoreAno } from '@/store/storeAno';
 import { useStoreLocal } from '@/store/storeLocal';
 import { FormHoraExtra } from './FormHoraExtra';
@@ -158,28 +160,25 @@ function LinhaPontoEletronico() {
 
   const hojeMes = hojeISO().slice(0, 7);
   const [mes, setMes] = useState(hojeMes);
-  const [horas, setHoras] = useState(() =>
-    ponto[hojeMes] != null ? String(ponto[hojeMes]).replace('.', ',') : '',
+  const [horasDigitos, setHorasDigitos] = useState(() =>
+    ponto[hojeMes] != null ? String(Math.round(ponto[hojeMes] * 100)) : '',
   );
   const [lancado, setLancado] = useState(false);
 
   // troca de mês: recarrega o valor salvo daquele mês
   const aoTrocarMes = (novoMes: string) => {
     setMes(novoMes);
-    setHoras(ponto[novoMes] != null ? String(ponto[novoMes]).replace('.', ',') : '');
+    setHorasDigitos(ponto[novoMes] != null ? String(Math.round(ponto[novoMes] * 100)) : '');
     setLancado(false);
   };
 
   const hora50 = salarioBruto > 0 ? (salarioBruto / HORAS_MES) * 1.5 : 0;
-  const horasNum = (() => {
-    const n = Number(String(horas).replace(',', '.'));
-    return Number.isFinite(n) && n >= 0 ? n : 0;
-  })();
+  const horasNum = horasDigitos === '' ? 0 : Number(horasDigitos) / 100;
   const valor = arred(horasNum * hora50);
   const salvo = ponto[mes] != null;
 
   const lancar = () => {
-    setPonto(mes, horas.trim() === '' || horasNum <= 0 ? null : horasNum);
+    setPonto(mes, horasDigitos === '' || horasNum <= 0 ? null : horasNum);
     setLancado(true);
     window.setTimeout(() => setLancado(false), 1500);
   };
@@ -210,18 +209,14 @@ function LinhaPontoEletronico() {
 
       <label className="flex items-center gap-1.5 text-xs text-slate-400">
         Horas extras
-        <input
-          type="text"
-          inputMode="decimal"
-          autoComplete="off"
-          placeholder="0,0"
-          value={horas}
-          onChange={(e) => setHoras(e.target.value)}
+        <EntradaHoras
+          value={horasDigitos}
+          onChange={setHorasDigitos}
           onBlur={lancar}
           onKeyDown={(e) => {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           }}
-          className="w-20 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-right text-sm tabular-nums text-slate-100 focus:border-sky-500 focus:outline-none"
+          className="w-20 px-2 py-1.5 text-sm !rounded-lg"
         />
         <span className="text-slate-500">h</span>
       </label>
@@ -255,7 +250,7 @@ function LinhaPontoEletronico() {
           type="button"
           onClick={() => {
             setPonto(mes, null);
-            setHoras('');
+            setHorasDigitos('');
             setLancado(false);
           }}
           title="Remover o valor salvo deste mês"
@@ -281,6 +276,9 @@ export function HorasExtrasPage() {
   const anoSelecionado = useStoreAno((s) => s.anoSelecionado);
   const [verTodos, setVerTodos] = useState(false);
 
+  // Ctrl+O → novo plantão
+  usePedidoNovo(() => setModal({ modo: 'novo' }));
+
   // Os plantões só aparecem para o ANO selecionado no topo do app —
   // assim um ano novo nasce "zerado" nesta aba. Nada é apagado:
   // use o botão "ver todos" para enxergar plantões de outros anos.
@@ -295,6 +293,8 @@ export function HorasExtrasPage() {
   const [modal, setModal] = useState<{ modo: 'novo' } | { modo: 'editar'; registro: RegistroHoraExtra } | null>(null);
   const [paraExcluir, setParaExcluir] = useState<RegistroHoraExtra | null>(null);
   const [mesFiltro, setMesFiltro] = useState<string>('');
+  /** Ordenação da coluna DATA: 'desc' = mais recente primeiro (padrão), 'asc' = mais antiga primeiro. */
+  const [ordemData, setOrdemData] = useState<'asc' | 'desc'>('desc');
 
   // cálculo memoizado por registro
   const linhas = useMemo<LinhaTabela[]>(() => {
@@ -303,8 +303,12 @@ export function HorasExtrasPage() {
         const c = calcularHoraExtra(registro, salarioBruto);
         return { registro, h100: c.horas100, h50: c.horas50, v100: arred(c.valor100), v50: arred(c.valor50), total: arred(c.total) };
       })
-      .sort((a, b) => b.registro.data.localeCompare(a.registro.data));
-  }, [doAno, salarioBruto]);
+      .sort((a, b) =>
+        ordemData === 'desc'
+          ? b.registro.data.localeCompare(a.registro.data)
+          : a.registro.data.localeCompare(b.registro.data),
+      );
+  }, [doAno, salarioBruto, ordemData]);
 
   const pontoEletronico = useMemo(
     () => dados.config.pontoEletronico ?? {},
@@ -491,7 +495,21 @@ export function HorasExtrasPage() {
             <table className="w-full min-w-[900px] text-sm">
               <thead>
                 <tr className="border-b border-slate-800 bg-slate-950/60 text-left text-[11px] uppercase tracking-wider text-slate-500">
-                  <th className="px-4 py-2.5 font-semibold">Data</th>
+                  <th className="px-4 py-2.5 font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => setOrdemData((o) => (o === 'desc' ? 'asc' : 'desc'))}
+                      title={ordemData === 'desc' ? 'Mais recentes primeiro — clique para inverter' : 'Mais antigas primeiro — clique para inverter'}
+                      className="flex items-center gap-1.5 uppercase tracking-wider transition hover:text-sky-300"
+                    >
+                      Data
+                      {ordemData === 'desc' ? (
+                        <ArrowDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ArrowUp className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  </th>
                   <th className="px-3 py-2.5 font-semibold">Período</th>
                   <th className="px-3 py-2.5 text-right font-semibold">H 100%</th>
                   <th className="px-3 py-2.5 text-right font-semibold">H 50%</th>

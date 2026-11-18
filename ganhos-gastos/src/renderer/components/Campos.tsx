@@ -75,6 +75,37 @@ export const EntradaMoeda = forwardRef<
 });
 
 /**
+ * Campo de HORAS com máscara automática (estilo EntradaMoeda, sem milhar):
+ * o usuário digita só os números; o sistema insere vírgula e 2 casas.
+ * Ex.: digitar 1234 → "12,34" · 25 → "0,25". Máx. 999,99 h/mês.
+ * O valor chega ao formulário como string de centésimos de hora.
+ */
+export const EntradaHoras = forwardRef<
+  HTMLInputElement,
+  Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type' | 'inputMode'> & {
+    value: string;
+    onChange: (valorDigitos: string) => void;
+  }
+>(function EntradaHoras({ value, onChange, placeholder, className, ...props }, ref) {
+  const digitos = String(value ?? '').replace(/\D/g, '').slice(0, 5);
+  const formatado = digitos === '' ? '' : (Number(digitos) / 100).toFixed(2).replace('.', ',');
+
+  return (
+    <input
+      ref={ref}
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      placeholder={placeholder ?? '0,00'}
+      value={formatado}
+      onChange={(e) => onChange(e.target.value.replace(/\D/g, ''))}
+      {...props}
+      className={`${CLASSES_INPUT} text-right tabular-nums ${className ?? ''}`}
+    />
+  );
+});
+
+/**
  * Campo de entrada com autocomplete (estilo Excel/Google Sheets):
  * - Enquanto o usuário digita, aparece uma lista de valores já usados (↑/↓).
  * - <Enter> seleciona a opção destacada e fecha o painel.
