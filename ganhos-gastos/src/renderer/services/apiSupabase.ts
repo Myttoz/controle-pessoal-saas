@@ -190,7 +190,30 @@ function rowToExtra(r: Record<string, unknown>): LinhaExtra {
     DESCRIÇÃO: String(r.descricao ?? ''),
     VALOR: num(r.valor) ?? 0,
     DATA: String(r.data ?? ''),
+    CLIENTE: r.cliente == null ? undefined : String(r.cliente),
+    DESPESAS_CLIENTE:
+      r.despesas_cliente == null ? undefined : num(r.despesas_cliente) ?? 0,
+    GANHOS_PECAS: r.ganhos_pecas == null ? undefined : num(r.ganhos_pecas) ?? 0,
+    GANHOS_SERVICOS: r.ganhos_servicos == null ? undefined : num(r.ganhos_servicos) ?? 0,
+    MINHAS_DESPESAS: r.minhas_despesas == null ? undefined : num(r.minhas_despesas) ?? 0,
   };
+}
+
+/**
+ * Mês (1-12) do lançamento: prefere a DATA; cai para a sigla MÊS; senão 1.
+ * (Antes os extras eram sempre salvos com mes=1, o que quebrava o FREELANCE
+ * por mês na aba Salário.)
+ */
+function mesDeExtra(dados: DadosExtra): number {
+  const data = dados.DATA ?? '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(data);
+  if (m) {
+    const mes = Number(m[2]);
+    if (mes >= 1 && mes <= 12) return mes;
+  }
+  const sigla = String(dados['MÊS'] ?? '').trim().toUpperCase().slice(0, 3);
+  const idx = MESES.findIndex((s) => s === sigla);
+  return idx >= 0 ? idx + 1 : 1;
 }
 
 function rowToHoraExtra(r: Record<string, unknown>): RegistroHoraExtra {
@@ -552,9 +575,8 @@ export function criarApiSupabase(): ApiElectron {
         salario: salRegs.length
           ? { aba: `Salário ${ano}`, registros: salRegs }
           : null,
-        extras: ext.length
-          ? { aba: `Extras ${ano}`, ganhos, gastos }
-          : null,
+        // A aba "Extras" existe para todo ano criado (pode simplesmente estar vazia)
+        extras: { aba: `Extras ${ano}`, ganhos, gastos },
         resumo: computeResumo(lanc, ano, 'CATEGORIA'),
       };
     },
@@ -679,20 +701,45 @@ export function criarApiSupabase(): ApiElectron {
         if (tabela === 'extras') {
           const ano = parseInt(payload.aba.replace(/\D/g, ''), 10);
           const dados = payload.dados as DadosExtra;
-          const { data, error } = await supabase
+          const colunaAusente = (msg: string) =>
+            /column .* does not exist|despesas_cliente|ganhos_pecas|ganhos_servicos|minhas_despesas|cliente/i.test(
+              msg,
+            );
+          const novo = {
+            user_id: uid,
+            ano,
+            mes: mesDeExtra(dados),
+            tipo: (payload as { tabela?: string }).tabela === 'gastos' ? 'gasto' : 'ganho',
+            categoria: dados.CATEGORIA ?? '',
+            descricao: dados.DESCRIÇÃO ?? '',
+            valor: num(dados.VALOR) ?? 0,
+            data: dados.DATA || null,
+            cliente: dados.CLIENTE ?? '',
+            despesas_cliente: num(dados.DESPESAS_CLIENTE) ?? 0,
+            ganhos_pecas: num(dados.GANHOS_PECAS) ?? 0,
+            ganhos_servicos: num(dados.GANHOS_SERVICOS) ?? 0,
+            minhas_despesas: num(dados.MINHAS_DESPESAS) ?? 0,
+          };
+          let { data, error } = await supabase
             .from('extras')
-            .insert({
-              user_id: uid,
-              ano,
-              mes: inteiro((dados as unknown as { mes?: number }).mes) ?? 1,
-              tipo: (payload as { tabela?: string }).tabela === 'gastos' ? 'gasto' : 'ganho',
-              categoria: dados.CATEGORIA ?? '',
-              descricao: dados.DESCRIÇÃO ?? '',
-              valor: num(dados.VALOR) ?? 0,
-              data: dados.DATA || null,
-            })
+            .insert(novo)
             .select()
             .single();
+          // Banco sem as colunas novas (migração 002 ainda não rodada):
+          // grava só os campos legados para não perder o lançamento.
+          if (error && colunaAusente(error.message)) {
+            const legado = { ...novo } as Record<string, unknown>;
+            delete legado.cliente;
+            delete legado.despesas_cliente;
+            delete legado.ganhos_pecas;
+            delete legado.ganhos_servicos;
+            delete legado.minhas_despesas;
+            ({ data, error } = await supabase
+              .from('extras')
+              .insert(legado)
+              .select()
+              .single());
+          }
           if (error) return erro(error.message);
           const reg = { linha: String(data.id), dados: rowToExtra(data as Record<string, unknown>) };
           return { sucesso: true, aba: payload.aba, linha: reg.linha, gravadas: Object.keys(dados), registro: reg.dados as unknown as LinhaExtra };
@@ -758,17 +805,42 @@ export function criarApiSupabase(): ApiElectron {
 
         if (tabela === 'extras') {
           const dados = payload.dados as DadosExtra;
-          const { data, error } = await supabase
+          const colunaAusente = (msg: string) =>
+            /column .* does not exist|despesas_cliente|ganhos_pecas|ganhos_servicos|minhas_despesas|cliente/i.test(
+              msg,
+            );
+          const atualizacao = {
+            mes: mesDeExtra(dados),
+            categoria: dados.CATEGORIA ?? '',
+            descricao: dados.DESCRIÇÃO ?? '',
+            valor: num(dados.VALOR) ?? 0,
+            data: dados.DATA || null,
+            cliente: dados.CLIENTE ?? '',
+            despesas_cliente: num(dados.DESPESAS_CLIENTE) ?? 0,
+            ganhos_pecas: num(dados.GANHOS_PECAS) ?? 0,
+            ganhos_servicos: num(dados.GANHOS_SERVICOS) ?? 0,
+            minhas_despesas: num(dados.MINHAS_DESPESAS) ?? 0,
+          };
+          let { data, error } = await supabase
             .from('extras')
-            .update({
-              categoria: dados.CATEGORIA ?? '',
-              descricao: dados.DESCRIÇÃO ?? '',
-              valor: num(dados.VALOR) ?? 0,
-              data: dados.DATA || null,
-            })
+            .update(atualizacao)
             .eq('id', payload.linha)
             .select()
             .single();
+          if (error && colunaAusente(error.message)) {
+            const legado = { ...atualizacao } as Record<string, unknown>;
+            delete legado.cliente;
+            delete legado.despesas_cliente;
+            delete legado.ganhos_pecas;
+            delete legado.ganhos_servicos;
+            delete legado.minhas_despesas;
+            ({ data, error } = await supabase
+              .from('extras')
+              .update(legado)
+              .eq('id', payload.linha)
+              .select()
+              .single());
+          }
           if (error) return erro(error.message);
           const reg = { linha: String(data.id), dados: rowToExtra(data as Record<string, unknown>) };
           return { sucesso: true, aba: payload.aba, linha: reg.linha, alteradas: Object.keys(dados), registro: reg.dados as unknown as LinhaExtra };
