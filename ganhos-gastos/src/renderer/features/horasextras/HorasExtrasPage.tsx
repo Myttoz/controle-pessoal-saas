@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Pencil, Plus, Timer, Trash2, ClipboardSignature } from 'lucide-react';
+import { Check, Eye, EyeOff, Pencil, Plus, Timer, Trash2, ClipboardSignature } from 'lucide-react';
 import type { RegistroHoraExtra } from '@/types/dados-locais';
 import { Botao } from '@/components/Botoes';
 import { ConfigSalario } from '@/components/ConfigSalario';
@@ -48,12 +48,109 @@ const MESES_CURTO = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 
+/** Valor em R$ das horas extras (a 50%) do ponto eletrônico. */
+function valorPonto(horas: number, salarioBruto: number): number {
+  if (salarioBruto <= 0) return 0;
+  return arred(horas * (salarioBruto / HORAS_MES) * 1.5);
+}
+
+/** "2026-11" → "Novembro 2026" */
+function rotuloMes(chave: string): string {
+  const [ano, m] = chave.split('-');
+  const idx = Number(m) - 1;
+  return `${MESES_CURTO[idx] ?? m} ${ano}`;
+}
+
 /**
  * LINHA "PONTO ELETRÔNICO" — primeira linha, logo acima da tabela.
  * O usuário informa o mês e o total de horas extras do ponto (a 50%),
  * digitado manualmente; o valor em R$ é calculado na hora e entra no
  * gráfico de ganhos por mês.
  */
+/**
+ * Tabela "Lançamentos do ponto eletrônico" — listagem mês a mês do que foi
+ * lançado manualmente (sempre a 50%). Fica logo abaixo da linha de lançamento.
+ */
+function TabelaPontoEletronico({
+  ano,
+  verTodos,
+  salarioBruto,
+}: {
+  ano: number | null;
+  verTodos: boolean;
+  salarioBruto: number;
+}) {
+  const ponto = useStoreLocal((s) => s.dados.config.pontoEletronico ?? {});
+  const setPonto = useStoreLocal((s) => s.setPontoEletronico);
+
+  const entradas = useMemo(
+    () =>
+      Object.entries(ponto)
+        .filter(([chave]) => verTodos || ano == null || chave.startsWith(String(ano)))
+        .sort((a, b) => b[0].localeCompare(a[0])),
+    [ponto, ano, verTodos],
+  );
+
+  if (entradas.length === 0) return null;
+
+  const totalHoras = entradas.reduce((s, [, h]) => s + (Number(h) || 0), 0);
+  const totalValor = entradas.reduce((s, [, h]) => s + valorPonto(Number(h) || 0, salarioBruto), 0);
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-950/60 px-4 py-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+          Lançamentos do ponto eletrônico
+        </p>
+        <p className="text-[11px] tabular-nums text-sky-300">
+          {totalHoras.toFixed(2).replace('.', ',')} h · {formatarMoeda(totalValor)}
+        </p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[480px] text-sm">
+          <thead>
+            <tr className="border-b border-slate-800 text-left text-[11px] uppercase tracking-wider text-slate-500">
+              <th className="px-4 py-2.5 font-semibold">Mês</th>
+              <th className="px-4 py-2.5 text-right font-semibold">Horas</th>
+              <th className="px-4 py-2.5 text-right font-semibold">Valor (50%)</th>
+              <th className="px-4 py-2.5 text-right font-semibold">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entradas.map(([chave, horas]) => (
+              <tr
+                key={chave}
+                className="border-b border-slate-800/70 transition hover:bg-slate-800/25"
+              >
+                <td className="px-4 py-2.5 font-medium text-slate-300">{rotuloMes(chave)}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums text-slate-300">
+                  {Number(horas).toFixed(2).replace('.', ',')} h
+                </td>
+                <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-sky-300">
+                  {formatarMoeda(valorPonto(Number(horas) || 0, salarioBruto))}
+                </td>
+                <td className="px-4 py-2.5">
+                  <div className="flex items-center justify-end">
+                    <button
+                      type="button"
+                      title="Remover este lançamento"
+                      aria-label="Remover lançamento do ponto eletrônico"
+                      onClick={() => setPonto(chave, null)}
+                      className="rounded-md p-1.5 text-slate-400 transition hover:bg-rose-900/50 hover:text-rose-300"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function LinhaPontoEletronico() {
   const ponto = useStoreLocal((s) => s.dados.config.pontoEletronico ?? {});
   const setPonto = useStoreLocal((s) => s.setPontoEletronico);
@@ -64,11 +161,13 @@ function LinhaPontoEletronico() {
   const [horas, setHoras] = useState(() =>
     ponto[hojeMes] != null ? String(ponto[hojeMes]).replace('.', ',') : '',
   );
+  const [lancado, setLancado] = useState(false);
 
   // troca de mês: recarrega o valor salvo daquele mês
   const aoTrocarMes = (novoMes: string) => {
     setMes(novoMes);
     setHoras(ponto[novoMes] != null ? String(ponto[novoMes]).replace('.', ',') : '');
+    setLancado(false);
   };
 
   const hora50 = salarioBruto > 0 ? (salarioBruto / HORAS_MES) * 1.5 : 0;
@@ -79,8 +178,10 @@ function LinhaPontoEletronico() {
   const valor = arred(horasNum * hora50);
   const salvo = ponto[mes] != null;
 
-  const commit = () => {
+  const lancar = () => {
     setPonto(mes, horas.trim() === '' || horasNum <= 0 ? null : horasNum);
+    setLancado(true);
+    window.setTimeout(() => setLancado(false), 1500);
   };
 
   return (
@@ -116,7 +217,7 @@ function LinhaPontoEletronico() {
           placeholder="0,0"
           value={horas}
           onChange={(e) => setHoras(e.target.value)}
-          onBlur={commit}
+          onBlur={lancar}
           onKeyDown={(e) => {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           }}
@@ -135,12 +236,27 @@ function LinhaPontoEletronico() {
         </span>
       </span>
 
+      <button
+        type="button"
+        onClick={lancar}
+        title={lancado ? 'Lançado!' : 'Salvar o valor deste mês'}
+        className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+          lancado
+            ? 'bg-emerald-600/80 text-white'
+            : 'bg-sky-600 text-white hover:bg-sky-500'
+        }`}
+      >
+        {lancado ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+        {lancado ? 'Lançado' : 'Lançar'}
+      </button>
+
       {salvo && (
         <button
           type="button"
           onClick={() => {
             setPonto(mes, null);
             setHoras('');
+            setLancado(false);
           }}
           title="Remover o valor salvo deste mês"
           aria-label="Remover o ponto eletrônico deste mês"
@@ -163,16 +279,17 @@ export function HorasExtrasPage() {
   const salarioBruto = dados.config.salarioBruto;
   const remover = useStoreLocal((s) => s.removerHoraExtra);
   const anoSelecionado = useStoreAno((s) => s.anoSelecionado);
+  const [verTodos, setVerTodos] = useState(false);
 
   // Os plantões só aparecem para o ANO selecionado no topo do app —
-  // assim um ano novo nasce "zerado" nesta aba (nada é apagado:
-  // os plantões de outros anos continuam salvos e reaparecem ao trocar de ano).
+  // assim um ano novo nasce "zerado" nesta aba. Nada é apagado:
+  // use o botão "ver todos" para enxergar plantões de outros anos.
   const doAno = useMemo(
     () =>
-      anoSelecionado
+      anoSelecionado && !verTodos
         ? dados.horasExtras.filter((r) => r.data.startsWith(String(anoSelecionado)))
         : dados.horasExtras,
-    [dados.horasExtras, anoSelecionado],
+    [dados.horasExtras, anoSelecionado, verTodos],
   );
 
   const [modal, setModal] = useState<{ modo: 'novo' } | { modo: 'editar'; registro: RegistroHoraExtra } | null>(null);
@@ -314,12 +431,19 @@ export function HorasExtrasPage() {
         <div className="flex flex-wrap items-center gap-2">
           <label className="text-xs text-slate-400">Mês:</label>
           {anoSelecionado && (
-            <span
-              className="rounded-md bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-400"
-              title="Os plantões exibidos são apenas os do ano selecionado no topo do app."
+            <button
+              type="button"
+              onClick={() => setVerTodos((v) => !v)}
+              title={
+                verTodos
+                  ? `Voltar a mostrar apenas o ano ${anoSelecionado}`
+                  : 'Mostrar plantões e lançamentos de todos os anos'
+              }
+              className="flex items-center gap-1.5 rounded-md bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-400 transition hover:bg-slate-700 hover:text-slate-200"
             >
-              Ano {anoSelecionado}
-            </span>
+              {verTodos ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              {verTodos ? 'Todos os anos' : `Ano ${anoSelecionado}`}
+            </button>
           )}
           <select
             value={mesFiltro}
@@ -341,6 +465,7 @@ export function HorasExtrasPage() {
 
       {/* ------- ponto eletrônico: primeira linha, acima da tabela ------- */}
       <LinhaPontoEletronico />
+      <TabelaPontoEletronico ano={anoSelecionado} verTodos={verTodos} salarioBruto={salarioBruto} />
 
       {/* ------- lista ------- */}
       {visiveis.length === 0 ? (

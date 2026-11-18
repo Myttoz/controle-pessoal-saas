@@ -6,6 +6,7 @@ import { Modal } from '@/components/Modal';
 import { formatarMoeda, hojeISO } from '@/lib/formatar';
 import { calcularHoraExtra } from '@/lib/calculos';
 import { useStoreLocal } from '@/store/storeLocal';
+import { useStoreAno } from '@/store/storeAno';
 
 interface Estado {
   data: string;
@@ -46,7 +47,17 @@ interface Props {
 }
 
 export function FormHoraExtra({ registro, aoFechar }: Props) {
-  const [estado, setEstado] = useState<Estado>(() => paraEstado(registro));
+  const anoSelecionado = useStoreAno((s) => s.anoSelecionado);
+
+  // data padrão: hoje se for do ano selecionado; senão, 1º de janeiro do ano
+  // em foco (evita "plantão salvo mas invisível" por causa do filtro de ano)
+  const [estado, setEstado] = useState<Estado>(() => {
+    const base = paraEstado(registro);
+    if (!registro && anoSelecionado && !base.data.startsWith(String(anoSelecionado))) {
+      return { ...base, data: `${anoSelecionado}-01-01` };
+    }
+    return base;
+  });
   const [erros, setErros] = useState<Partial<Record<keyof Estado, string>>>({});
   const [enviando, setEnviando] = useState(false);
 
