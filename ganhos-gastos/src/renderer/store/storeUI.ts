@@ -74,10 +74,13 @@ interface EstadoUI {
   modalLancamento: ModalLancamento | null;
   /** Contador para sinalizar "focar a busca" vindo dos atalhos globais. */
   focoBusca: number;
+  /** Contador para sinalizar "novo registro" vindo do atalho Ctrl+O. */
+  pedidoNovo: number;
   toasts: ToastUI[];
 
   irPara(pagina: Pagina): void;
   setMes(mes: SiglaMes): void;
+  pedirNovo(): void;
   setBusca(busca: string): void;
   setFiltro(campo: keyof Filtros, valor: string): void;
   limparFiltros(): void;
@@ -106,6 +109,7 @@ export const useStoreUI = create<EstadoUI>((set, get) => ({
   abaExtras: 'ganhos',
   modalLancamento: null,
   focoBusca: 0,
+  pedidoNovo: 0,
   toasts: [],
 
   irPara: (pagina) => set({ pagina }),
@@ -155,6 +159,7 @@ export const useStoreUI = create<EstadoUI>((set, get) => ({
   fecharModalLancamento: () => set({ modalLancamento: null }),
 
   solicitarFocoBusca: () => set({ focoBusca: get().focoBusca + 1 }),
+  pedirNovo: () => set({ pedidoNovo: get().pedidoNovo + 1 }),
 
   toast: (tipo, texto) => {
     const id = proximoIdToast++;

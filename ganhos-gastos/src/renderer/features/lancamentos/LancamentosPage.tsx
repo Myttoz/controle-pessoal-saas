@@ -12,6 +12,7 @@ import { sugestoesDescricoes, sugestoesObservacoes } from '@/lib/sugestoes';
 import { calcularResumo, gastosProximoMes } from '@/lib/resumo';
 import { resumirDivisao } from '@/lib/divisao';
 import { useRegistrosFiltrados } from '@/hooks/useRegistrosFiltrados';
+import { usePedidoNovo } from '@/hooks/usePedidoNovo';
 import { useOpcoes } from '@/hooks/useOpcoes';
 import { useStoreAno } from '@/store/storeAno';
 import { useStoreLocal } from '@/store/storeLocal';
@@ -80,6 +81,15 @@ export function LancamentosPage() {
   const fecharModal = useStoreUI((s) => s.fecharModalLancamento);
   const abrirNovo = useStoreUI((s) => s.abrirNovoLancamento);
   const focoBusca = useStoreUI((s) => s.focoBusca);
+
+  // Ctrl+O → novo lançamento (global por setor)
+  usePedidoNovo(() => {
+    if (!aba) {
+      useStoreUI.getState().toast('info', `Não existe a aba do mês ${mes} no ano selecionado.`);
+      return;
+    }
+    abrirNovo();
+  });
 
   const buscaRef = useRef<HTMLInputElement>(null);
   useEffect(() => {

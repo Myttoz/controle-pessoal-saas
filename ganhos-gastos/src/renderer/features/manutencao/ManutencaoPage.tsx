@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Car, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { RegistroManutencao } from '@/types/dados-locais';
+import { usePedidoNovo } from '@/hooks/usePedidoNovo';
 import { Botao } from '@/components/Botoes';
 import { Campo, Entrada } from '@/components/Campos';
 import { EstadoVazio } from '@/components/Estados';
@@ -73,6 +74,9 @@ export function ManutencaoPage() {
   const remover = useStoreLocal((s) => s.removerManutencao);
 
   const [modal, setModal] = useState<{ modo: 'novo' } | { modo: 'editar'; registro: RegistroManutencao } | null>(null);
+
+  // Ctrl+O → nova manutenção
+  usePedidoNovo(() => setModal({ modo: 'novo' }));
   const [paraExcluir, setParaExcluir] = useState<RegistroManutencao | null>(null);
 
   const [kmTexto, setKmTexto] = useState(kmAtual ? String(kmAtual) : '');

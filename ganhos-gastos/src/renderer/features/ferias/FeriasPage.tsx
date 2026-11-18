@@ -9,6 +9,7 @@ import { formatarMoeda, hojeISO } from '@/lib/formatar';
 import { arred, calcularFerias, saldoPeriodo } from '@/lib/calculos';
 import { useStoreLocal } from '@/store/storeLocal';
 import { FormFerias } from './FormFerias';
+import { usePedidoNovo } from '@/hooks/usePedidoNovo';
 
 function br(iso: string): string {
   const p = iso.split('-');
@@ -22,6 +23,9 @@ export function FeriasPage() {
 
   const [modal, setModal] = useState<{ modo: 'novo' } | { modo: 'editar'; registro: RegistroFerias } | null>(null);
   const [paraExcluir, setParaExcluir] = useState<RegistroFerias | null>(null);
+
+  // Ctrl+O → nova retirada de férias
+  usePedidoNovo(() => setModal({ modo: 'novo' }));
 
   const linhas = useMemo(() => {
     return dados.ferias

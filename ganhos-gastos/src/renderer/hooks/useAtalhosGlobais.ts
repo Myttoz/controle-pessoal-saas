@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useStoreAno } from '@/store/storeAno';
 import { useStoreUI } from '@/store/storeUI';
 
 function irParaLancamentosEPedirFoco(): void {
@@ -8,24 +7,9 @@ function irParaLancamentosEPedirFoco(): void {
   ui.solicitarFocoBusca();
 }
 
-function podeAbrirNovoLancamento(): boolean {
-  const ui = useStoreUI.getState();
-  const estado = useStoreAno.getState();
-  const ano = estado.anoSelecionado;
-  const snapshot = ano != null ? estado.snapshots[ano] : undefined;
-  const mes = snapshot?.meses[ui.mes];
-  if (!mes) {
-    ui.toast('info', `Não existe a aba do mês ${ui.mes} no ano selecionado.`);
-    return false;
-  }
-  ui.irPara('lancamentos');
-  ui.abrirNovoLancamento();
-  return true;
-}
-
 /**
  * Atalhos globais:
- *  Ctrl/Cmd + O  → novo lançamento
+ *  Ctrl/Cmd + O  → novo registro no setor atual
  *  Ctrl/Cmd + F  → busca de lançamentos
  *  /             → busca (quando não está digitando)
  *  Esc           → fecha modal
@@ -46,7 +30,7 @@ export function useAtalhosGlobais(): void {
 
       if (ctrl && tecla === 'o') {
         evento.preventDefault();
-        podeAbrirNovoLancamento();
+        useStoreUI.getState().pedirNovo();
       } else if (ctrl && tecla === 'f') {
         evento.preventDefault();
         irParaLancamentosEPedirFoco();

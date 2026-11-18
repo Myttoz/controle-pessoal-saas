@@ -4,6 +4,7 @@ import { AreaErro, Carregando, EstadoVazio } from '@/components/Estados';
 import { Botao } from '@/components/Botoes';
 import { Campo, Entrada } from '@/components/Campos';
 import { Modal } from '@/components/Modal';
+import { usePedidoNovo } from '@/hooks/usePedidoNovo';
 import { useStoreAno } from '@/store/storeAno';
 import { useStoreUI } from '@/store/storeUI';
 
@@ -23,6 +24,11 @@ export function AnosPage() {
 
   const maiorAno = anos.length > 0 ? Math.max(...anos) : new Date().getFullYear();
   const proximoAno = maiorAno + 1;
+
+  // Ctrl+O → foca o campo "Criar novo ano"
+  usePedidoNovo(() => {
+    document.getElementById('novo-ano-input')?.focus();
+  });
 
   const [novoAno, setNovoAno] = useState('');
   const [criando, setCriando] = useState(false);
@@ -109,6 +115,8 @@ export function AnosPage() {
               }}
               placeholder={String(proximoAno)}
               inputMode="numeric"
+              id="novo-ano-input"
+              autoComplete="off"
             />
           </Campo>
           <Botao

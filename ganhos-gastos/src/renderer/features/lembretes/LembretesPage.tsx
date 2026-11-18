@@ -24,6 +24,7 @@ import { Modal } from '@/components/Modal';
 import { formatarData, hojeISO } from '@/lib/formatar';
 import { linkGoogleAgenda } from '@/lib/google-agenda';
 import { useStoreLembretes } from '@/store/storeLembretes';
+import { usePedidoNovo } from '@/hooks/usePedidoNovo';
 
 type FiltroStatus = 'TODOS' | StatusLembrete;
 
@@ -69,6 +70,9 @@ export function LembretesPage() {
   useEffect(() => {
     void carregar();
   }, [carregar]);
+
+  // Ctrl+O → novo lembrete
+  usePedidoNovo(() => abrirNovo());
 
   const listaFiltrada = useMemo(() => {
     if (filtro === 'TODOS') return lembretes;
