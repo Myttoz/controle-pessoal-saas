@@ -16,6 +16,8 @@ export function Modal({ aberto, titulo, aoFechar, children, rodape, largura = 'm
     if (!aberto) return;
     function aoTeclar(e: KeyboardEvent) {
       if (e.key === 'Escape') {
+        // Painel de sugestões aberto? Esc fecha o painel, não o modal.
+        if (document.body?.dataset.sugestoesAbertas === 'true') return;
         e.stopPropagation();
         aoFechar();
       }

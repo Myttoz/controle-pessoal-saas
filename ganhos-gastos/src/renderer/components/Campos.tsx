@@ -76,8 +76,11 @@ export const EntradaMoeda = forwardRef<
 
 /**
  * Campo de entrada com autocomplete (estilo Excel/Google Sheets):
- * - Enquanto o usuário digita, aparece uma lista de valores já usados.
- * - Pressionar <Tab> ou clicar na opção completa o valor.
+ * - Enquanto o usuário digita, aparece uma lista de valores já usados (↑/↓).
+ * - <Enter> seleciona a opção destacada e fecha o painel.
+ * - <Tab> NUNCA seleciona nem ciclca opções — apenas move o foco entre os campos
+ *   do lançamento (comportamento natural de tabulação).
+ * - <Escape> fecha SÓ o painel de sugestões (nunca o lançamento/modal).
  * - Primeira letra toda maiúscula automaticamente (se `primeiraMaiuscula`).
  */
 export const EntradaSugestoes = forwardRef<
@@ -136,6 +139,18 @@ export const EntradaSugestoes = forwardRef<
     setIndiceAtivo(-1);
   }, [termo, sugestoes]);
 
+  const painelAberto = foco && filtradas.length > 0;
+
+  // Sinaliza no <body> que há um painel de sugestões aberto — o Modal
+  // ignora o Esc nesse caso (Esc fecha SÓ o painel, nunca o lançamento).
+  useEffect(() => {
+    if (painelAberto) document.body.dataset.sugestoesAbertas = 'true';
+    else delete document.body.dataset.sugestoesAbertas;
+    return () => {
+      delete document.body.dataset.sugestoesAbertas;
+    };
+  }, [painelAberto]);
+
   // Mantém o item destacado visível na lista.
   useEffect(() => {
     const el = listaRef.current?.querySelector('[data-active="true"]');
@@ -149,26 +164,49 @@ export const EntradaSugestoes = forwardRef<
   };
 
   const aoTeclar = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (!foco) setFoco(true);
-    if (e.key === 'Tab' && !e.shiftKey) {
-      const alvo = filtradas[indiceAtivo] ?? filtradas[0];
-      if (alvo) {
+    if (e.key === 'Escape') {
+      // fecha SÓ o painel de sugestões
+      if (painelAberto) {
         e.preventDefault();
-        selecionar(alvo);
+        e.stopPropagation();
+        setIndiceAtivo(-1);
+        setFoco(false);
       }
-    } else if (e.key === 'Escape') {
+      return;
+    }
+
+    if (e.key === 'Tab') {
+      // Tab nunca escolhe sugestão: apenas navega o foco entre os campos
+      setIndiceAtivo(-1);
       setFoco(false);
-    } else if (e.key === 'ArrowDown') {
+      // sem preventDefault → o foco segue para o próximo campo normalmente
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setIndiceAtivo((atual) => Math.min(atual + 1, filtradas.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setIndiceAtivo((atual) => Math.max(atual - 1, 0));
-    } else if (e.key === 'Enter') {
-      if (indiceAtivo >= 0 && filtradas[indiceAtivo]) {
-        e.preventDefault();
-        selecionar(filtradas[indiceAtivo]);
+      if (!painelAberto) {
+        setFoco(true);
+        return;
       }
+      setIndiceAtivo((atual) => Math.min(atual + 1, filtradas.length - 1));
+      return;
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!painelAberto) return;
+      setIndiceAtivo((atual) => Math.max(atual - 1, 0));
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      if (!painelAberto) return; // painel fechado → Enter segue o fluxo do formulário
+      e.preventDefault();
+      e.stopPropagation();
+      // sem nada destacado, seleciona a primeira opção da lista
+      const indice = indiceAtivo >= 0 && filtradas[indiceAtivo] ? indiceAtivo : 0;
+      selecionar(filtradas[indice]);
     }
   };
 
