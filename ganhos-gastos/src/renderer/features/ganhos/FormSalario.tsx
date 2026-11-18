@@ -3,14 +3,17 @@ import type { DadosSalario, LinhaSalario, Registro } from '@/types/api-types';
 import { Botao } from '@/components/Botoes';
 import { Campo, Entrada, EntradaMoeda } from '@/components/Campos';
 import { Modal } from '@/components/Modal';
+import { formatarMoeda } from '@/lib/formatar';
+import { SIGLAS } from '@/lib/meses';
+import { horaExtraPorMes } from '@/lib/calculos';
 import { useStoreAno } from '@/store/storeAno';
+import { useStoreLocal } from '@/store/storeLocal';
 
 type CamposNumericos =
   | 'SALÁRIO BASE'
   | '13º'
   | 'FÉRIAS'
   | 'AJUDA CUSTO (info)'
-  | 'HORA EXTRA (info)'
   | 'OUTROS'
   | 'TICKET';
 
@@ -21,12 +24,6 @@ const CAMPOS: { campo: CamposNumericos; rotulo: string; informativo?: boolean; d
   {
     campo: 'AJUDA CUSTO (info)',
     rotulo: 'Ajuda custo (info)',
-    informativo: true,
-    dica: 'Coluna informativa — não entra no cálculo do salário',
-  },
-  {
-    campo: 'HORA EXTRA (info)',
-    rotulo: 'Hora extra (info)',
     informativo: true,
     dica: 'Coluna informativa — não entra no cálculo do salário',
   },
@@ -67,6 +64,17 @@ export function FormSalario({
 
   const editarSalario = useStoreAno((s) => s.editarSalario);
   const ano = useStoreAno((s) => s.anoSelecionado);
+
+  // HORA EXTRA (info): calculada ao vivo — soma dos plantões + ponto
+  // eletrônico do mês. Só leitura, nada é gravado em salarios.hora_extra.
+  const horasExtras = useStoreLocal((s) => s.dados.horasExtras);
+  const pontoEletronico = useStoreLocal((s) => s.dados.config.pontoEletronico);
+  const salarioBruto = useStoreLocal((s) => s.dados.config.salarioBruto);
+  const horaExtra = (() => {
+    if (ano == null) return 0;
+    const idx = SIGLAS.indexOf(registro.dados['MÊS']);
+    return idx >= 0 ? horaExtraPorMes(ano, horasExtras, pontoEletronico, salarioBruto).get(idx + 1) ?? 0 : 0;
+  })();
 
   const enviar = async () => {
     const dados: DadosSalario = {};
@@ -125,6 +133,19 @@ export function FormSalario({
           </Campo>
         ))}
 
+        <Campo
+          rotulo="Hora extra (info)"
+          dica="Calculada automaticamente: plantões do mês + ponto eletrônico (sempre a 50%). Não entra no cálculo do salário."
+        >
+          <input
+            type="text"
+            readOnly
+            disabled
+            value={formatarMoeda(horaExtra)}
+            className="block w-full cursor-not-allowed rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2.5 text-right text-sm tabular-nums text-slate-500 outline-none"
+          />
+        </Campo>
+
         <Campo rotulo="Observação" className="sm:col-span-2">
           <Entrada
             value={observacao}
@@ -137,9 +158,10 @@ export function FormSalario({
       {erros && <p className="mt-3 text-sm text-rose-400">{erros}</p>}
 
       <p className="mt-4 rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2 text-xs text-slate-500">
-        O <strong>TICKET</strong> é informativo: entra aqui apenas como registro e{' '}
-        <strong>não participa do TOTAL SALÁRIO nem do TOTAL GANHOS</strong> (recalculados pelo app).
-        A coluna <strong>FREELANCE</strong> vem calculada da planilha e também não é editada.
+        O <strong>TICKET</strong> e a <strong>HORA EXTRA (info)</strong> são informativos: a hora
+        extra é calculada automaticamente (plantões + ponto eletrônico do mês, sempre a 50%) e não
+        entra no TOTAL SALÁRIO nem no TOTAL GANHOS. A coluna <strong>FREELANCE</strong> vem dos
+        Serviços lançados na aba <strong>Extras</strong> (mesmo mês) e também não é editada.
       </p>
     </Modal>
   );

@@ -4,9 +4,11 @@ import { Banknote, Pencil, Wallet } from 'lucide-react';
 import type { LinhaSalario, Registro } from '@/types/api-types';
 import { AreaErro, Carregando, EstadoVazio } from '@/components/Estados';
 import { arredondar2, formatarMoeda } from '@/lib/formatar';
-import { NOMES_MESES } from '@/lib/meses';
+import { NOMES_MESES, SIGLAS } from '@/lib/meses';
+import { horaExtraPorMes } from '@/lib/calculos';
 import { useSnapshot } from '@/hooks/useRegistrosFiltrados';
 import { useStoreAno } from '@/store/storeAno';
+import { useStoreLocal } from '@/store/storeLocal';
 import { ExtrasArea } from './ExtrasArea';
 import { FormSalario } from './FormSalario';
 
@@ -32,7 +34,8 @@ function Num({
   );
 }
 
-const DICA_CALCULADA = 'Coluna calculada pela planilha — não editável';
+const DICA_CALCULADA = 'Calculado automaticamente pelos Serviços (aba Extras) — não editável';
+const DICA_HORA_AUTO = 'Calculado pelos plantões + ponto eletrônico do mês (sempre a 50%)';
 const DICA_INFORMATIVA = 'Coluna informativa — não entra no cálculo do salário';
 const DICA_TOTAL_APP = 'Recalculado pelo app — o TICKET (informativo) não entra';
 
@@ -63,11 +66,30 @@ export function GanhosPage() {
   const erro = useStoreAno((s) => s.erro);
   const revalidar = useStoreAno((s) => s.revalidar);
 
+  // dados locais para a HORA EXTRA (info) ao vivo:
+  // soma dos plantões do mês + ponto eletrônico do mês
+  const horasExtras = useStoreLocal((s) => s.dados.horasExtras);
+  const pontoEletronico = useStoreLocal((s) => s.dados.config.pontoEletronico);
+  const salarioBruto = useStoreLocal((s) => s.dados.config.salarioBruto);
+
   const [abaInterna, setAbaInterna] = useState<AbaInterna>('salario');
   const [paraEditar, setParaEditar] = useState<Registro<LinhaSalario> | null>(null);
 
   const salario = snapshot?.salario ?? null;
   const registros = salario?.registros ?? [];
+
+  const horaExtraMes = useMemo(
+    () =>
+      snapshot
+        ? horaExtraPorMes(snapshot.ano, horasExtras, pontoEletronico, salarioBruto)
+        : new Map<number, number>(),
+    [snapshot, horasExtras, pontoEletronico, salarioBruto],
+  );
+
+  const horaExtraDe = (mes: string): number => {
+    const idx = SIGLAS.indexOf(mes as (typeof SIGLAS)[number]);
+    return idx >= 0 ? horaExtraMes.get(idx + 1) ?? 0 : 0;
+  };
 
   const totais = useMemo(() => {
     const soma = (campo: keyof (typeof registros)[number]['dados']) =>
@@ -83,7 +105,7 @@ export function GanhosPage() {
       decimo: soma('13º'),
       ferias: soma('FÉRIAS'),
       ajuda: soma('AJUDA CUSTO (info)'),
-      hora: soma('HORA EXTRA (info)'),
+      hora: arredondar2([...horaExtraMes.values()].reduce((acc, v) => acc + v, 0)),
       outros: soma('OUTROS'),
       ticket: soma('TICKET'),
       freelance: soma('FREELANCE'),
@@ -91,7 +113,7 @@ export function GanhosPage() {
       totalSalario: arredondar2(registros.reduce((acc, r) => acc + totalSalarioDe(r.dados), 0)),
       totalGanhos: arredondar2(registros.reduce((acc, r) => acc + totalGanhosDe(r.dados), 0)),
     };
-  }, [registros]);
+  }, [registros, horaExtraMes]);
 
   if (!snapshot) {
     if (carregando) return <Carregando />;
@@ -187,7 +209,7 @@ export function GanhosPage() {
                       <td className="px-3 py-2.5 text-right tabular-nums"><Num valor={d['13º']} /></td>
                       <td className="px-3 py-2.5 text-right tabular-nums"><Num valor={d['FÉRIAS']} /></td>
                       <td className="px-3 py-2.5 text-right tabular-nums"><Num valor={d['AJUDA CUSTO (info)']} dica={DICA_INFORMATIVA} /></td>
-                      <td className="px-3 py-2.5 text-right tabular-nums"><Num valor={d['HORA EXTRA (info)']} dica={DICA_INFORMATIVA} /></td>
+                      <td className="px-3 py-2.5 text-right tabular-nums"><Num valor={horaExtraDe(d['MÊS'])} dica={DICA_HORA_AUTO} /></td>
                       <td className="px-3 py-2.5 text-right tabular-nums"><Num valor={d['OUTROS']} /></td>
                       <td className="px-3 py-2.5 text-right tabular-nums"><Num valor={d['TICKET']} dica={DICA_INFORMATIVA} /></td>
                       <td className="px-3 py-2.5 text-right tabular-nums"><Num valor={d['FREELANCE']} dica={DICA_CALCULADA} /></td>
@@ -233,7 +255,9 @@ export function GanhosPage() {
           <p className="border-t border-slate-800 px-4 py-2.5 text-xs text-slate-600">
             * <strong>TOTAL SALÁRIO</strong> e <strong>TOTAL GANHOS</strong> são recalculados pelo
             app: o <strong>TICKET</strong> é informativo e não entra na conta (assim como a ajuda de
-            custo e a hora extra). <strong>FREELANCE</strong> vem calculado da planilha.
+            custo e a hora extra). <strong>FREELANCE</strong> vem dos Serviços lançados na aba{' '}
+            <strong>Extras</strong> (mesmo mês). <strong>HORA EXTRA</strong> vem da soma dos
+            plantões e do ponto eletrônico do mês — tudo automático.
           </p>
         </div>
       )}

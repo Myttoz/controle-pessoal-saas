@@ -347,3 +347,41 @@ export function agruparPorMes<T>(
 export function arred(v: number): number {
   return Math.round((Number(v) || 0) * 100) / 100;
 }
+
+// ---------------------------------------------------------------------------
+//  HORA EXTRA POR MÊS (plantões + ponto eletrônico)
+//  Usada pela aba Salário (HORA EXTRA info, somente leitura) e pela aba
+//  Horas Extras (gráfico). Soma SEMPRE:
+//    ganho dos plantões do mês (100% + 50%)  +  ganho do ponto eletrônico
+//    do mês (horas × hora 50%).
+// ---------------------------------------------------------------------------
+export function horaExtraPorMes(
+  ano: number,
+  registros: { data: string; chegada: string; almocoInicio: string; almocoFim: string; saidaEmpresa: string; fimPlantao?: string }[],
+  pontoEletronico: Record<string, number> | undefined,
+  salarioBruto: number,
+): Map<number, number> {
+  const mapa = new Map<number, number>();
+  const hora50 = salarioBruto > 0 ? (salarioBruto / HORAS_MES) * 1.5 : 0;
+
+  for (const r of registros) {
+    const iso = r?.data ?? '';
+    if (!iso.startsWith(String(ano))) continue;
+    const m = Number(iso.slice(5, 7));
+    if (!m || m < 1 || m > 12) continue;
+    const c = calcularHoraExtra({ ...r, fimPlantao: r.fimPlantao ?? '' }, salarioBruto);
+    mapa.set(m, arred((mapa.get(m) ?? 0) + c.total));
+  }
+
+  if (hora50 > 0 && pontoEletronico) {
+    for (const [chave, horas] of Object.entries(pontoEletronico)) {
+      if (!chave.startsWith(String(ano))) continue;
+      const hrs = Number(horas);
+      if (!Number.isFinite(hrs) || hrs <= 0) continue;
+      const m = Number(chave.slice(5, 7));
+      if (!m || m < 1 || m > 12) continue;
+      mapa.set(m, arred((mapa.get(m) ?? 0) + hrs * hora50));
+    }
+  }
+  return mapa;
+}
