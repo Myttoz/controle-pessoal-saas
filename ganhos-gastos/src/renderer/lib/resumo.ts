@@ -9,7 +9,7 @@
  * Salário vem do snapshot (aba Ganhos), igual às outras áreas.
  */
 import type { LinhaSalario, Registro, SiglaMes, SnapshotAno } from '@/types/api-types';
-import type { ConfigLocal, ResumoMesConfig } from '@/types/dados-locais';
+import type { ConfigLocal } from '@/types/dados-locais';
 import { arredondar2 } from '@/lib/formatar';
 import { resumirDivisao } from '@/lib/divisao';
 
@@ -63,7 +63,7 @@ export interface LinhaResumo {
   /** Saldo em caixa ao final do mês (acúmulo anual a partir do saldo inicial). */
   saldoFinal: number;
   temDados: boolean;
-  /** `true` = entrada manual (2026); `false` = automático (2027+). */
+  /** `false` = cálculo automático a partir dos Lançamentos Mensais. */
   ehManualAno: boolean;
 }
 
@@ -82,10 +82,11 @@ export interface ResultadoResumo {
  * Calcula o resumo inteiro do ano (12 linhas) acumulando o saldo
  * mês a mês a partir do saldo inicial informado (default 0).
  *
- * Modo de cálculo:
- *   - Anos ≤ 2026: Despesas e Recebido Lívia digitados à mão.
- *   - Anos ≥ 2027: Despesas e Recebido Lívia calculados automaticamente a partir dos
- *     Lançamentos Mensais (Total Gasto e receboLivia) — nada é digitado à mão.
+ * Despesas e Recebido Lívia são SEMPRE automáticos, a partir dos
+ * Lançamentos Mensais do mês:
+ *   Despesas       = Total Gasto (todos os lançamentos)
+ *   Recebido Lívia = (Dividido 50/50 ÷ 2) + tudo com QUEM PAGA = Lívia
+ * Salário vem do snapshot (aba Recebidos → Total Ganhos do mês).
  */
 export function calcularResumo(
   snapshot: SnapshotAno,
@@ -95,8 +96,7 @@ export function calcularResumo(
 ): ResultadoResumo {
   const mapaSalario = salarioPorMes(snapshot);
   const saldoInicial = Number(config.saldoInicial?.[String(ano)] ?? 0) || 0;
-  const resumoMes = config.resumoMes ?? {};
-  const ehManualAno = ano <= 2026;
+  const ehManualAno = false; // Despesas e Recebido Lívia sempre automáticos
 
   const linhas: LinhaResumo[] = [];
   let saldoAcumulado = saldoInicial;
@@ -104,23 +104,14 @@ export function calcularResumo(
   for (let i = 0; i < 12; i++) {
     const mes = MESES_RESUMO[i];
     const mesIndex = i + 1;
-    const chave = chaveResumo(ano, mesIndex);
-    const entrada: ResumoMesConfig = resumoMes[chave] ?? { despesas: null, recebidoLivia: null };
 
     const salario = arredondar2(mapaSalario.get(mes) ?? 0);
 
-    // Resolve Despesas / Recebido Lívia:
-    //   - 2026 e anteriores: usa o que foi digitado à mão (manual)
-    //   - 2027+: calcula automático a partir dos Lançamentos Mensais
     const registrosMes = snapshot.meses?.[mes]?.registros ?? [];
     const divisao = resumirDivisao(registrosMes);
 
-    const despesas = ehManualAno
-      ? Number(entrada.despesas ?? 0) || 0
-      : divisao.totalGasto;
-    const recebidoLivia = ehManualAno
-      ? Number(entrada.recebidoLivia ?? 0) || 0
-      : divisao.receboLivia;
+    const despesas = divisao.totalGasto;
+    const recebidoLivia = divisao.receboLivia;
     const restante = arredondar2(salario - despesas + recebidoLivia);
 
     saldoAcumulado = arredondar2(saldoAcumulado + restante);
