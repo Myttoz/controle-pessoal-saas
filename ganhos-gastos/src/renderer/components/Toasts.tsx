@@ -1,16 +1,18 @@
-import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
 import { useStoreUI, type ToastUI } from '@/store/storeUI';
 
 const ICONES: Record<ToastUI['tipo'], typeof CheckCircle2> = {
   sucesso: CheckCircle2,
   erro: AlertCircle,
   info: Info,
+  aviso: AlertTriangle,
 };
 
 const CORES: Record<ToastUI['tipo'], string> = {
   sucesso: 'border-emerald-700/60 text-emerald-300',
   erro: 'border-rose-700/60 text-rose-200',
   info: 'border-sky-700/60 text-sky-200',
+  aviso: 'border-amber-600/60 text-amber-200',
 };
 
 /** Toasts globais (canto inferior direito) — erros de API, confirmações de escrita. */

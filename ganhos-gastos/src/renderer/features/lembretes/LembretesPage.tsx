@@ -24,6 +24,7 @@ import { Modal } from '@/components/Modal';
 import { formatarData, hojeISO } from '@/lib/formatar';
 import { linkGoogleAgenda } from '@/lib/google-agenda';
 import { useStoreLembretes } from '@/store/storeLembretes';
+import { RecorrentesLembretes } from './RecorrentesLembretes';
 import { usePedidoNovo } from '@/hooks/usePedidoNovo';
 
 type FiltroStatus = 'TODOS' | StatusLembrete;
@@ -199,6 +200,9 @@ export function LembretesPage() {
           </li>
         </ol>
       </section>
+
+      {/* ---------- lembretes fixos (recorrências) ---------- */}
+      <RecorrentesLembretes />
 
       {/* ---------- filtros ---------- */}
       <div className="flex flex-wrap items-center gap-2">

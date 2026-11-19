@@ -57,7 +57,7 @@ export type FiltrosColunas = Record<string, string[]>;
 
 export interface ToastUI {
   id: number;
-  tipo: 'sucesso' | 'erro' | 'info';
+  tipo: 'sucesso' | 'erro' | 'info' | 'aviso';
   texto: string;
 }
 
@@ -164,7 +164,7 @@ export const useStoreUI = create<EstadoUI>((set, get) => ({
   toast: (tipo, texto) => {
     const id = proximoIdToast++;
     set({ toasts: [...get().toasts, { id, tipo, texto }] });
-    const duracao = tipo === 'erro' ? 8000 : 4000;
+    const duracao = tipo === 'erro' ? 8000 : tipo === 'aviso' ? 5000 : 4000;
     setTimeout(() => get().removerToast(id), duracao);
   },
   removerToast: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),

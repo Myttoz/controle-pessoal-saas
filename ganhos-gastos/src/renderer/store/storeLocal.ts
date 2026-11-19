@@ -14,12 +14,14 @@ import { create } from 'zustand';
 import type {
   ConfigLocal,
   DadosLocais,
+  LembreteFixo,
   RegistroFerias,
   RegistroHoraExtra,
   RegistroManutencao,
   ResumoMesConfig,
 } from '@/types/dados-locais';
 import { dadosLocaisVazios } from '@/types/dados-locais';
+import { hojeISO } from '@/lib/formatar';
 import { msgDeErro, servicoApi } from '@/services/api';
 import { useStoreAuth } from './storeAuth';
 import { useStoreUI } from './storeUI';
@@ -64,6 +66,10 @@ interface EstadoLocal {
   editarManutencao(id: string, parcial: Partial<RegistroManutencao>): void;
   removerManutencao(id: string): void;
 
+  adicionarLembreteFixo(registro: Omit<LembreteFixo, 'id'>): void;
+  concluirLembreteFixo(id: string): void;
+  removerLembreteFixo(id: string): void;
+
   /** Gera e baixa um arquivo JSON com todos os dados locais. */
   exportarBackup(): void;
   /** Importa um arquivo gerado por `exportarBackup`. */
@@ -103,6 +109,20 @@ function normalizar(carregado: DadosLocais | null | undefined): DadosLocais | nu
         configDaVez.pontoEletronico && typeof configDaVez.pontoEletronico === 'object'
           ? configDaVez.pontoEletronico
           : {},
+      // 1ª vez que o app abre após esta versão: cria o lembrete fixo padrão
+      // (o usuário pediu) — backup da pasta do projeto a cada 15 dias.
+      // Depois disso, a lista nunca é preenchida de novo aqui.
+      lembretesFixos:
+        Array.isArray(configDaVez.lembretesFixos)
+          ? configDaVez.lembretesFixos
+          : [
+              {
+                id: novoId(),
+                titulo: 'Backup da pasta do projeto (Drive)',
+                intervaloDias: 15,
+                ultimaConclusao: hojeISO(),
+              },
+            ],
     },
     horasExtras: Array.isArray(carregado.horasExtras) ? carregado.horasExtras : [],
     ferias: Array.isArray(carregado.ferias) ? carregado.ferias : [],
@@ -392,6 +412,43 @@ export const useStoreLocal = create<EstadoLocal>((set, get) => {
       mutar((d) => ({ ...d, manutencoes: d.manutencoes.filter((r) => r.id !== id) }));
       toast('sucesso', 'Manutenção removida.');
     },
+
+    // ------------------------------------------------------------------
+    //  LEMBRETES FIXOS (recorrências — ex.: backup a cada 15 dias)
+    // ------------------------------------------------------------------
+    adicionarLembreteFixo: (registro) => {
+      mutar((d) => ({
+        ...d,
+        config: {
+          ...d.config,
+          lembretesFixos: [
+            ...(d.config.lembretesFixos ?? []),
+            { ...registro, id: novoId() },
+          ],
+        },
+      }));
+      toast('sucesso', 'Lembrete fixo adicionado.');
+    },
+    concluirLembreteFixo: (id) => {
+      mutar((d) => ({
+        ...d,
+        config: {
+          ...d.config,
+          lembretesFixos: (d.config.lembretesFixos ?? []).map((l) =>
+            l.id === id ? { ...l, ultimaConclusao: hojeISO() } : l,
+          ),
+        },
+      }));
+      toast('sucesso', 'Lembrete concluído — próximo aviso já agendado.');
+    },
+    removerLembreteFixo: (id) =>
+      mutar((d) => ({
+        ...d,
+        config: {
+          ...d.config,
+          lembretesFixos: (d.config.lembretesFixos ?? []).filter((l) => l.id !== id),
+        },
+      })),
 
     // -----------------------------------------------------------------------
     //  BACKUP (arquivo único para pendrive / nuvem)

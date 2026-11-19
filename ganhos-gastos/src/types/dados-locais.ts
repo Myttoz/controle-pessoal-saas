@@ -24,6 +24,20 @@ export interface ResumoMesConfig {
   recebidoLivia: number | null;
 }
 
+/**
+ * Um lembrete FIXO/recorrente (ex.: "backup da pasta a cada 15 dias") —
+ * aparece na aba Lembretes permanentemente, e o app dispara um aviso
+ * chamativo enquanto estiver vencido (9h, 16h e 20h do dia).
+ */
+export interface LembreteFixo {
+  id: string;
+  titulo: string;
+  /** Intervalo em dias entre disparos (15 = a cada 15 dias). */
+  intervaloDias: number;
+  /** ISO de quando foi concluído da última vez (null = nunca). */
+  ultimaConclusao: string | null;
+}
+
 export interface ConfigLocal {
   /** Salário bruto mensal (R$). Base de todos os cálculos de hora extra e férias. */
   salarioBruto: number;
@@ -39,6 +53,8 @@ export interface ConfigLocal {
    * Entra no gráfico de ganhos por mês para o mês correspondente.
    */
   pontoEletronico?: Record<string, number>;
+  /** Lembretes fixos/recorrentes (ex.: backup a cada 15 dias). */
+  lembretesFixos?: LembreteFixo[];
 }
 
 // ---------------------------------------------------------------------------

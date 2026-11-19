@@ -5,6 +5,7 @@ import { Layout } from '@/components/Layout';
 import { TitleBar } from '@/components/TitleBar';
 import { Carregando } from '@/components/Estados';
 import { useAtalhosGlobais } from '@/hooks/useAtalhosGlobais';
+import { useLembretesFixosAlerta } from '@/hooks/useLembretesFixosAlerta';
 import { useStoreAno } from '@/store/storeAno';
 import { useStoreLocal } from '@/store/storeLocal';
 import { useStoreUI } from '@/store/storeUI';
@@ -37,6 +38,7 @@ export default function App() {
   const autenticado = !!token && !!usuario;
 
   useAtalhosGlobais();
+  useLembretesFixosAlerta();
 
   // 1. Inicializa stores (cache + dados locais)
   useEffect(() => {
