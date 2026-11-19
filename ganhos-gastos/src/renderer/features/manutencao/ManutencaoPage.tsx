@@ -139,6 +139,16 @@ export function ManutencaoPage() {
     return base.sort((a, b) => sinal * comparar(ordem.campo, a, b));
   }, [dados.manutencoes, kmAtual, ordem]);
 
+  const proximaMaisPerto = useMemo(() => {
+    const comData = linhas.filter((l) => l.proximaData);
+    if (comData.length === 0) return null;
+    return [...comData].sort((a, b) => {
+      const d = (a.proximaData ?? '').localeCompare(b.proximaData ?? '');
+      if (d !== 0) return d;
+      return a.registro.descricao.localeCompare(b.registro.descricao, 'pt-BR', { sensitivity: 'base' });
+    })[0];
+  }, [linhas]);
+
   const visiveis = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     return linhas.filter((l) => {
@@ -287,10 +297,10 @@ export function ManutencaoPage() {
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60">
-          <div className="overflow-x-auto">
+          <div className="max-h-[68vh] overflow-auto">
             <table className="w-full min-w-[1000px] text-sm">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-950/60 text-left text-[11px] uppercase tracking-wider text-slate-500">
+                <tr className="sticky top-0 z-10 border-b border-slate-800 bg-slate-950 text-left text-[11px] uppercase tracking-wider text-slate-500 [&>th]:bg-slate-950">
                   <th className="p-0 font-semibold">
                     <ThOrdenavel
                       rotulo="MANUTENÇÃO"
@@ -413,6 +423,66 @@ export function ManutencaoPage() {
                   </tr>
                 ))}
               </tbody>
+              {/* rodapé fixo (1 linha): manutenção mais próxima + soma geral */}
+              <tfoot className="sticky bottom-0 z-10 border-t border-slate-800 bg-slate-950/95 text-[11px] backdrop-blur [&>td]:bg-slate-950/95">
+                <tr>
+                  <td className="px-4 py-1.5 leading-tight">
+                    <span className="block text-[9px] font-semibold uppercase tracking-wider text-slate-500">
+                      Próxima manutenção
+                    </span>
+                    <span
+                      className="block max-w-[170px] truncate font-medium text-sky-300"
+                      title={proximaMaisPerto?.registro.descricao ?? ''}
+                    >
+                      {proximaMaisPerto?.registro.descricao ?? 'Nenhuma revisão agendada'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-1.5 tabular-nums text-slate-300">
+                    {proximaMaisPerto ? formatarData(proximaMaisPerto.registro.data) : '—'}
+                  </td>
+                  <td className="px-3 py-1.5 text-right tabular-nums text-slate-400">
+                    {proximaMaisPerto?.registro.km != null
+                      ? proximaMaisPerto.registro.km.toLocaleString('pt-BR')
+                      : '—'}
+                  </td>
+                  <td
+                    className="px-3 py-1.5 text-right font-semibold tabular-nums text-teal-300"
+                    title="Soma de todas as manutenções"
+                  >
+                    {formatarMoeda(totais.total)}
+                  </td>
+                  <td className="px-3 py-1.5 text-slate-400">
+                    <span
+                      className="block max-w-[120px] truncate"
+                      title={proximaMaisPerto?.registro.mecanico ?? ''}
+                    >
+                      {proximaMaisPerto?.registro.mecanico ?? '—'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-1.5 text-slate-400">
+                    <span
+                      className="block max-w-[120px] truncate"
+                      title={proximaMaisPerto?.registro.lojaPecas ?? ''}
+                    >
+                      {proximaMaisPerto?.registro.lojaPecas ?? '—'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-1.5 text-xs text-slate-400">
+                    <span className="block tabular-nums">
+                      {proximaMaisPerto?.proximaData ? formatarData(proximaMaisPerto.proximaData) : '—'}
+                    </span>
+                    <span className="block tabular-nums text-slate-500">
+                      {proximaMaisPerto?.proximoKm != null
+                        ? `${proximaMaisPerto.proximoKm.toLocaleString('pt-BR')} km`
+                        : '—'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-1.5">
+                    {proximaMaisPerto ? <BadgeStatus status={proximaMaisPerto.status} /> : '—'}
+                  </td>
+                  <td className="px-4 py-1.5 text-right text-slate-600">—</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
