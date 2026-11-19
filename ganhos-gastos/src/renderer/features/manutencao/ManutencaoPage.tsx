@@ -148,12 +148,28 @@ export function ManutencaoPage() {
         return false;
       }
       if (!termo) return true;
-      return (
-        l.registro.descricao.toLowerCase().includes(termo) ||
-        l.registro.mecanico.toLowerCase().includes(termo) ||
-        (l.registro.lojaPecas ?? '').toLowerCase().includes(termo) ||
-        (l.registro.observacao ?? '').toLowerCase().includes(termo)
-      );
+      // busca livre: cobre TODAS as colunas da tabela
+      const valor = l.registro.valor || 0;
+      const alvo = [
+        l.registro.descricao,
+        l.registro.mecanico,
+        l.registro.lojaPecas ?? '',
+        l.registro.observacao ?? '',
+        l.registro.data,
+        l.registro.data.split('-').reverse().join('/'),
+        l.proximaData ?? '',
+        l.proximaData ? l.proximaData.split('-').reverse().join('/') : '',
+        String(valor.toFixed(2)).replace('.', ','),
+        String(Math.round(valor)),
+        formatarMoeda(valor),
+        String(l.registro.km ?? ''),
+        String(l.registro.intervaloKm ?? ''),
+        String(l.registro.intervaloDataMeses ?? ''),
+        l.status,
+      ]
+        .join(' ')
+        .toLowerCase();
+      return alvo.includes(termo);
     });
   }, [linhas, filtroStatus, selecao, busca]);
 
