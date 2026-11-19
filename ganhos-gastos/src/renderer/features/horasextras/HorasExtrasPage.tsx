@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -16,6 +16,7 @@ import { ArrowDown, ArrowUp, Check, Eye, EyeOff, Pencil, Plus, Timer, Trash2, Cl
 import type { RegistroHoraExtra } from '@/types/dados-locais';
 import { Botao } from '@/components/Botoes';
 import { ConfigSalario } from '@/components/ConfigSalario';
+import { SelecaoTodos } from '@/components/SelecaoTodos';
 import { EstadoVazio } from '@/components/Estados';
 import { Modal } from '@/components/Modal';
 import { formatarData, formatarMoeda, hojeISO } from '@/lib/formatar';
@@ -77,10 +78,16 @@ function TabelaPontoEletronico({
   ano,
   verTodos,
   salarioBruto,
+  selecionados,
+  aoAlternarSelecao,
+  aoDefinirSelecao,
 }: {
   ano: number | null;
   verTodos: boolean;
   salarioBruto: number;
+  selecionados: string[];
+  aoAlternarSelecao: (chave: string) => void;
+  aoDefinirSelecao: (chaves: (number | string)[]) => void;
 }) {
   const ponto = useStoreLocal((s) => s.dados.config.pontoEletronico ?? {});
   const setPonto = useStoreLocal((s) => s.setPontoEletronico);
@@ -108,10 +115,17 @@ function TabelaPontoEletronico({
           {totalHoras.toFixed(2).replace('.', ',')} h · {formatarMoeda(totalValor)}
         </p>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[480px] text-sm">
+      <div className="max-h-[34vh] overflow-auto">
+        <table className="w-full min-w-[520px] text-sm">
           <thead>
-            <tr className="border-b border-slate-800 text-left text-[11px] uppercase tracking-wider text-slate-500">
+            <tr className="sticky top-0 z-10 border-b border-slate-800 bg-slate-950 text-left text-[11px] uppercase tracking-wider text-slate-500 [&>th]:bg-slate-950">
+              <th className="px-3 py-2.5 text-center font-semibold">
+                <SelecaoTodos
+                  visiveis={entradas.map(([chave]) => chave)}
+                  selecionados={selecionados}
+                  aoDefinirSelecao={(ids) => aoDefinirSelecao(ids)}
+                />
+              </th>
               <th className="px-4 py-2.5 font-semibold">Mês</th>
               <th className="px-4 py-2.5 text-right font-semibold">Horas</th>
               <th className="px-4 py-2.5 text-right font-semibold">Valor (50%)</th>
@@ -124,6 +138,16 @@ function TabelaPontoEletronico({
                 key={chave}
                 className="border-b border-slate-800/70 transition hover:bg-slate-800/25"
               >
+                <td className="px-3 py-2.5 text-center">
+                  <input
+                    type="checkbox"
+                    checked={selecionados.includes(chave)}
+                    onChange={() => aoAlternarSelecao(chave)}
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Selecionar lançamento"
+                    className="h-4 w-4 cursor-pointer accent-sky-500"
+                  />
+                </td>
                 <td className="px-4 py-2.5 font-medium text-slate-300">{rotuloMes(chave)}</td>
                 <td className="px-4 py-2.5 text-right tabular-nums text-slate-300">
                   {Number(horas).toFixed(2).replace('.', ',')} h
@@ -295,6 +319,10 @@ export function HorasExtrasPage() {
   const [mesFiltro, setMesFiltro] = useState<string>('');
   /** Ordenação da coluna DATA: 'desc' = mais recente primeiro (padrão), 'asc' = mais antiga primeiro. */
   const [ordemData, setOrdemData] = useState<'asc' | 'desc'>('desc');
+  /** ids selecionados nos plantões (checkbox) — soma no rodapé só os marcados */
+  const [selHe, setSelHe] = useState<string[]>([]);
+  /** chaves selecionadas no ponto eletrônico ("AAAA-MM") */
+  const [selPonto, setSelPonto] = useState<string[]>([]);
 
   // cálculo memoizado por registro
   const linhas = useMemo<LinhaTabela[]>(() => {
@@ -321,6 +349,11 @@ export function HorasExtrasPage() {
   );
 
   // Gráfico inclui também as horas do ponto eletrônico (sempre a 50%), mês a mês
+  useEffect(() => {
+    setSelHe([]);
+    setSelPonto([]);
+  }, [anoSelecionado, verTodos, mesFiltro]);
+
   const porMes = useMemo<TotalMes[]>(() => {
     const mapa = new Map<string, TotalMes>();
     for (const m of porMesBase) mapa.set(m.chave, { ...m });
@@ -374,6 +407,24 @@ export function HorasExtrasPage() {
       quantidade: mesSel.length,
     };
   }, [visiveis, linhas, mesFiltro]);
+
+  // linhas efetivamente usadas para o rodapé da tabela: só os selecionados
+  const visiveisSel = useMemo(
+    () => (selHe.length === 0 ? visiveis : visiveis.filter((l) => selHe.includes(l.registro.id))),
+    [visiveis, selHe],
+  );
+  const totaisRodape = useMemo(() => {
+    const soma = (f: (l: LinhaTabela) => number) =>
+      arred(visiveisSel.reduce((s, l) => s + f(l), 0));
+    return {
+      v100: soma((l) => l.v100),
+      v50: soma((l) => l.v50),
+      total: soma((l) => l.total),
+      h100: Math.round(visiveisSel.reduce((s, l) => s + l.h100, 0) * 100) / 100,
+      h50: Math.round(visiveisSel.reduce((s, l) => s + l.h50, 0) * 100) / 100,
+      quantidade: visiveisSel.length,
+    };
+  }, [visiveisSel]);
 
   const dadosPizza = [
     { nome: '100% (presencial)', valor: totais.v100 },
@@ -469,7 +520,18 @@ export function HorasExtrasPage() {
 
       {/* ------- ponto eletrônico: primeira linha, acima da tabela ------- */}
       <LinhaPontoEletronico />
-      <TabelaPontoEletronico ano={anoSelecionado} verTodos={verTodos} salarioBruto={salarioBruto} />
+      <TabelaPontoEletronico
+        ano={anoSelecionado}
+        verTodos={verTodos}
+        salarioBruto={salarioBruto}
+        selecionados={selPonto}
+        aoAlternarSelecao={(chave) =>
+          setSelPonto((atual) =>
+            atual.includes(chave) ? atual.filter((c) => c !== chave) : [...atual, chave],
+          )
+        }
+        aoDefinirSelecao={(chaves) => setSelPonto(chaves.map(String))}
+      />
 
       {/* ------- lista ------- */}
       {visiveis.length === 0 ? (
@@ -491,10 +553,17 @@ export function HorasExtrasPage() {
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-sm">
+          <div className="max-h-[55vh] overflow-auto">
+            <table className="w-full min-w-[940px] text-sm">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-950/60 text-left text-[11px] uppercase tracking-wider text-slate-500">
+                <tr className="sticky top-0 z-10 border-b border-slate-800 bg-slate-950 text-left text-[11px] uppercase tracking-wider text-slate-500 [&>th]:bg-slate-950">
+                  <th className="px-3 py-2.5 text-center font-semibold">
+                    <SelecaoTodos
+                      visiveis={visiveis.map((l) => l.registro.id)}
+                      selecionados={selHe}
+                      aoDefinirSelecao={(ids) => setSelHe(ids.map(String))}
+                    />
+                  </th>
                   <th className="px-4 py-2.5 font-semibold">
                     <button
                       type="button"
@@ -522,6 +591,22 @@ export function HorasExtrasPage() {
               <tbody>
                 {visiveis.map((l) => (
                   <tr key={l.registro.id} className="border-b border-slate-800/70 transition hover:bg-slate-800/25">
+                    <td className="px-3 py-2.5 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selHe.includes(l.registro.id)}
+                        onChange={() =>
+                          setSelHe((atual) =>
+                            atual.includes(l.registro.id)
+                              ? atual.filter((id) => id !== l.registro.id)
+                              : [...atual, l.registro.id],
+                          )
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label="Selecionar plantão"
+                        className="h-4 w-4 cursor-pointer accent-sky-500"
+                      />
+                    </td>
                     <td className="px-4 py-2.5 tabular-nums text-slate-300">{formatarData(l.registro.data)}</td>
                     <td className="px-3 py-2.5 text-xs text-slate-400">
                       {l.registro.chegada} → {l.registro.saidaEmpresa}
@@ -545,6 +630,25 @@ export function HorasExtrasPage() {
                   </tr>
                 ))}
               </tbody>
+              <tfoot className="sticky bottom-0 z-10 border-t border-slate-800 bg-slate-950/95 text-[11px] backdrop-blur [&>td]:bg-slate-950/95">
+                <tr>
+                  <td className="px-3 py-2.5 text-center text-slate-500">
+                    {selHe.length > 0 ? `${selHe.length}` : `${totaisRodape.quantidade}`}
+                  </td>
+                  <td className="px-4 py-2.5 text-slate-300">
+                    {selHe.length > 0
+                      ? `${totaisRodape.quantidade} de ${visiveis.length} selecionado(s)`
+                      : `${visiveis.length} plantão(ões)`}
+                  </td>
+                  <td className="px-3 py-2.5 text-xs text-slate-500">—</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-slate-400">{totaisRodape.h100.toFixed(2)}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-slate-400">{totaisRodape.h50.toFixed(2)}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-sky-300">{formatarMoeda(totaisRodape.v100)}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-violet-300">{formatarMoeda(totaisRodape.v50)}</td>
+                  <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-emerald-300">{formatarMoeda(totaisRodape.total)}</td>
+                  <td className="px-4 py-2.5" />
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
