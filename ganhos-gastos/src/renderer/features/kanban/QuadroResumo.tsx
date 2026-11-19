@@ -242,7 +242,7 @@ function RodapeColunas({
   totalGeral: number;
 }) {
   return (
-    <div className="flex gap-3">
+    <div className="sticky bottom-0 z-10 mt-1 flex gap-3 border-t border-slate-800 bg-slate-950/95 px-2 pt-2 pb-1 backdrop-blur">
       {espelho && (
         <div
           className="w-[232px] shrink-0 rounded-xl border border-amber-900/60 bg-amber-950/20 px-4 py-3"
@@ -449,7 +449,7 @@ export function QuadroResumo({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="sticky top-0 z-20 -mx-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/95 px-4 py-2 backdrop-blur sm:-mx-5 sm:px-5 lg:-mx-7 lg:px-7">
         <MesTabs meses={snapshot.meses} selecionado={mes} aoSelecionar={setMes} />
         <div className="flex items-center gap-2">
           <p className="hidden max-w-xs truncate text-xs text-slate-500 xl:block" title={dica}>
@@ -492,7 +492,7 @@ export function QuadroResumo({
         <div
           ref={scrollRef}
           onMouseDown={aoPressionar}
-          className={`overflow-x-auto overflow-y-hidden pb-1 ${
+          className={`max-h-[66vh] overflow-auto pb-1 ${
             arrastandoScroll ? 'cursor-grabbing select-none' : 'cursor-grab'
           }`}
         >
