@@ -102,24 +102,25 @@ git commit -m "título da mudança"
 git push -u origin master
 ```
 
-## 4.1 Release bonitinha (adicional a cada marco)
+## 4.1 Release bonitinha (a cada marco)
 
-Use só quando quiser a página `releases` no GitHub com notas automáticas —
-não é necessária a cada push:
+Use só quando quiser a página `releases` no GitHub — não é necessária a cada
+push. Antes de tagear, **atualize o `RELEASE_NOTES.md`** com as notas da nova
+versão (o workflow lê esse arquivo na hora de criar a release):
 
 ```bash
 # (1) push normal — publica o site
 git push -u origin master
 
-# (2) criar release bonitinha — opcional, quando quiser marcar
-git tag v1.0.0          # escolha a próxima versão (sempre `v` + semver)
-git push origin v1.0.0  # dispara o workflow "Release" → cria a página + notas
+# (2) criar release bonitinha — quando quiser marcar
+#     (edite RELEASE_NOTES.md ANTES)
+git tag vX.Y.Z          # escolha a próxima versão (sempre `v` + semver)
+git push origin vX.Y.Z  # dispara o workflow "Release" → cria a página + notas
 ```
 
-O workflow `.github/workflows/release.yml` roda sozinho e gera a release
-com notas a partir dos commits desde a tag anterior (`gh release create
-<tag> --generate-notes`). Uma tag = uma release; commits isolados **não**
-criam releases.
+O workflow `.github/workflows/release.yml` cria a release usando o corpo do
+`RELEASE_NOTES.md` (não mais commits brutos). Uma tag = uma release; commits
+isolados **não** criam releases.
 
 > Se o push reclamar de `workflow scope` num arquivo em
 > `.github/workflows/`, seu token não tem permissão para workflows — gere
@@ -292,3 +293,44 @@ APP Financas/                     (raiz do repositório; clone direto do GitHub)
 
 > `.env` (git-ignored) = API_URL + anon key. Nunca commitar.
 > `master` é o branch de produção — não `main`.
+
+## 8. Checklist de manutenção e segurança do SaaS
+
+### Todo dia (5 s)
+- Abrir o app, ver o indicador **"Sincronizado"** no canto superior direito.
+- Se aparecer algo como "Erro na última sincronização", clicar em **Atualizar**.
+
+### Toda semana (30 s)
+- **GitHub → Actions → `backup-semanal`**: último run verde? Se vermelho, abrir e ler o erro.
+- **GitHub → Actions → `deploy-web`**: último deploy verde? Se vermelho, o site fica na versão anterior.
+- Conferir que o dump semanal está aparecendo em `Myttoz/controle-pessoal-backup` (Actions cria lá).
+
+### Todo mês (5 min)
+- Baixar um dump ou CSV manual do mês (backup extra no Drive).
+- **Supabase → Database → Database Size**: cresceu normal? (deve estar na casa de MB.)
+- **Supabase → Authentication → Audit Logs** (se disponível no plano): acessos estranhos?
+
+### Trimestral (~10 min) — a cargo do usuário
+1. **Rotacionar o token do banco do backup (pg_dump)**:
+   a. Supabase → **Project Settings → Database → Reset database password**;
+   b. Copie a nova senha/URL (ou só a senha, conforme o secret atual);
+   c. GitHub → repositório → **Settings → Secrets and variables → Actions**;
+   d. Edite o secret que o workflow de backup usa (ex.: `SUPABASE_DB_URL` ou `PGPASSWORD`) e cole o novo valor;
+   e. Actions → **backup-semanal → Run workflow** para confirmar que continua verde.
+   → Se gerar um lembrete, um por trimestre resolve.
+2. Rotacionar a senha do usuário do app (Supabase Auth → Users → o seu → Reset password) se houver suspeita.
+3. Verificar que as migrations 002–006 estão no banco (ver apêndice).
+
+### Semestral
+- **Teste de restauração**: clone do `controle-pessoal-backup`, restaure o dump mais recente
+  num PostgreSQL local/Docker (`createdb teste && pg_restore -d teste arquivo.dump`)
+  e confira `select count(*) from lancamentos;`.
+- Conferir que nada em `.env` foi committado (git ls-files | grep .env → deve sair vazio).
+
+### Migrations pendentes (rodar no SQL Editor do Supabase)
+`002-servicos-extras.sql` · `003-rls.sql` · `004-backup-rls.sql` · `005-ferias-vendidos.sql` · `006-horas-fim-plantao.sql`.
+
+### Backup JSON × dump
+Exportar backup em **JSON** (Sincronização e Backup) salva **somente** dados locais
+(Horas Extras, Férias, Manutenção, salário/config). **Não** salva lançamentos/extras/salário.
+O dump `pg_dump` semanal é o ÚNICO backup completo do banco.

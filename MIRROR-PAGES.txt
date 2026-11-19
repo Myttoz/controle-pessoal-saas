@@ -1,0 +1,108 @@
+MIRROR-PAGES.txt — Como manter o Controle Pessoal publicado em DOIS hosts
+===============================================================
+
+Objetivo
+--------
+Ter o site publicado em dois provedores independentes, para o site não cair
+se um deles falhar:
+
+  Host 1: GitHub Pages  → https://myttoz.github.io/controle-pessoal-saas  (atual)
+  Host 2: Cloudflare Pages → https://<seu-projeto>.pages.dev               (mirror)
+
+Por que Cloudflare e não outro serviço da mesma "família":
+- Cloudflare NÃO é dona do GitHub — são empresas, redes e data centers
+  diferentes. Se a GitHub Pages cair, a Cloudflare continua de pé.
+- Cloudflare Pages tem plano gratuito generoso, SSL grátis, e faz deploy
+  automático a cada push na branch master (igual ao GitHub Pages).
+
+O que é grátis e o que não é
+----------------------------
+- Mirror no Cloudflare Pages: GRÁTIS. SSL grátis. Deploys ilimitados.
+  URL https://controle-pessoal-saas.pages.dev (você escolhe o nome).
+- Failover AUTOMÁTICO (o domínio "saltar" sozinho quando um host cai):
+  paga com DNS/serviço como Cloudflare Load Balancing ou Routes53
+  (R$ ~30–70/mês). No gratuito, o "failover" é manual: você troca a URL
+  do bookmark/app usada ou muda o CNAME do domínio para o outro host
+  (2 minutos). Honesto: a maior parte das quedas do GitHub Pages dura
+  menos que o tempo de você ler esse arquivo.
+- Domínio personalizado (ex.: app.seudominio.com.br): opcional, pago
+  (registro.br ~ R$40/ano) — só necessário se quiser um endereço próprio.
+
+PASSO A PASSO — Criar o mirror no Cloudflare Pages
+==================================================
+
+Passo 1. Crie uma conta em https://dash.cloudflare.com/sign-up
+         (pode cadastrar o seu e-mail; não precisa trocar de DNS de domínio).
+
+Passo 2. No painel, menu lateral → "Workers & Pages" → aba "Pages"
+         → botão azul "Connect to Git".
+
+Passo 3. Autorize a Cloudflare a ver a sua conta GitHub
+         (botão "Connect GitHub" → autorize somente o repositório
+          "Myttoz/controle-pessoal-saas").
+
+Passo 4. Escolha "controle-pessoal-saas" → botão "Begin setup".
+
+Passo 5. Configuração do build (a única parte técnica):
+
+   Project name:       controle-pessoal-saas        (define a URL)
+   Production branch:  master
+   Framework preset:   None
+   Build command:      cd ganhos-gastos && npm ci && npm run build:web
+   Build output dir:   ganhos-gastos/dist-web
+   Root directory:     (deixe o padrão "." / em branco)
+
+Passo 6. Variáveis de ambiente (aba "Environment variables" antes do deploy):
+
+   Nome: VITE_SUPABASE_URL        Valor: https://srojhhwpwfjbotuphoxq.supabase.co
+   Nome: VITE_SUPABASE_ANON_KEY   Valor: sb_publishable_kcVOc7NhsDkX2Z09f-QR8A_nVrG4Yty
+
+   (São valores públicos — o mesmo par que já vai embutido no site.
+    Não coloque aqui nenhuma chave "secreta" de banco.)
+
+Passo 7. Clique "Save and Deploy". Aguarde 1–3 minutos — a Cloudflare
+         constrói o projeto e te dá a URL, ex.:
+         https://controle-pessoal-saas.pages.dev
+
+Passo 8. Teste o site pelo link .pages.dev:
+   - login funciona? (depende do Passo 6)
+   - dados carregam? (RLS, Supabase tudo certo)
+   Se sim: deploy automático de agora em diante — toda vez que você
+   fizer push no master, os DOIS hosts publicam sozinhos.
+
+PASSO A PASSO — Usar quando o GitHub Pages cair
+==============================================
+
+Situação A (recomendada na prática): você tem dois favoritos no navegador
+   GitHub Pages : https://myttoz.github.io/controle-pessoal-saas/
+   Cloudflare   : https://controle-pessoal-saas.pages.dev/
+Se um cair, abra o outro. Nenhum dado se perde — o banco (Supabase) é o mesmo.
+
+Situação B (com domínio próprio): se você tiver um domínio (ex.: app.exemplo.com.br),
+ponte-o para o Cloudflare Pages (em Custom domains do projeto Pages). Quando
+o GitHub Pages cair por mais de algumas horas, troque no painel do seu
+fornecedor de DNS o registro CNAME de "app.exemplo.com.br" para o endereço
+do Cloudflare Pages (o que for pedido em Workers & Pages → Custom domains).
+
+Situação C (failover 100% automático, pago): Cloudflare Load Balancing com
+2 origens (GitHub Pages e o Pages do Cloudflare) + health check em
+https://myttoz.github.io/controle-pessoal-saas/ — se ele falhar 2 checagens
+seguidas, o tráfego do domínio é levado ao mirror automaticamente.
+Custo: plano Load Balancing (como referência, ~US$ 5/mês + por requisição).
+Para uso pessoal, raramente compensa.
+
+CHECKLIST DE MANUTENÇÃO DO MIRROR
+----------------------------------
+- Depois de cada push no master: confirmar que os DOIS deploys ficaram
+  verdes (GitHub → Actions; Cloudflare → projeto → aba "Deployments").
+- Teste o .pages.dev 1 vez por mês (abrir e entrar) — garantia de que
+  o build continua passando lá também.
+- Se mudar o domínio/nome do projeto no Cloudflare, atualize esta nota.
+
+RESUMO PARA FINS DE CADERNO
+---------------------------
+Host principal : GitHub Pages (deploy por push no master)
+Mirror         : Cloudflare Pages (mesmo build, deploy por push no master)
+Dados/banco    : Supabase (compartilhado pelos dois) — nada muda no app
+Failover       : manual (dois bookmarks) ou DNS/pago (domínio próprio)
+Custo          : R$ 0 (com SSL e domínio .pages.dev grátis)
