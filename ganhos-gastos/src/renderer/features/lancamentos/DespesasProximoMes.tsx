@@ -61,6 +61,12 @@ export function DespesasProximoMes({
     salvar(chave, { [campo]: n });
   };
 
+  const totalDespesas =
+    Math.round((
+      (faturaDigitos === '' ? 0 : Number(faturaDigitos) / 100) +
+      (pixDigitos === '' ? 0 : Number(pixDigitos) / 100)
+    ) * 100) / 100;
+
   const mesSeguinteSigla = SIGLAS[(idx + 1) % 12];
   const anoSeguinte = idx === 11 ? ano + 1 : ano;
 
@@ -80,8 +86,8 @@ export function DespesasProximoMes({
       </header>
 
       {/* ------- campos ------- */}
-      <div className="grid gap-3 p-4 sm:grid-cols-2">
-        <Campo rotulo="Fatura cartão (R$)">
+      <div className="flex flex-wrap items-end gap-x-6 gap-y-3 p-4">
+        <Campo rotulo="Fatura cartão (R$)" className="w-40">
           <EntradaMoeda
             value={faturaDigitos}
             onChange={(digitos) => {
@@ -91,7 +97,11 @@ export function DespesasProximoMes({
             placeholder="0,00"
           />
         </Campo>
-        <Campo rotulo="Despesas Pix (R$)" dica="Contas fixas etc. pagas em Pix ao receber o salário">
+        <Campo
+          rotulo="Despesas Pix (R$)"
+          dica="Contas fixas etc. pagas em Pix ao receber o salário"
+          className="w-40"
+        >
           <EntradaMoeda
             value={pixDigitos}
             onChange={(digitos) => {
@@ -101,6 +111,14 @@ export function DespesasProximoMes({
             placeholder="0,00"
           />
         </Campo>
+        <div className="flex flex-col items-end gap-0.5 pb-0.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            Total
+          </p>
+          <p className="text-lg font-semibold tabular-nums text-violet-300">
+            {formatarMoeda(totalDespesas)}
+          </p>
+        </div>
       </div>
 
       {/* ------- rodapé: Restante do mês ------- */}
