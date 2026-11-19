@@ -1,38 +1,22 @@
-# Notas da próxima release (lidas pelo workflow de release).
-#
-# Como funciona:
-#   git push -u origin master
-#   git tag vX.Y.Z
-#   git push origin vX.Y.Z
-#
-# O workflow `.github/workflows/release.yml` cria a página da release
-# usando ESTE arquivo como corpo (não mais commits brutos).
-#
-# Ou seja: ANTES de criar a tag, edite este arquivo com as notas da nova
-# versão. Mantenha sempre a versão ATUAL aqui.
+# Controle Pessoal — v2.1.0
 
-# Controle Pessoal — v2.0.0
-
-Release de consolidação do SaaS (GitHub Pages + Supabase). ~60 commits desde a v1.0.0.
+Release de funcionalidades (minor) sobre a v2.0.0. Sem mudança de banco.
 
 ## Novidades
 
-- **Duplicar lançamento para o mês seguinte** (botão direito na tabela): mesmo lançamento, DATA +1 mês, parcela "7/12" → "8/12".
-- **Ponto eletrônico**: total de HE do mês lançado manualmente (sempre a 50%) + tabela dedicada; entra no gráfico; plantões filtrados por ano (com "ver todos"); coluna Data ordenável.
-- **Extras virou Serviços**: data, cliente, serviço, despesas cliente (informativo), ganhos peças/serviços e minhas despesas — o **total do mês entra como FREELANCE** na aba Recebidos → Salário. Gastos mantidos à parte.
-- **Resumo Pagamentos automático** (Salário, Despesas = Total Gasto, Recebido Lívia = ½ 50/50 + tudo "Livia") em todos os anos; saldo acumulado pelo saldo inicial; sem abas de mês no topo.
-- **Resumo Mensal Tipo / Resumo Mensal Categoria**: colunas dinâmicas por mês, totais por coluna e total geral, rolagem horizontal.
-- **Dashboard**: Total gasto no ano = Despesas − Recebido Lívia; novo card "Total ganho no ano"; Saldo = ganho − gasto; ranking anual por tipo; gráficos por categoria/mês.
-- **Ctrl+O** por setor; **Lembretes** viram Enviado ao abrir o Google Agenda; **Férias** com status; **TOTAL GANHOS** unificado; máscara R$ com 2 casas em todo campo monetário; **HORA EXTRA** calculada ao vivo.
+- **Despesas próximo mês** (Lançamentos): quadro de planejamento manual com **Fatura cartão** e **Despesas Pix** — o valor que você vai pagar ao receber o salário no mês seguinte (ex.: no novembro, o que será pago em dezembro). Persistido por mês, sincroniza na nuvem.
+- **Seleção em lote nos Lançamentos**: caixa de seleção na primeira coluna (com "selecionar todos os visíveis"); o rodapé passa a mostrar a soma somente dos itens selecionados ("N de M registro(s) selecionado(s) · R$ X"), igual ao comportamento da busca.
+- **Manutenção com busca livre**: o campo de busca agora cobre TODAS as colunas (descrição, data, km, valor, oficina, loja de peças, intervalos, status).
+- **Lembretes fixos (recorrentes)** na aba Lembretes: lembretes que reaparecem sozinhos (ex.: “Backup da pasta do projeto” a cada 15 dias, já semeado); no dia do vencimento, um aviso chamativo dispara às 09h, 16h e 20h (botão X, some em 5s) até você marcar como concluído.
+- **Duplicar lançamento** agora mantém você na mesma tela (não navega mais para o mês seguinte).
+- **Login**: removida a opção "Criar conta" da tela de entrada — apenas Entrar e Entrar com Google.
 
-## Correções
+## Manutenção
 
-- Tabela de Lançamentos quebrada em 2027; autocomplete com Tab/Enter/Esc corretos; extras de ano novo "não existiam"; mês do extra sempre 1; plantões salvos mas invisíveis; férias perdiam o abono a cada sincronização.
+- Fluxo de release simplificado: `RELEASE_NOTES.md` lido no workflow `release.yml` (sem editar nada no site).
+- `MIRROR-PAGES.txt` no repositório: passo a passo para um mirror gratuito no Cloudflare Pages.
+- Colinha §4.1 (release) e §8 (checklist de manutenção/segurança) atualizadas.
 
-## Banco de dados
+## Como atualizar
 
-`sql/002`–`sql/006` já versionados (extras/serviços, RLS, férias, horas extras). Execute no SQL Editor do Supabase quem ainda não rodou.
-
-## Segurança
-
-RLS revisado e aplicado em todas as tabelas (incluindo as `backup_*` que estavam públicas).
+`master` é produção. Após o push no master, o deploy do Pages acontece automaticamente — hard refresh (Ctrl+Shift+R) no app.
