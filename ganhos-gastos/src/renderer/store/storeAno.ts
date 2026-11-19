@@ -608,11 +608,6 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
     };
 
     const ok = await get().adicionarLancamento(anoAlvo, abaAlvo, dados);
-    if (ok) {
-      // leva o usuário para onde o lançamento caiu
-      if (anoAlvo !== ano) await get().selecionarAno(anoAlvo);
-      useStoreUI.getState().setMes(siglaAlvo);
-    }
     return ok;
   },
 
