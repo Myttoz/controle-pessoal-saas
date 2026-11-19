@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogIn, Mail, Lock, AlertCircle, UserPlus } from 'lucide-react';
+import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Botao } from '@/components/Botoes';
 import { useStoreAuth } from '@/store/storeAuth';
@@ -37,7 +37,6 @@ export function LoginPage() {
   const [usuario, setUsuario] = useState('');
   const [senha, setSenha] = useState('');
   const [carregando, setCarregando] = useState(false);
-  const [modoCadastro, setModoCadastro] = useState(false);
 
   const login = useStoreAuth((s) => s.login);
   const erro = useStoreAuth((s) => s.erro);
@@ -56,31 +55,6 @@ export function LoginPage() {
     if (sucesso) {
       limparErro();
       irPara('dashboard');
-    }
-  };
-
-  const aoCadastrar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!usuario.trim() || !senha.trim()) return;
-    setCarregando(true);
-
-    const { data, error } = await supabase.auth.signUp({
-      email: usuario.trim(),
-      password: senha,
-    });
-    setCarregando(false);
-
-    if (error) {
-      toast('erro', error.message);
-      return;
-    }
-
-    if (data.session) {
-      // Cadastro já autenticado (sem confirmação de e-mail)
-      irPara('dashboard');
-    } else {
-      toast('info', 'Conta criada! Verifique seu e-mail para confirmar.');
-      setModoCadastro(false);
     }
   };
 
@@ -117,7 +91,7 @@ export function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={modoCadastro ? aoCadastrar : aoEntrar} className="space-y-4">
+        <form onSubmit={aoEntrar} className="space-y-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs text-slate-400">
               <Mail className="h-3.5 w-3.5" />
@@ -144,7 +118,7 @@ export function LoginPage() {
             </div>
             <input
               type="password"
-              autoComplete={modoCadastro ? 'new-password' : 'current-password'}
+              autoComplete="current-password"
               required
               value={senha}
               onChange={(e) => {
@@ -162,7 +136,7 @@ export function LoginPage() {
             carregando={carregando}
             className="w-full"
           >
-            {modoCadastro ? 'Criar conta' : 'Entrar'}
+            Entrar
           </Botao>
         </form>
 
@@ -181,20 +155,6 @@ export function LoginPage() {
         >
           Entrar com Google
         </Botao>
-
-        <div className="text-center text-xs">
-          <button
-            type="button"
-            onClick={() => {
-              setModoCadastro((v) => !v);
-              limparErro();
-            }}
-            className="inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-200"
-          >
-            <UserPlus className="h-3.5 w-3.5" />
-            {modoCadastro ? 'Já tenho conta' : 'Criar uma conta'}
-          </button>
-        </div>
 
         <p className="text-[10px] text-slate-500 text-center">
           Seus dados ficam no Supabase, isolados por usuário.
