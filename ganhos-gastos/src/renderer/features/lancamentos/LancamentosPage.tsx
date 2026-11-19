@@ -11,6 +11,7 @@ import { NOMES_MESES } from '@/lib/meses';
 import { sugestoesDescricoes, sugestoesObservacoes } from '@/lib/sugestoes';
 import { calcularResumo, gastosProximoMes } from '@/lib/resumo';
 import { DespesasProximoMes } from './DespesasProximoMes';
+import type { ReactNode } from 'react';
 import { resumirDivisao } from '@/lib/divisao';
 import { useRegistrosFiltrados } from '@/hooks/useRegistrosFiltrados';
 import { usePedidoNovo } from '@/hooks/usePedidoNovo';
@@ -202,6 +203,59 @@ export function LancamentosPage() {
   // divisão de contas com a Lívia sobre o que está VISÍVEL (com filtros)
   const divisao = useMemo(() => resumirDivisao(registros), [registros]);
 
+  const rodape: ReactNode = registros.length > 0 ? (
+    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1.5 px-4 py-2.5 text-sm">
+          <span className="text-slate-400">
+            {selecionados.length > 0 ? (
+              <>
+                {selCount} de {quantidadeTotal} registro(s) selecionado(s) ·{' '}
+                <span className="font-semibold text-violet-300">R$ {formatarMoeda(selTotal)}</span>
+              </>
+            ) : (
+              <>
+                {quantidade} de {quantidadeTotal} registro(s) · mês{' '}
+                <span className="text-slate-200">{formatarMoeda(totalDoMes)}</span>
+              </>
+            )}
+          </span>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5">
+            <span className="text-slate-400">
+              Total Gasto:{' '}
+              <span className="font-semibold text-slate-100">
+                {formatarMoeda(divisao.totalGasto)}
+              </span>
+            </span>
+            <span
+              className="text-slate-400"
+              title="Soma de (Dividido 50/50 ÷ 2) com tudo que é da Lívia — o que ela me repassa"
+            >
+              Recebo Livia:{' '}
+              <span className="font-semibold text-amber-300">
+                {formatarMoeda(divisao.receboLivia)}
+              </span>
+            </span>
+            <span
+              className="text-slate-400"
+              title="Total Gasto − Recebo Livia — o que realmente sai do meu bolso"
+            >
+              Total Real:{' '}
+              <span className="font-semibold text-emerald-300">
+                {formatarMoeda(divisao.totalReal)}
+              </span>
+            </span>
+            <span
+              className="text-slate-400"
+              title="Soma dos lançamentos marcados como 'Fatura futura' — quanto desta despesa só aparecerá no mês seguinte"
+            >
+              Gastos próximo mês:{' '}
+              <span className="font-semibold text-violet-300">
+                {formatarMoeda(gastosProximoMesValor)}
+              </span>
+            </span>
+          </div>
+            </div>
+  ) : undefined;
+
   // ---------- estados de carregamento/erro (sem cache nenhum) ----------
   if (!snapshot) {
     if (carregando) return <Carregando />;
@@ -333,61 +387,8 @@ export function LancamentosPage() {
           selecionados={selecionados}
           aoAlternarSelecao={alternarSelecao}
           aoDefinirSelecao={definirSelecao}
+          rodape={rodape}
         />
-      )}
-
-      {/* ------- totais (memoizados no hook) ------- */}
-      {registros.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm">
-          <span className="text-slate-400">
-            {selecionados.length > 0 ? (
-              <>
-                {selCount} de {quantidadeTotal} registro(s) selecionado(s) ·{' '}
-                <span className="font-semibold text-violet-300">R$ {formatarMoeda(selTotal)}</span>
-              </>
-            ) : (
-              <>
-                {quantidade} de {quantidadeTotal} registro(s) · mês{' '}
-                <span className="text-slate-200">{formatarMoeda(totalDoMes)}</span>
-              </>
-            )}
-          </span>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5">
-            <span className="text-slate-400">
-              Total Gasto:{' '}
-              <span className="font-semibold text-slate-100">
-                {formatarMoeda(divisao.totalGasto)}
-              </span>
-            </span>
-            <span
-              className="text-slate-400"
-              title="Soma de (Dividido 50/50 ÷ 2) com tudo que é da Lívia — o que ela me repassa"
-            >
-              Recebo Livia:{' '}
-              <span className="font-semibold text-amber-300">
-                {formatarMoeda(divisao.receboLivia)}
-              </span>
-            </span>
-            <span
-              className="text-slate-400"
-              title="Total Gasto − Recebo Livia — o que realmente sai do meu bolso"
-            >
-              Total Real:{' '}
-              <span className="font-semibold text-emerald-300">
-                {formatarMoeda(divisao.totalReal)}
-              </span>
-            </span>
-            <span
-              className="text-slate-400"
-              title="Soma dos lançamentos marcados como 'Fatura futura' — quanto desta despesa só aparecerá no mês seguinte"
-            >
-              Gastos próximo mês:{' '}
-              <span className="font-semibold text-violet-300">
-                {formatarMoeda(gastosProximoMesValor)}
-              </span>
-            </span>
-          </div>
-        </div>
       )}
 
       {/* ------- modal de cadastro/edição ------- */}

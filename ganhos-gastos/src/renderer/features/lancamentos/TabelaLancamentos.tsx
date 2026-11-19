@@ -1,5 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { FixedSizeList, type ListChildComponentProps } from 'react-window';
+import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Copy, Pencil, Trash2 } from 'lucide-react';
 import type { LancamentoMensal, Registro } from '@/types/api-types';
 import { BadgeCategoria } from '@/components/BadgeCategoria';
@@ -8,6 +7,7 @@ import { EntradaSugestoes } from '@/components/Campos';
 import { TooltipTexto } from '@/components/TooltipTexto';
 import { formatarData, formatarMoeda, nomeFormaPgto, valorFormaPgto } from '@/lib/formatar';
 import { createPortal } from 'react-dom';
+import { SelecaoTodos } from '@/components/SelecaoTodos';
 import { ehUltimaParcela } from '@/lib/parcelas';
 import { useStoreUI } from '@/store/storeUI';
 
@@ -225,82 +225,6 @@ const Linha = memo(function Linha({ registro, colunas, linha, sugestoesObservaca
   );
 });
 
-interface DadosVirtuais {
-  registros: Registro<LancamentoMensal>[];
-  colunas: string;
-  linhaInicial: number;
-  sugestoesObservacao: string[];
-  aoEditar: (registro: Registro<LancamentoMensal>) => void;
-  aoExcluir: (registro: Registro<LancamentoMensal>) => void;
-  aoEditarObservacao: (linha: number | string, novoValor: string) => Promise<void>;
-  aoAbrirMenu: (e: React.MouseEvent, registro: Registro<LancamentoMensal>) => void;
-  selecionados: (number | string)[];
-  aoAlternarSelecao: (id: number | string) => void;
-}
-
-/** Checkbox do cabeçalho: marca/desmarca todos os registros VISÍVEIS. */
-function SelecaoTodos({
-  registros,
-  selecionados,
-  aoDefinirSelecao,
-}: {
-  registros: Registro<LancamentoMensal>[];
-  selecionados: (number | string)[];
-  aoDefinirSelecao: (ids: (number | string)[]) => void;
-}) {
-  const visiveis = registros.map((r) => r.linha);
-  const qtdSel = visiveis.filter((id) => selecionados.includes(id)).length;
-  const todos = visiveis.length > 0 && qtdSel === visiveis.length;
-  const alguns = qtdSel > 0 && !todos;
-
-  return (
-    <input
-      type="checkbox"
-      checked={todos}
-      ref={(el) => {
-        if (el) el.indeterminate = alguns;
-      }}
-      onChange={() => {
-        if (todos) {
-          // todos marcados → desmarca os visíveis; mantém os de fora do filtro
-          aoDefinirSelecao(selecionados.filter((id) => !visiveis.includes(id)));
-        } else {
-          aoDefinirSelecao([...new Set([...selecionados, ...visiveis])]);
-        }
-      }}
-      aria-label="Selecionar todos os registros visíveis"
-      title="Selecionar todos os registros visíveis"
-      className="h-4 w-4 accent-sky-500 cursor-pointer"
-    />
-  );
-}
-
-function LinhaVirtual({ index, style, data }: ListChildComponentProps<DadosVirtuais>) {
-  const registro = data.registros[index];
-  if (!registro) return null;
-  return (
-    <div style={style}>
-      <Linha
-        registro={registro}
-        colunas={data.colunas}
-        linha={data.linhaInicial + index}
-        sugestoesObservacao={data.sugestoesObservacao}
-        aoEditar={data.aoEditar}
-        aoExcluir={data.aoExcluir}
-        aoEditarObservacao={data.aoEditarObservacao}
-        aoAbrirMenu={data.aoAbrirMenu}
-        selecionado={data.selecionados.includes(registro.linha)}
-        aoAlternarSelecao={data.aoAlternarSelecao}
-      />
-    </div>
-  );
-}
-
-const ALTURA_LINHA = 54;
-/** Acima disso a lista passa a ser virtualizada (5.9). */
-const LIMITE_VIRTUALIZACAO = 200;
-const ALTURA_MAXIMA = 700;
-
 interface Props {
   registros: Registro<LancamentoMensal>[];
   /** Valores existentes no mês, por coluna (para os filtros multi-seleção). */
@@ -316,9 +240,11 @@ interface Props {
   selecionados: (number | string)[];
   aoAlternarSelecao: (id: number | string) => void;
   aoDefinirSelecao: (ids: (number | string)[]) => void;
+  /** Conteúdo do rodapé fixo (ex.: totais do mês). */
+  rodape?: ReactNode;
 }
 
-export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao, aoDuplicar, selecionados, aoAlternarSelecao, aoDefinirSelecao }: Props) {
+export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao, aoDuplicar, selecionados, aoAlternarSelecao, aoDefinirSelecao, rodape }: Props) {
   const ordem = useStoreUI((s) => s.ordemLancamentos);
   const filtrosColunas = useStoreUI((s) => s.filtrosColunas);
   const alternarOrdem = useStoreUI((s) => s.alternarOrdemLancamentos);
@@ -366,24 +292,6 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
   const colunas = useMemo(() => `36px ${colunasBase}`, [colunasBase]);
   const larguraMinima = larguraBase + 36 + 16;
 
-  const dadosVirtuais = useMemo(
-    () => ({
-      registros,
-      colunas,
-      linhaInicial: 0,
-      aoEditar,
-      aoExcluir,
-      aoEditarObservacao,
-      sugestoesObservacao,
-      aoAbrirMenu,
-      selecionados,
-      aoAlternarSelecao,
-    }),
-    [registros, colunas, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao, aoAbrirMenu, selecionados, aoAlternarSelecao],
-  );
-
-  const virtualizar = registros.length > LIMITE_VIRTUALIZACAO;
-
   const direcaoDe = (campo: CampoOrdenavel): DirecaoOrdem | null =>
     ordem?.campo === campo ? ordem.direcao : null;
 
@@ -406,14 +314,14 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60">
-      <div className="overflow-x-auto">
-        <div className="w-full" style={{ minWidth: larguraMinima }}>
-          {/* cabeçalho */}
+      <div className="flex max-h-[68vh] flex-col overflow-x-auto overflow-y-auto">
+        <div className="flex w-full min-w-max flex-col" style={{ minWidth: larguraMinima }}>
+          {/* cabeçalho (fixo no topo enquanto a área rola) */}
           <div
             style={{ gridTemplateColumns: colunas }}
-            className="grid items-center gap-4 border-b border-slate-800 bg-slate-950/60 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500"
+            className="sticky top-0 z-10 grid shrink-0 items-center gap-4 border-b border-slate-800 bg-slate-950/95 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 backdrop-blur"
           >
-            <SelecaoTodos registros={registros} selecionados={selecionados} aoDefinirSelecao={aoDefinirSelecao} />
+            <SelecaoTodos visiveis={registros.map((r) => r.linha)} selecionados={selecionados} aoDefinirSelecao={aoDefinirSelecao} />
             <ThOrdenavel
               rotulo="DATA"
               direcao={direcaoDe('data')}
@@ -463,19 +371,8 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
             <span className="text-right">AÇÕES</span>
           </div>
 
-          {/* corpo */}
-          {virtualizar ? (
-            <FixedSizeList
-              height={Math.min(ALTURA_MAXIMA, registros.length * ALTURA_LINHA)}
-              width="100%"
-              itemCount={registros.length}
-              itemSize={ALTURA_LINHA}
-              itemData={dadosVirtuais}
-              overscanCount={8}
-            >
-              {LinhaVirtual}
-            </FixedSizeList>
-          ) : (
+          {/* corpo (rolagem interna; cabeçalho e rodapé ficam visíveis) */}
+          <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="w-full">
               {registros.map((registro) => (
                 <Linha
@@ -492,6 +389,13 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
                   aoAlternarSelecao={aoAlternarSelecao}
                 />
               ))}
+            </div>
+          </div>
+
+          {/* rodapé (fixo no fundo enquanto a área rola) */}
+          {rodape && (
+            <div className="sticky bottom-0 z-10 shrink-0 border-t border-slate-800 bg-slate-950/95 backdrop-blur">
+              {rodape}
             </div>
           )}
         </div>
