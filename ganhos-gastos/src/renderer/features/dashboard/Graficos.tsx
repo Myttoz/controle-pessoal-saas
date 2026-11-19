@@ -24,9 +24,13 @@ const ESTILOTooltip = {
   backgroundColor: '#0f172a',
   border: '1px solid #334155',
   borderRadius: '10px',
-  color: '#f1f5f9',
+  color: '#f8fafc',
   fontSize: 13,
 } as const;
+
+/** força texto claro no tooltip (rótulo + itens), independente do tema padrão do recharts */
+const ESTILOItem = { color: '#f8fafc' } as const;
+const ESTILORotulo = { color: '#f8fafc', fontWeight: 600 } as const;
 
 function valorFormatado(valor: unknown): string {
   return formatarMoeda(Number(valor));
@@ -67,7 +71,7 @@ export function GraficoCategorias({ resumo }: { resumo: ResumoDashboard }) {
             <Cell key={i} fill={CORES[i % CORES.length]} />
           ))}
         </Pie>
-        <Tooltip formatter={valorFormatado} contentStyle={ESTILOTooltip} />
+        <Tooltip formatter={valorFormatado} contentStyle={ESTILOTooltip} itemStyle={ESTILOItem} labelStyle={ESTILORotulo} />
         <Legend
           verticalAlign="bottom"
           height={46}
@@ -107,6 +111,8 @@ export function GraficoMeses({ resumo }: { resumo: ResumoDashboard }) {
           formatter={valorFormatado}
           labelFormatter={(rotulo) => `Mês: ${rotulo}`}
           contentStyle={ESTILOTooltip}
+          itemStyle={ESTILOItem}
+          labelStyle={ESTILORotulo}
         />
         <Bar dataKey="total" name="Gastos" fill="#38bdf8" radius={[6, 6, 0, 0]} maxBarSize={44} />
       </BarChart>

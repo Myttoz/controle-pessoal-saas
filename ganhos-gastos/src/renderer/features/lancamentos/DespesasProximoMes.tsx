@@ -12,7 +12,7 @@
  */
 import { useEffect, useState } from 'react';
 import type { SiglaMes } from '@/types/api-types';
-import { Campo, EntradaMoeda } from '@/components/Campos';
+import { EntradaMoeda } from '@/components/Campos';
 import { formatarMoeda } from '@/lib/formatar';
 import { NOMES_MESES, SIGLAS } from '@/lib/meses';
 import { useStoreLocal } from '@/store/storeLocal';
@@ -85,9 +85,12 @@ export function DespesasProximoMes({
         </p>
       </header>
 
-      {/* ------- campos ------- */}
-      <div className="flex flex-wrap items-end gap-x-6 gap-y-3 p-4">
-        <Campo rotulo="Fatura cartão (R$)" className="w-40">
+      {/* ------- campos (compactos) ------- */}
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-2 px-4 py-2.5">
+        <label className="flex flex-col gap-0.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            Fatura cartão (R$)
+          </span>
           <EntradaMoeda
             value={faturaDigitos}
             onChange={(digitos) => {
@@ -95,13 +98,14 @@ export function DespesasProximoMes({
               salvarCampo('faturaCartao', digitos);
             }}
             placeholder="0,00"
+            className="w-32 !px-2 !py-1.5 !text-sm"
           />
-        </Campo>
-        <Campo
-          rotulo="Despesas Pix (R$)"
-          dica="Contas fixas etc. pagas em Pix ao receber o salário"
-          className="w-40"
-        >
+        </label>
+
+        <label className="flex flex-col gap-0.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            Despesas Pix (R$)
+          </span>
           <EntradaMoeda
             value={pixDigitos}
             onChange={(digitos) => {
@@ -109,16 +113,18 @@ export function DespesasProximoMes({
               salvarCampo('despesasPix', digitos);
             }}
             placeholder="0,00"
+            className="w-32 !px-2 !py-1.5 !text-sm"
           />
-        </Campo>
-        <div className="flex flex-col items-end gap-0.5 pb-0.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+        </label>
+
+        <span className="ml-auto flex flex-col items-end gap-0.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
             Total
-          </p>
-          <p className="text-lg font-semibold tabular-nums text-violet-300">
+          </span>
+          <span className="text-base font-semibold tabular-nums leading-7 text-violet-300">
             {formatarMoeda(totalDespesas)}
-          </p>
-        </div>
+          </span>
+        </span>
       </div>
 
       {/* ------- rodapé: Restante do mês ------- */}
