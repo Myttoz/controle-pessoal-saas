@@ -24,6 +24,14 @@ export interface ResumoMesConfig {
   recebidoLivia: number | null;
 }
 
+/** Planejamento manual de despesas do mês seguinte ("chego em dez pagando o cartão de nov"). */
+export interface DespesasProximoMesConfig {
+  /** Fatura do cartão a pagar no próximo mês (informado à mão). */
+  faturaCartao: number | null;
+  /** Despesas em Pix (contas fixas etc.) a pagar no próximo mês. */
+  despesasPix: number | null;
+}
+
 /**
  * Um lembrete FIXO/recorrente (ex.: "backup da pasta a cada 15 dias") —
  * aparece na aba Lembretes permanentemente, e o app dispara um aviso
@@ -55,6 +63,8 @@ export interface ConfigLocal {
   pontoEletronico?: Record<string, number>;
   /** Lembretes fixos/recorrentes (ex.: backup a cada 15 dias). */
   lembretesFixos?: LembreteFixo[];
+  /** Planejamento manual por mês ("AAAA-MM" = mês em que você paga): fatura do cartão + despesas Pix. */
+  despesasProximoMes?: Record<string, DespesasProximoMesConfig>;
 }
 
 // ---------------------------------------------------------------------------

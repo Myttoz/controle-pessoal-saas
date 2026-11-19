@@ -128,9 +128,12 @@ interface LinhaProps {
   aoEditarObservacao: (linha: number | string, novoValor: string) => Promise<void>;
   /** Abre o menu de contexto (botão direito) — duplicar etc. */
   aoAbrirMenu: (e: React.MouseEvent, registro: Registro<LancamentoMensal>) => void;
+  /** Esta linha está selecionada (checkbox da primeira coluna)? */
+  selecionado: boolean;
+  aoAlternarSelecao: (id: number | string) => void;
 }
 
-const Linha = memo(function Linha({ registro, colunas, linha, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao, aoAbrirMenu }: LinhaProps) {
+const Linha = memo(function Linha({ registro, colunas, linha, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao, aoAbrirMenu, selecionado, aoAlternarSelecao }: LinhaProps) {
   const d = registro.dados;
   const [editandoObs, setEditandoObs] = useState(false);
   const [textoObs, setTextoObs] = useState(d.OBSERVAÇÃO ?? '');
@@ -154,6 +157,17 @@ const Linha = memo(function Linha({ registro, colunas, linha, sugestoesObservaca
         aoAbrirMenu(e, registro);
       }}
     >
+      <span className="flex items-center justify-center">
+        <input
+          type="checkbox"
+          checked={selecionado}
+          onChange={() => aoAlternarSelecao(registro.linha)}
+          onClick={(e) => e.stopPropagation()}
+          onContextMenu={(e) => e.stopPropagation()}
+          aria-label="Selecionar lançamento"
+          className="h-4 w-4 accent-sky-500 cursor-pointer"
+        />
+      </span>
       <span className="tabular-nums text-slate-400">{formatarData(d.DATA)}</span>
       <span className="min-w-0">
         <BadgeCategoria categoria={d.CATEGORIA} />
@@ -220,6 +234,45 @@ interface DadosVirtuais {
   aoExcluir: (registro: Registro<LancamentoMensal>) => void;
   aoEditarObservacao: (linha: number | string, novoValor: string) => Promise<void>;
   aoAbrirMenu: (e: React.MouseEvent, registro: Registro<LancamentoMensal>) => void;
+  selecionados: (number | string)[];
+  aoAlternarSelecao: (id: number | string) => void;
+}
+
+/** Checkbox do cabeçalho: marca/desmarca todos os registros VISÍVEIS. */
+function SelecaoTodos({
+  registros,
+  selecionados,
+  aoDefinirSelecao,
+}: {
+  registros: Registro<LancamentoMensal>[];
+  selecionados: (number | string)[];
+  aoDefinirSelecao: (ids: (number | string)[]) => void;
+}) {
+  const visiveis = registros.map((r) => r.linha);
+  const qtdSel = visiveis.filter((id) => selecionados.includes(id)).length;
+  const todos = visiveis.length > 0 && qtdSel === visiveis.length;
+  const alguns = qtdSel > 0 && !todos;
+
+  return (
+    <input
+      type="checkbox"
+      checked={todos}
+      ref={(el) => {
+        if (el) el.indeterminate = alguns;
+      }}
+      onChange={() => {
+        if (todos) {
+          // todos marcados → desmarca os visíveis; mantém os de fora do filtro
+          aoDefinirSelecao(selecionados.filter((id) => !visiveis.includes(id)));
+        } else {
+          aoDefinirSelecao([...new Set([...selecionados, ...visiveis])]);
+        }
+      }}
+      aria-label="Selecionar todos os registros visíveis"
+      title="Selecionar todos os registros visíveis"
+      className="h-4 w-4 accent-sky-500 cursor-pointer"
+    />
+  );
 }
 
 function LinhaVirtual({ index, style, data }: ListChildComponentProps<DadosVirtuais>) {
@@ -236,6 +289,8 @@ function LinhaVirtual({ index, style, data }: ListChildComponentProps<DadosVirtu
         aoExcluir={data.aoExcluir}
         aoEditarObservacao={data.aoEditarObservacao}
         aoAbrirMenu={data.aoAbrirMenu}
+        selecionado={data.selecionados.includes(registro.linha)}
+        aoAlternarSelecao={data.aoAlternarSelecao}
       />
     </div>
   );
@@ -257,9 +312,13 @@ interface Props {
   aoEditarObservacao: (linha: number | string, novoValor: string) => Promise<void>;
   /** Duplicar a linha para o mês seguinte (menu de botão direito). */
   aoDuplicar?: (registro: Registro<LancamentoMensal>) => void;
+  /** ids selecionados (checkboxes) — controlado pela página. */
+  selecionados: (number | string)[];
+  aoAlternarSelecao: (id: number | string) => void;
+  aoDefinirSelecao: (ids: (number | string)[]) => void;
 }
 
-export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao, aoDuplicar }: Props) {
+export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao, aoDuplicar, selecionados, aoAlternarSelecao, aoDefinirSelecao }: Props) {
   const ordem = useStoreUI((s) => s.ordemLancamentos);
   const filtrosColunas = useStoreUI((s) => s.filtrosColunas);
   const alternarOrdem = useStoreUI((s) => s.alternarOrdemLancamentos);
@@ -303,7 +362,9 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
     });
   }, []);
 
-  const { colunas, larguraMinima } = useMemo(() => calcularColunas(registros), [registros]);
+  const { colunas: colunasBase, larguraMinima: larguraBase } = useMemo(() => calcularColunas(registros), [registros]);
+  const colunas = useMemo(() => `36px ${colunasBase}`, [colunasBase]);
+  const larguraMinima = larguraBase + 36 + 16;
 
   const dadosVirtuais = useMemo(
     () => ({
@@ -315,8 +376,10 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
       aoEditarObservacao,
       sugestoesObservacao,
       aoAbrirMenu,
+      selecionados,
+      aoAlternarSelecao,
     }),
-    [registros, colunas, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao, aoAbrirMenu],
+    [registros, colunas, sugestoesObservacao, aoEditar, aoExcluir, aoEditarObservacao, aoAbrirMenu, selecionados, aoAlternarSelecao],
   );
 
   const virtualizar = registros.length > LIMITE_VIRTUALIZACAO;
@@ -350,6 +413,7 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
             style={{ gridTemplateColumns: colunas }}
             className="grid items-center gap-4 border-b border-slate-800 bg-slate-950/60 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500"
           >
+            <SelecaoTodos registros={registros} selecionados={selecionados} aoDefinirSelecao={aoDefinirSelecao} />
             <ThOrdenavel
               rotulo="DATA"
               direcao={direcaoDe('data')}
@@ -424,6 +488,8 @@ export function TabelaLancamentos({ registros, opcoes, sugestoesObservacao, aoEd
                   aoExcluir={aoExcluir}
                   aoEditarObservacao={aoEditarObservacao}
                   aoAbrirMenu={aoAbrirMenu}
+                  selecionado={selecionados.includes(registro.linha)}
+                  aoAlternarSelecao={aoAlternarSelecao}
                 />
               ))}
             </div>

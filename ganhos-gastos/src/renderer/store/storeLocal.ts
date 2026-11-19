@@ -14,6 +14,7 @@ import { create } from 'zustand';
 import type {
   ConfigLocal,
   DadosLocais,
+  DespesasProximoMesConfig,
   LembreteFixo,
   RegistroFerias,
   RegistroHoraExtra,
@@ -69,6 +70,8 @@ interface EstadoLocal {
   adicionarLembreteFixo(registro: Omit<LembreteFixo, 'id'>): void;
   concluirLembreteFixo(id: string): void;
   removerLembreteFixo(id: string): void;
+  /** Define/apaga fatura do cartão e despesas Pix do mês (chave "AAAA-MM"). */
+  setDespesasProximoMes(chave: string, parcial: Partial<DespesasProximoMesConfig>): void;
 
   /** Gera e baixa um arquivo JSON com todos os dados locais. */
   exportarBackup(): void;
@@ -123,6 +126,10 @@ function normalizar(carregado: DadosLocais | null | undefined): DadosLocais | nu
                 ultimaConclusao: hojeISO(),
               },
             ],
+      despesasProximoMes:
+        configDaVez.despesasProximoMes && typeof configDaVez.despesasProximoMes === 'object'
+          ? configDaVez.despesasProximoMes
+          : {},
     },
     horasExtras: Array.isArray(carregado.horasExtras) ? carregado.horasExtras : [],
     ferias: Array.isArray(carregado.ferias) ? carregado.ferias : [],
@@ -449,6 +456,16 @@ export const useStoreLocal = create<EstadoLocal>((set, get) => {
           lembretesFixos: (d.config.lembretesFixos ?? []).filter((l) => l.id !== id),
         },
       })),
+    setDespesasProximoMes: (chave, parcial) =>
+      mutar((d) => {
+        const mapa = { ...(d.config.despesasProximoMes ?? {}) };
+        const atual = mapa[chave] ?? { faturaCartao: null, despesasPix: null };
+        mapa[chave] = {
+          ...atual,
+          ...parcial,
+        };
+        return { ...d, config: { ...d.config, despesasProximoMes: mapa } };
+      }),
 
     // -----------------------------------------------------------------------
     //  BACKUP (arquivo único para pendrive / nuvem)

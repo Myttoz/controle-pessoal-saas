@@ -72,6 +72,8 @@ interface EstadoUI {
   filtrosColunas: FiltrosColunas;
   abaExtras: 'ganhos' | 'gastos';
   modalLancamento: ModalLancamento | null;
+  /** Seleção de lançamentos no mês (ids) para somar no rodapé — persiste filtrada por mês. */
+  selecionadosLanc: (number | string)[];
   /** Contador para sinalizar "focar a busca" vindo dos atalhos globais. */
   focoBusca: number;
   /** Contador para sinalizar "novo registro" vindo do atalho Ctrl+O. */
@@ -80,6 +82,9 @@ interface EstadoUI {
 
   irPara(pagina: Pagina): void;
   setMes(mes: SiglaMes): void;
+  alternarSelecaoLanc(id: number | string): void;
+  definirSelecaoLanc(ids: (number | string)[]): void;
+  limparSelecaoLanc(): void;
   pedirNovo(): void;
   setBusca(busca: string): void;
   setFiltro(campo: keyof Filtros, valor: string): void;
@@ -107,13 +112,22 @@ export const useStoreUI = create<EstadoUI>((set, get) => ({
   ordemLancamentos: null,
   filtrosColunas: {},
   abaExtras: 'ganhos',
+  selecionadosLanc: [],
   modalLancamento: null,
   focoBusca: 0,
   pedidoNovo: 0,
   toasts: [],
 
-  irPara: (pagina) => set({ pagina }),
-  setMes: (mes) => set({ mes }),
+  irPara: (pagina) => set({ pagina, selecionadosLanc: [] }),
+  setMes: (mes) => set({ mes, selecionadosLanc: [] }),
+  alternarSelecaoLanc: (id) =>
+    set((s) => ({
+      selecionadosLanc: s.selecionadosLanc.includes(id)
+        ? s.selecionadosLanc.filter((v) => v !== id)
+        : [...s.selecionadosLanc, id],
+    })),
+  definirSelecaoLanc: (ids) => set({ selecionadosLanc: ids }),
+  limparSelecaoLanc: () => set({ selecionadosLanc: [] }),
   setBusca: (busca) => set({ busca }),
   setFiltro: (campo, valor) => set({ filtros: { ...get().filtros, [campo]: valor } }),
   limparFiltros: () =>

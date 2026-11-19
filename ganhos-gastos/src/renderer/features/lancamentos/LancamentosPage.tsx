@@ -6,10 +6,11 @@ import { Campo, Entrada, Selecao } from '@/components/Campos';
 import { AreaErro, Carregando, EstadoVazio } from '@/components/Estados';
 import { MesTabs } from '@/components/MesTabs';
 import { Modal } from '@/components/Modal';
-import { formatarMoeda, nomeFormaPgto } from '@/lib/formatar';
+import { formatarMoeda, nomeFormaPgto, arredondar2 } from '@/lib/formatar';
 import { NOMES_MESES } from '@/lib/meses';
 import { sugestoesDescricoes, sugestoesObservacoes } from '@/lib/sugestoes';
 import { calcularResumo, gastosProximoMes } from '@/lib/resumo';
+import { DespesasProximoMes } from './DespesasProximoMes';
 import { resumirDivisao } from '@/lib/divisao';
 import { useRegistrosFiltrados } from '@/hooks/useRegistrosFiltrados';
 import { usePedidoNovo } from '@/hooks/usePedidoNovo';
@@ -82,6 +83,22 @@ export function LancamentosPage() {
   const fecharModal = useStoreUI((s) => s.fecharModalLancamento);
   const abrirNovo = useStoreUI((s) => s.abrirNovoLancamento);
   const focoBusca = useStoreUI((s) => s.focoBusca);
+  const selecionados = useStoreUI((s) => s.selecionadosLanc);
+  const alternarSelecao = useStoreUI((s) => s.alternarSelecaoLanc);
+  const definirSelecao = useStoreUI((s) => s.definirSelecaoLanc);
+  const selCount = useMemo(
+    () => registros.filter((r) => selecionados.includes(r.linha)).length,
+    [registros, selecionados],
+  );
+  const selTotal = useMemo(
+    () =>
+      arredondar2(
+        registros
+          .filter((r) => selecionados.includes(r.linha))
+          .reduce((s, r) => s + (Number(r.dados.VALOR) || 0), 0),
+      ),
+    [registros, selecionados],
+  );
 
   // Ctrl+O → novo lançamento (global por setor)
   usePedidoNovo(() => {
@@ -268,16 +285,8 @@ export function LancamentosPage() {
       </div>
 
       {/* ------- restante do mês (mesmos números de Resumo Pagamentos) ------- */}
-      {linhaRestanteMes && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-800/50 bg-sky-950/30 px-4 py-2.5 text-sm">
-          <span className="text-sky-200/80">
-            Restante em <strong>{NOMES_MESES[mes]}</strong>{' '}
-            <span className="hidden sm:inline">— Salário − Despesas + Recebido Lívia (aba Resumo Pagamentos)</span>
-          </span>
-          <span className="font-semibold tabular-nums text-sky-300">
-            {formatarMoeda(linhaRestanteMes.restante)}
-          </span>
-        </div>
+      {linhaRestanteMes && ano != null && (
+        <DespesasProximoMes ano={ano} mes={mes} restante={linhaRestanteMes.restante} />
       )}
 
       {/* ------- tabela ------- */}
@@ -321,6 +330,9 @@ export function LancamentosPage() {
           aoExcluir={aoExcluir}
           aoEditarObservacao={aoEditarObservacao}
           aoDuplicar={(registro) => void duplicarLancamento(ano ?? 0, aba ?? '', registro.linha)}
+          selecionados={selecionados}
+          aoAlternarSelecao={alternarSelecao}
+          aoDefinirSelecao={definirSelecao}
         />
       )}
 
@@ -328,8 +340,17 @@ export function LancamentosPage() {
       {registros.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm">
           <span className="text-slate-400">
-            {quantidade} de {quantidadeTotal} registro(s) · mês{' '}
-            <span className="text-slate-200">{formatarMoeda(totalDoMes)}</span>
+            {selecionados.length > 0 ? (
+              <>
+                {selCount} de {quantidadeTotal} registro(s) selecionado(s) ·{' '}
+                <span className="font-semibold text-violet-300">R$ {formatarMoeda(selTotal)}</span>
+              </>
+            ) : (
+              <>
+                {quantidade} de {quantidadeTotal} registro(s) · mês{' '}
+                <span className="text-slate-200">{formatarMoeda(totalDoMes)}</span>
+              </>
+            )}
           </span>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5">
             <span className="text-slate-400">
