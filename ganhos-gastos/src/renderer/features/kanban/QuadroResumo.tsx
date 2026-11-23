@@ -134,17 +134,17 @@ function Coluna({
         isOver ? 'border-sky-500/70 bg-sky-950/20' : destacada ? 'border-slate-700' : 'border-slate-800'
       }`}
     >
-      <header className="flex items-center justify-between gap-2 border-b border-slate-800 px-3 py-2.5">
+      <header className="flex items-start justify-between gap-2 border-b border-slate-800 px-3 py-2.5">
         <div className="min-w-0">
           <h3 className="truncate text-sm font-semibold text-slate-200" title={rotulo}>
             {rotulo}
           </h3>
           <p className="text-[11px] text-slate-500">
-            {registros.length} registro(s) · {formatarMoeda(total)}
+            {registros.length} registro(s)
           </p>
         </div>
-        <span className="rounded-md bg-slate-800 px-1.5 py-0.5 text-xs font-semibold text-slate-400">
-          {registros.length}
+        <span className="shrink-0 rounded-md bg-slate-800 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-slate-300">
+          {formatarMoeda(total)}
         </span>
       </header>
 
@@ -189,15 +189,15 @@ function ColunaDespesasLivia({
         destacada ? 'border-amber-500/70 bg-amber-950/20' : 'border-slate-800'
       }`}
     >
-      <header className="flex items-center justify-between gap-2 border-b border-slate-800 px-3 py-2.5">
+      <header className="flex items-start justify-between gap-2 border-b border-slate-800 px-3 py-2.5">
         <div className="min-w-0">
           <h3 className="truncate text-sm font-semibold text-amber-300">Despesas Livia</h3>
           <p className="text-[11px] text-slate-500">
-            {registros.length} registro(s) · {formatarMoeda(total)}
+            {registros.length} registro(s)
           </p>
         </div>
-        <span className="rounded-md bg-slate-800 px-1.5 py-0.5 text-xs font-semibold text-amber-400">
-          {registros.length}
+        <span className="shrink-0 rounded-md bg-amber-950/50 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-amber-300">
+          {formatarMoeda(total)}
         </span>
       </header>
 
@@ -242,7 +242,7 @@ function RodapeColunas({
   totalGeral: number;
 }) {
   return (
-    <div className="sticky bottom-0 z-10 mt-1 flex gap-3 border-t border-slate-800 bg-slate-950/95 px-2 pt-2 pb-1 backdrop-blur">
+    <div className="sticky bottom-0 z-10 mt-1 flex gap-3 border-t border-slate-800 bg-slate-950/95 pt-3 pb-2 backdrop-blur">
       {espelho && (
         <div
           className="w-[232px] shrink-0 rounded-xl border border-amber-900/60 bg-amber-950/20 px-4 py-3"
