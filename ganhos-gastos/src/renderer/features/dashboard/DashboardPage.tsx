@@ -23,6 +23,7 @@ import { useStoreAno } from '@/store/storeAno';
 import { useStoreLocal } from '@/store/storeLocal';
 import { useStoreUI } from '@/store/storeUI';
 import { GraficoCategorias, GraficoMeses } from './Graficos';
+import { ProjecaoSaldo } from './ProjecaoSaldo';
 import { MesTabs } from '@/components/MesTabs';
 
 type Tom = 'sky' | 'rose' | 'emerald' | 'amber' | 'violet' | 'indigo' | 'teal';
@@ -265,6 +266,15 @@ export function DashboardPage() {
           <GraficoMeses resumo={resumo} />
         </div>
       </section>
+
+      {/* ------- projeção de saldo ------- */}
+      {resumo && (
+        <ProjecaoSaldo
+          snapshot={snapshot}
+          config={dadosLocais.config}
+          mesSelecionado={mes}
+        />
+      )}
 
       {/* ------- top categorias (lista) ------- */}
       {(resumo?.categorias.length ?? 0) > 0 && (

@@ -23,6 +23,8 @@ interface EstadoAuth {
   carregando: boolean;
   /** Último erro de autenticação. */
   erro: string | null;
+  /** true quando o usuário chegou por link de recuperação de senha. */
+  recuperacaoSenhaPendente: boolean;
 
   /** Tenta logar com usuário/senha. Salva localStorage e injeta token no serviço API. */
   login: (usuario: string, senha: string) => Promise<boolean>;
@@ -33,6 +35,7 @@ interface EstadoAuth {
   /** Define token/usuario manualmente. */
   setSessao: (token: string, usuario: Usuario) => void;
   limparErro: () => void;
+  setRecuperacaoSenhaPendente: (v: boolean) => void;
 }
 
 export const useStoreAuth = create<EstadoAuth>((set, get) => ({
@@ -47,6 +50,7 @@ export const useStoreAuth = create<EstadoAuth>((set, get) => ({
   })(),
   carregando: false,
   erro: null,
+  recuperacaoSenhaPendente: false,
 
   login: async (usuario, senha) => {
     set({ carregando: true, erro: null });
@@ -151,6 +155,7 @@ export const useStoreAuth = create<EstadoAuth>((set, get) => ({
   },
 
   limparErro: () => set({ erro: null }),
+  setRecuperacaoSenhaPendente: (v) => set({ recuperacaoSenhaPendente: v }),
 }));
 
 // ---------------------------------------------------------------------------

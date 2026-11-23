@@ -21,6 +21,8 @@ import { KanbanCategoriaPage } from '@/features/kanban/KanbanCategoriaPage';
 import { LancamentosPage } from '@/features/lancamentos/LancamentosPage';
 import { LembretesPage } from '@/features/lembretes/LembretesPage';
 import { LoginPage } from '@/features/auth/LoginPage';
+import { RecuperarSenhaPage } from '@/features/auth/RecuperarSenhaPage';
+import { supabase } from '@/lib/supabase';
 import { ManutencaoPage } from '@/features/manutencao/ManutencaoPage';
 import { PagamentosPage } from '@/features/pagamentos/PagamentosPage';
 import { SincronizacaoPage } from '@/features/sincronizacao/SincronizacaoPage';
@@ -34,7 +36,9 @@ export default function App() {
   const pagina = useStoreUI((s) => s.pagina);
   const irPara = useStoreUI((s) => s.irPara);
 
-  const { token, usuario, logout, verificar } = useStoreAuth();
+  const { token, usuario, verificar, logout } = useStoreAuth();
+  const recuperacaoSenhaPendente = useStoreAuth((s) => s.recuperacaoSenhaPendente);
+  const setRecuperacaoSenhaPendente = useStoreAuth((s) => s.setRecuperacaoSenhaPendente);
   const autenticado = !!token && !!usuario;
 
   useAtalhosGlobais();
@@ -61,6 +65,16 @@ export default function App() {
     verificouSessao.current = true;
     void verificar();
   }, [verificar]);
+
+  // 3b. Link de recuperação de senha: força o usuário a definir nova senha.
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setRecuperacaoSenhaPendente(true);
+      }
+    });
+    return () => data.subscription.unsubscribe();
+  }, [setRecuperacaoSenhaPendente]);
 
   // 4. Reenvia alterações pendentes quando a internet volta e a cada 30s.
   useEffect(() => {
@@ -130,6 +144,9 @@ export default function App() {
   } else if (!autenticado) {
     // Não autenticado → mostra tela de login
     conteudo = <LoginPage />;
+  } else if (recuperacaoSenhaPendente) {
+    // Veio por link de recuperação — exige definir nova senha
+    conteudo = <RecuperarSenhaPage />;
   } else {
     // Autenticado → renderiza a aplicação
     conteudo = (
