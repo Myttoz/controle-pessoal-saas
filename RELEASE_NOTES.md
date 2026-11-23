@@ -1,23 +1,10 @@
-# Controle Pessoal — v2.2.0
+# Controle Pessoal — v2.2.1
 
-Release de funcionalidades (minor) sobre a v2.1.0. Sem mudança de banco.
+Release de correções (patch) sobre a v2.2.0. Sem mudança de banco.
 
-## Novidades
+## Correções
 
-- **Cabeçalho e rodapé fixos nas tabelas** (Lançamentos): a tabela rola na própria área interna com **cabeçalho sticky** (topo) e **rodapé sticky** (fundo) — os totais do mês ficam sempre visíveis.
-- **Rodapé da tabela de Lançamentos**: agora faixa fixa no fundo do card — registros/selecionados · Total Gasto · Recebo Lívia · Total Real · Gastos próximo mês.
-
-## Horas Extras
-
-- **Seleção em lote**: caixas de seleção nas linhas de plantões e no ponto eletrônico (com "selecionar todos os visíveis" no cabeçalho); o rodapé soma **somente os selecionados**.
-
-## Manutenção
-
-- **Rodapé de 1 linha**: mostra a **manutenção mais próxima** (data, km, oficina, peças, próxima revisão e status) + **total geral** (soma de todas) em cor levemente diferente.
-
-## Resumo Mensal
-
-- **Cabeçalho e rodapé fixos** (abas de mês + totais) durante a rolagem.
+- **Segurança**: remoção de logs no console do fluxo de autenticação que podiam expor o token de sessão/resposta de login no browser.
 
 ## Como atualizar
 
