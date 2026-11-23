@@ -145,7 +145,7 @@ async function calcularFreelance(
 }
 
 function rowToLancamento(r: Record<string, unknown>): LancamentoMensal {
-  return {
+  const base: LancamentoMensal = {
     CATEGORIA: String(r.categoria ?? '') as Categoria,
     VALOR: num(r.valor) ?? 0,
     DESCRIÇÃO: String(r.descricao ?? ''),
@@ -155,6 +155,11 @@ function rowToLancamento(r: Record<string, unknown>): LancamentoMensal {
     DATA: String(r.data ?? ''),
     OBSERVAÇÃO: String(r.observacao ?? ''),
   };
+  if (r.grupo_id) base.GRUPO_ID = String(r.grupo_id);
+  if (r.grupo_tipo === 'recorrente' || r.grupo_tipo === 'parcela') base.GRUPO_TIPO = r.grupo_tipo;
+  if (r.grupo_indice != null) base.GRUPO_INDICE = inteiro(r.grupo_indice) ?? undefined;
+  if (r.grupo_total != null) base.GRUPO_TOTAL = inteiro(r.grupo_total) ?? undefined;
+  return base;
 }
 
 function rowToSalario(r: Record<string, unknown>, freelanceCalculado?: number): LinhaSalario {
@@ -779,6 +784,58 @@ export function criarApiSupabase(): ApiElectron {
         const parsed = parseAba(payload.aba);
         if (!parsed) return erro('Aba inválida.', 'PARAMETRO_AUSENTE');
         const dados = payload.dados as DadosMensais;
+        const lote = (payload as { lote?: { tipo: 'recorrente' | 'parcela'; total: number } }).lote;
+        const grupoTotal = lote && lote.total > 1 ? Math.min(Math.max(Math.floor(lote.total), 2), 60) : 0;
+
+        const baseObs = String(dados.OBSERVAÇÃO ?? '').trim();
+        const dataBase = String(dados.DATA ?? '');
+        const mkData = (ano: number, mes: number) => {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(dataBase)) return dataBase || null;
+          const dia = Math.min(parseInt(dataBase.slice(8, 10), 10) || 1, 28);
+          return `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+        };
+
+        if (grupoTotal > 0) {
+          const grupoId = (globalThis.crypto?.randomUUID?.() ?? `grp-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+          const linhas: Record<string, unknown>[] = [];
+          for (let i = 0; i < grupoTotal; i++) {
+            const mAbs = (parsed.mes - 1) + i;
+            const anoI = parsed.ano + Math.floor(mAbs / 12);
+            const mesI = (mAbs % 12) + 1;
+            const obs = lote!.tipo === 'parcela'
+              ? (baseObs ? `${baseObs} ${i + 1}/${grupoTotal}` : `${i + 1}/${grupoTotal}`)
+              : baseObs;
+            linhas.push({
+              user_id: uid,
+              ano: anoI,
+              mes: mesI,
+              categoria: dados.CATEGORIA ?? '',
+              valor: num(dados.VALOR) ?? 0,
+              descricao: dados.DESCRIÇÃO ?? '',
+              forma_pgt: dados['FORMA DE PGTO'] ?? '',
+              tipo: dados.TIPO ?? '',
+              quem_paga: dados['QUEM PAGA'] ?? '',
+              data: mkData(anoI, mesI),
+              observacao: obs,
+              grupo_id: grupoId,
+              grupo_tipo: lote!.tipo,
+              grupo_indice: i + 1,
+              grupo_total: grupoTotal,
+            });
+          }
+          let { data, error } = await supabase.from('lancamentos').insert(linhas).select();
+          // fallback se colunas de grupo não existirem ainda
+          if (error && /grupo_id|grupo_tipo|grupo_indice|grupo_total|column .* does not exist/i.test(error.message)) {
+            const legado = linhas.map((l) => {
+              const c = { ...l }; delete c.grupo_id; delete c.grupo_tipo; delete c.grupo_indice; delete c.grupo_total; return c;
+            });
+            ({ data, error } = await supabase.from('lancamentos').insert(legado).select());
+          }
+          if (error) return erro(error.message);
+          const regs = ((data ?? []) as Record<string, unknown>[]).map((r) => ({ linha: String(r.id), dados: rowToLancamento(r) }));
+          return { sucesso: true, aba: payload.aba, linha: regs[0]?.linha ?? '', gravadas: Object.keys(dados), registro: regs[0]?.dados as unknown as LancamentoMensal, registros: regs } as unknown as RespostaEscrita;
+        }
+
         const { data, error } = await supabase
           .from('lancamentos')
           .insert({
@@ -793,9 +850,23 @@ export function criarApiSupabase(): ApiElectron {
             quem_paga: dados['QUEM PAGA'] ?? '',
             data: dados.DATA || null,
             observacao: dados.OBSERVAÇÃO ?? '',
+            ...(dados.GRUPO_ID ? { grupo_id: dados.GRUPO_ID, grupo_tipo: dados.GRUPO_TIPO, grupo_indice: dados.GRUPO_INDICE, grupo_total: dados.GRUPO_TOTAL } : {}),
           })
           .select()
           .single();
+        if (error && /grupo_id|grupo_tipo|grupo_indice|grupo_total|column .* does not exist/i.test(error.message)) {
+          const legado = {
+            user_id: uid, ano: parsed.ano, mes: parsed.mes,
+            categoria: dados.CATEGORIA ?? '', valor: num(dados.VALOR) ?? 0,
+            descricao: dados.DESCRIÇÃO ?? '', forma_pgt: dados['FORMA DE PGTO'] ?? '',
+            tipo: dados.TIPO ?? '', quem_paga: dados['QUEM PAGA'] ?? '',
+            data: dados.DATA || null, observacao: dados.OBSERVAÇÃO ?? '',
+          };
+          const retry = await supabase.from('lancamentos').insert(legado).select().single();
+          if (retry.error) return erro(retry.error.message);
+          const reg = { linha: String(retry.data.id), dados: rowToLancamento(retry.data as Record<string, unknown>) };
+          return { sucesso: true, aba: payload.aba, linha: reg.linha, gravadas: Object.keys(dados), registro: reg.dados as unknown as LancamentoMensal };
+        }
         if (error) return erro(error.message);
         const reg = { linha: String(data.id), dados: rowToLancamento(data as Record<string, unknown>) };
         return { sucesso: true, aba: payload.aba, linha: reg.linha, gravadas: Object.keys(dados), registro: reg.dados as unknown as LancamentoMensal };
@@ -882,21 +953,30 @@ export function criarApiSupabase(): ApiElectron {
         }
 
         const dados = payload.dados as DadosMensais;
-        const { data, error } = await supabase
+        const atualizacao: Record<string, unknown> = {
+          categoria: dados.CATEGORIA ?? '',
+          valor: num(dados.VALOR) ?? 0,
+          descricao: dados.DESCRIÇÃO ?? '',
+          forma_pgt: dados['FORMA DE PGTO'] ?? '',
+          tipo: dados.TIPO ?? '',
+          quem_paga: dados['QUEM PAGA'] ?? '',
+          data: dados.DATA || null,
+          observacao: dados.OBSERVAÇÃO ?? '',
+        };
+        if (dados.GRUPO_ID !== undefined) atualizacao.grupo_id = dados.GRUPO_ID || null;
+        if (dados.GRUPO_TIPO !== undefined) atualizacao.grupo_tipo = dados.GRUPO_TIPO || null;
+        if (dados.GRUPO_INDICE !== undefined) atualizacao.grupo_indice = dados.GRUPO_INDICE ?? null;
+        if (dados.GRUPO_TOTAL !== undefined) atualizacao.grupo_total = dados.GRUPO_TOTAL ?? null;
+        let { data, error } = await supabase
           .from('lancamentos')
-          .update({
-            categoria: dados.CATEGORIA ?? '',
-            valor: num(dados.VALOR) ?? 0,
-            descricao: dados.DESCRIÇÃO ?? '',
-            forma_pgt: dados['FORMA DE PGTO'] ?? '',
-            tipo: dados.TIPO ?? '',
-            quem_paga: dados['QUEM PAGA'] ?? '',
-            data: dados.DATA || null,
-            observacao: dados.OBSERVAÇÃO ?? '',
-          })
+          .update(atualizacao)
           .eq('id', payload.linha)
           .select()
           .single();
+        if (error && /grupo_id|grupo_tipo|grupo_indice|grupo_total|column .* does not exist/i.test(error.message)) {
+          delete atualizacao.grupo_id; delete atualizacao.grupo_tipo; delete atualizacao.grupo_indice; delete atualizacao.grupo_total;
+          ({ data, error } = await supabase.from('lancamentos').update(atualizacao).eq('id', payload.linha).select().single());
+        }
         if (error) return erro(error.message);
         const reg = { linha: String(data.id), dados: rowToLancamento(data as Record<string, unknown>) };
         return { sucesso: true, aba: payload.aba, linha: reg.linha, alteradas: Object.keys(dados), registro: reg.dados as unknown as LancamentoMensal };

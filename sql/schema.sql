@@ -61,8 +61,16 @@ create table if not exists lancamentos (
   quem_paga text,
   data date,
   observacao text,
+  grupo_id uuid,
+  grupo_tipo text,      -- 'recorrente' | 'parcela'
+  grupo_indice int,     -- 1..N
+  grupo_total int,      -- N
   created_at timestamptz default now()
 );
+
+create index if not exists lancamentos_grupo_id_idx
+  on public.lancamentos (grupo_id)
+  where grupo_id is not null;
 
 -- ---------------------------------------------------------------------------
 -- Salários (1 por mês)

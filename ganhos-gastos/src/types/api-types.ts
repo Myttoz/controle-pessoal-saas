@@ -65,6 +65,11 @@ export interface LancamentoMensal {
   /** Data em ISO 'yyyy-MM-dd'. Pode vir vazia ''. */
   DATA: string;
   OBSERVAÇÃO: string;
+  /** Recorrência/parcelamento (opcional, aditivo). */
+  GRUPO_ID?: string;
+  GRUPO_TIPO?: 'recorrente' | 'parcela';
+  GRUPO_INDICE?: number;
+  GRUPO_TOTAL?: number;
 }
 
 /** Linha da aba "Salário YYYY". Colunas A..L. */
@@ -315,6 +320,8 @@ export interface PayloadAdicionar<T> extends BasePayload {
   dados: T;
   /** Só para Extras: 'ganhos' | 'gastos' (padrão 'ganhos'). */
   tabela?: 'ganhos' | 'gastos';
+  /** Criação em lote: recorrência (N meses) ou parcelamento (1/N). */
+  lote?: { tipo: 'recorrente' | 'parcela'; total: number };
 }
 
 export interface PayloadEditar<T> extends BasePayload {

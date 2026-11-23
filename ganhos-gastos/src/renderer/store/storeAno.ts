@@ -59,7 +59,12 @@ export interface EstadoAno {
   revalidar(ano?: number): Promise<void>;
   atualizarAnos(): Promise<void>;
 
-  adicionarLancamento(ano: number, aba: string, dados: DadosMensais): Promise<boolean>;
+  adicionarLancamento(
+    ano: number,
+    aba: string,
+    dados: DadosMensais,
+    lote?: { tipo: 'recorrente' | 'parcela'; total: number },
+  ): Promise<boolean>;
   editarLancamento(
     ano: number,
     aba: string,
@@ -457,13 +462,35 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
   // -------------------------------------------------------------------------
   //  LANÇAMENTOS MENSAIS
   // -------------------------------------------------------------------------
-  adicionarLancamento: async (ano, aba, dados) => {
+  adicionarLancamento: async (ano, aba, dados, lote) => {
     const sigla = siglaDeAba(aba);
     const mes = get().snapshots[ano]?.meses[sigla];
     if (!mes) {
       ui().toast('erro', `A aba "${aba}" não está disponível para o ano ${ano}.`);
       return false;
     }
+    if (lote && lote.total > 1) {
+      try {
+        const resp = await servicoApi.escrita({
+          acao: 'adicionar',
+          aba,
+          dados,
+          lote,
+        } as unknown as PayloadEscrita);
+        if (!resp.sucesso) {
+          const msg = 'erro' in resp ? String((resp as { erro?: unknown }).erro ?? '') : '';
+          ui().toast('erro', msg || 'Falha ao criar lançamentos.');
+          return false;
+        }
+        ui().toast('sucesso', `${lote.total} lançamentos criados (${lote.tipo}).`);
+        await get().revalidar();
+        return true;
+      } catch (e) {
+        ui().toast('erro', msgDeErro(e));
+        return false;
+      }
+    }
+
     const anterior = clonar(mes);
     const tempLinha = -(Math.floor(Math.random() * 1_000_000_000) + 1);
     const registroTemporario: Registro<LancamentoMensal> = {
