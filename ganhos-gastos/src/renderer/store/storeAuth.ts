@@ -51,10 +51,10 @@ export const useStoreAuth = create<EstadoAuth>((set, get) => ({
   login: async (usuario, senha) => {
     set({ carregando: true, erro: null });
     try {
-      console.log('[auth] login() iniciado para:', usuario);
+      console.log('[auth] login() iniciado');
       const payload: PayloadLogin = { acao: 'login', usuario, senha };
       const resposta = await api.login(payload);
-      console.log('[auth] resposta do login:', resposta);
+      console.log('[auth] resposta do login:', resposta.sucesso);
 
       if (!resposta.sucesso) {
         set({ erro: 'Usuário ou senha incorreto.', carregando: false });
@@ -103,7 +103,7 @@ export const useStoreAuth = create<EstadoAuth>((set, get) => ({
       // devolver a sessão existente. Se não houver, ele responde "token inválido".
       const payload: PayloadVerificar = { acao: 'verificar', token };
       const resposta = await api.verificar(payload);
-      console.log('[auth] resposta do verificar:', resposta);
+      console.log('[auth] resposta do verificar:', resposta.sucesso);
 
       if (!resposta.sucesso) {
         console.log('[auth] verificar(): token inválido');
