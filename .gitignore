@@ -43,3 +43,6 @@ desktop.ini
 .idea/
 .vscode/
 scripts/reimport-*.sql
+
+# Arquivos movidos para revisão local (não versionar)
+removidos/
