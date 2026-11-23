@@ -92,6 +92,7 @@ interface EstadoUI {
   /** Ciclo: sem ordenação → `inicial` → oposta → sem ordenação. */
   alternarOrdemLancamentos(campo: string, inicial?: DirecaoOrdem): void;
   alternarFiltroColuna(campo: string, valor: string): void;
+  definirFiltroColuna(campo: string, valores: string[]): void;
   limparFiltroColuna(campo: string): void;
   setAbaExtras(aba: 'ganhos' | 'gastos'): void;
   abrirNovoLancamento(): void;
@@ -157,6 +158,13 @@ export const useStoreUI = create<EstadoUI>((set, get) => ({
       ? atual.filter((v) => v !== valor)
       : [...atual, valor];
     set({ filtrosColunas: { ...get().filtrosColunas, [campo]: novo } });
+  },
+  definirFiltroColuna: (campo, valores) => {
+    if (valores.length === 0) {
+      get().limparFiltroColuna(campo);
+      return;
+    }
+    set({ filtrosColunas: { ...get().filtrosColunas, [campo]: valores } });
   },
   limparFiltroColuna: (campo) => {
     const resto: FiltrosColunas = {};

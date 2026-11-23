@@ -162,6 +162,7 @@ export function LancamentosPage() {
   const opcoesObservacao = useMemo(() => sugestoesObservacoes(snapshot), [snapshot]);
 
   const filtrosColunas = useStoreUI((s) => s.filtrosColunas);
+  const definirFiltroColuna = useStoreUI((s) => s.definirFiltroColuna);
   const temFiltroColunas = useMemo(
     () => Object.values(filtrosColunas).some((lista) => lista.length > 0),
     [filtrosColunas],
@@ -325,7 +326,26 @@ export function LancamentosPage() {
             />
           </Campo>
 
-          <div className="flex items-end pb-0.5">
+          <div className="flex items-end gap-2 pb-0.5">
+            <Botao
+              onClick={() => {
+                const ativo =
+                  filtrosColunas.quem?.length === 2 &&
+                  filtrosColunas.quem.includes('Dividido 50/50') &&
+                  filtrosColunas.quem.includes('Livia');
+                definirFiltroColuna('quem', ativo ? [] : ['Dividido 50/50', 'Livia']);
+              }}
+              title="Mostrar apenas Dividido 50/50 + Lívia"
+              variante={
+                filtrosColunas.quem?.length === 2 &&
+                filtrosColunas.quem.includes('Dividido 50/50') &&
+                filtrosColunas.quem.includes('Livia')
+                  ? 'primario'
+                  : 'secundario'
+              }
+            >
+              50/50 + Lívia
+            </Botao>
             <Botao
               icone={FilterX}
               onClick={limparFiltros}
