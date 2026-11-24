@@ -3,6 +3,7 @@ import type { RegistroManutencao } from '@/types/dados-locais';
 import { Botao } from '@/components/Botoes';
 import { Campo, Entrada, EntradaMoeda, Selecao } from '@/components/Campos';
 import { Modal } from '@/components/Modal';
+import { AnexosCampo } from '@/components/AnexosCampo';
 // ...parseValor removed — valores em centavos
 import { avaliarManutencao, hojeISO, PRESETS_REVISAO } from '@/lib/calculos';
 import { useStoreLocal } from '@/store/storeLocal';
@@ -190,6 +191,12 @@ export function FormManutencao({ registro, aoFechar }: Props) {
           <Entrada value={estado.intervaloKm} onChange={(e) => alterar('intervaloKm', e.target.value)} inputMode="numeric" placeholder="Ex.: 10000" />
         </Campo>
       </div>
+
+      {modoEdicao && registro?.id && (
+        <div className="mt-4">
+          <AnexosCampo entidadeTipo="manutencao" entidadeId={registro.id} />
+        </div>
+      )}
 
       {/* prévia do status */}
       <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/50 p-3.5 text-sm">

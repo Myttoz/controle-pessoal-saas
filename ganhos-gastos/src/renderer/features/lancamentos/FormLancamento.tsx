@@ -3,6 +3,7 @@ import type { LancamentoMensal, Registro } from '@/types/api-types';
 import { Botao } from '@/components/Botoes';
 import { Campo, EntradaMoeda, Entrada, EntradaSugestoes, Selecao } from '@/components/Campos';
 import { Modal } from '@/components/Modal';
+import { AnexosCampo } from '@/components/AnexosCampo';
 import { useOpcoes } from '@/hooks/useOpcoes';
 import { useStoreAno } from '@/store/storeAno';
 
@@ -301,6 +302,12 @@ export function FormLancamento({
                 {estado.modoRepeticao === 'parcela' ? ' A observação receberá a numeração 1/N, 2/N...' : ''}
               </p>
             )}
+          </div>
+        )}
+
+        {modoEdicao && registro?.linha != null && (
+          <div className="sm:col-span-2">
+            <AnexosCampo entidadeTipo="lancamento" entidadeId={String(registro.linha)} />
           </div>
         )}
       </div>

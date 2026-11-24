@@ -268,5 +268,25 @@ create policy "lembretes_update_own" on lembretes for update using (auth.uid() =
 create policy "lembretes_delete_own" on lembretes for delete using (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------------
+-- Anexos (metadados; arquivos ficam no Supabase Storage bucket "anexos")
+-- ---------------------------------------------------------------------------
+create table if not exists anexos (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  entidade_tipo text not null check (entidade_tipo in ('lancamento', 'manutencao')),
+  entidade_id uuid not null,
+  nome text not null,
+  caminho text not null,
+  mime text,
+  tamanho bigint,
+  created_at timestamptz default now()
+);
+create index if not exists anexos_entidade_idx on public.anexos (user_id, entidade_tipo, entidade_id);
+alter table public.anexos enable row level security;
+create policy "anexos_select_own" on anexos for select using (auth.uid() = user_id);
+create policy "anexos_insert_own" on anexos for insert with check (auth.uid() = user_id);
+create policy "anexos_delete_own" on anexos for delete using (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------------
 -- Fim
 -- ---------------------------------------------------------------------------
