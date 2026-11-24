@@ -5,6 +5,7 @@ import { Campo, EntradaMoeda, Entrada, EntradaSugestoes, Selecao } from '@/compo
 import { Modal } from '@/components/Modal';
 import { AnexosCampo } from '@/components/AnexosCampo';
 import { useOpcoes } from '@/hooks/useOpcoes';
+import { hojeISO } from '@/lib/calculos';
 import { useStoreAno } from '@/store/storeAno';
 
 interface EstadoForm {
@@ -30,7 +31,7 @@ function paraEstado(dados?: LancamentoMensal): EstadoForm {
     forma: dados?.['FORMA DE PGTO'] ?? '',
     tipo: dados?.TIPO ?? '',
     quem: dados?.['QUEM PAGA'] ?? '',
-    data: dados?.DATA ?? '',
+    data: dados?.DATA ?? hojeISO(),
     observacao: dados?.OBSERVAÇÃO ?? '',
     modoRepeticao: 'nenhum',
     quantidadeRepeticao: '2',
