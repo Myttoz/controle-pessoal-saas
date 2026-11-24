@@ -130,6 +130,15 @@ function normalizar(carregado: DadosLocais | null | undefined): DadosLocais | nu
         configDaVez.despesasProximoMes && typeof configDaVez.despesasProximoMes === 'object'
           ? configDaVez.despesasProximoMes
           : {},
+      alertasInteligentesAtivo: !!configDaVez.alertasInteligentesAtivo,
+      orcamentosCategoria:
+        configDaVez.orcamentosCategoria && typeof configDaVez.orcamentosCategoria === 'object'
+          ? configDaVez.orcamentosCategoria
+          : {},
+      alertaOrcamentoPercentual:
+        typeof configDaVez.alertaOrcamentoPercentual === 'number' && configDaVez.alertaOrcamentoPercentual > 0
+          ? configDaVez.alertaOrcamentoPercentual
+          : 80,
     },
     horasExtras: Array.isArray(carregado.horasExtras) ? carregado.horasExtras : [],
     ferias: Array.isArray(carregado.ferias) ? carregado.ferias : [],

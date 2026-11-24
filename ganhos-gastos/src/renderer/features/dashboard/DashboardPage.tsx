@@ -24,6 +24,7 @@ import { useStoreLocal } from '@/store/storeLocal';
 import { useStoreUI } from '@/store/storeUI';
 import { GraficoCategorias, GraficoMeses } from './Graficos';
 import { ProjecaoSaldo } from './ProjecaoSaldo';
+import { SaudeFinanceira } from './SaudeFinanceira';
 import { MesTabs } from '@/components/MesTabs';
 
 type Tom = 'sky' | 'rose' | 'emerald' | 'amber' | 'violet' | 'indigo' | 'teal';
@@ -275,6 +276,9 @@ export function DashboardPage() {
           mesSelecionado={mes}
         />
       )}
+
+      {/* ------- saúde financeira / alertas (Bloco 8, reversível) ------- */}
+      <SaudeFinanceira />
 
       {/* ------- top categorias (lista) ------- */}
       {(resumo?.categorias.length ?? 0) > 0 && (

@@ -8,6 +8,8 @@ import {
   Upload,
 } from 'lucide-react';
 import { Botao } from '@/components/Botoes';
+import { Campo, Entrada } from '@/components/Campos';
+import { LISTAS } from '@/types/api-types';
 import { useStoreLocal } from '@/store/storeLocal';
 
 function quando(ts: number | null): string {
@@ -30,6 +32,8 @@ export function SincronizacaoPage() {
   const sincronizar = useStoreLocal((s) => s.sincronizar);
   const exportar = useStoreLocal((s) => s.exportarBackup);
   const importar = useStoreLocal((s) => s.importarBackup);
+  const config = useStoreLocal((s) => s.dados.config);
+  const setConfig = useStoreLocal((s) => s.setConfig);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [mensagem, setMensagem] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(
@@ -145,6 +149,74 @@ export function SincronizacaoPage() {
             {mensagem.texto}
           </p>
         )}
+      </section>
+
+      {/* ---------- orçamento e alertas (Bloco 8, reversível) ---------- */}
+      <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-200">Orçamento e alertas inteligentes</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Reversível: desligue a chave para ocultar o painel e ignorar os alertas. Os orçamentos são salvos localmente/sincronizados.
+            </p>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-slate-300">
+            <input
+              type="checkbox"
+              checked={!!config.alertasInteligentesAtivo}
+              onChange={(e) => setConfig({ alertasInteligentesAtivo: e.target.checked })}
+            />
+            Ativar
+          </label>
+        </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Campo rotulo="Avisar ao atingir (%)" dica="Ex.: 80 = alerta quando categoria chega a 80% do orçamento">
+            <Entrada
+              type="number"
+              min={1}
+              max={100}
+              value={String(config.alertaOrcamentoPercentual ?? 80)}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setConfig({ alertaOrcamentoPercentual: Number.isFinite(v) ? Math.min(100, Math.max(1, v)) : 80 });
+              }}
+            />
+          </Campo>
+        </div>
+
+        <div className="mt-4">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-500">Orçamento mensal por categoria (R$)</p>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {LISTAS.CATEGORIA.map((cat) => {
+              const atual = config.orcamentosCategoria?.[cat];
+              return (
+                <label key={cat} className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-xs text-slate-300">
+                  <span className="min-w-0 flex-1 truncate" title={cat}>{cat}</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={atual ?? ''}
+                    placeholder="0,00"
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      const orcamentos = { ...(config.orcamentosCategoria ?? {}) };
+                      if (raw === '') {
+                        delete orcamentos[cat];
+                      } else {
+                        const n = Number(raw);
+                        if (Number.isFinite(n) && n >= 0) orcamentos[cat] = n;
+                      }
+                      setConfig({ orcamentosCategoria: orcamentos });
+                    }}
+                    className="w-28 rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-right text-slate-200"
+                  />
+                </label>
+              );
+            })}
+          </div>
+        </div>
       </section>
 
       {/* ---------- como funciona ---------- */}

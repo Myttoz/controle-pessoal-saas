@@ -65,6 +65,12 @@ export interface ConfigLocal {
   lembretesFixos?: LembreteFixo[];
   /** Planejamento manual por mês ("AAAA-MM" = mês em que você paga): fatura do cartão + despesas Pix. */
   despesasProximoMes?: Record<string, DespesasProximoMesConfig>;
+  /** Bloco 8 (reversível): ativa painel de saúde financeira/alertas. */
+  alertasInteligentesAtivo?: boolean;
+  /** Orçamento mensal por categoria (R$). Usado quando alertasInteligentesAtivo=true. */
+  orcamentosCategoria?: Record<string, number>;
+  /** Percentual para avisar consumo de orçamento (padrão 80). */
+  alertaOrcamentoPercentual?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -147,6 +153,9 @@ export const CONFIG_PADRAO: ConfigLocal = {
   saldoInicial: {},
   resumoMes: {},
   pontoEletronico: {},
+  alertasInteligentesAtivo: false,
+  orcamentosCategoria: {},
+  alertaOrcamentoPercentual: 80,
 };
 
 export function dadosLocaisVazios(): DadosLocais {
