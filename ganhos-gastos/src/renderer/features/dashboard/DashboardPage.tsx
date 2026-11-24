@@ -25,6 +25,8 @@ import { useStoreUI } from '@/store/storeUI';
 import { GraficoCategorias, GraficoMeses } from './Graficos';
 import { ProjecaoSaldo } from './ProjecaoSaldo';
 import { SaudeFinanceira } from './SaudeFinanceira';
+import { AlertasBoletos } from './AlertasBoletos';
+import { Comparativo } from './Comparativo';
 import { MesTabs } from '@/components/MesTabs';
 
 type Tom = 'sky' | 'rose' | 'emerald' | 'amber' | 'violet' | 'indigo' | 'teal';
@@ -234,6 +236,8 @@ export function DashboardPage() {
         </p>
       </section>
 
+      <AlertasBoletos />
+
       {/* ------- exportação ------- */}
       <section className="flex flex-wrap items-center gap-3">
         <Botao icone={Download} onClick={exportarCsv}>
@@ -267,6 +271,8 @@ export function DashboardPage() {
           <GraficoMeses resumo={resumo} />
         </div>
       </section>
+
+      <Comparativo />
 
       {/* ------- projeção de saldo ------- */}
       {resumo && (

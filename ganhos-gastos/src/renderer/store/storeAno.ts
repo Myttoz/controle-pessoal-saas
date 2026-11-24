@@ -64,7 +64,7 @@ export interface EstadoAno {
     aba: string,
     dados: DadosMensais,
     lote?: { tipo: 'recorrente' | 'parcela'; total: number },
-  ): Promise<boolean>;
+  ): Promise<number | string | null>;
   editarLancamento(
     ano: number,
     aba: string,
@@ -467,7 +467,7 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
     const mes = get().snapshots[ano]?.meses[sigla];
     if (!mes) {
       ui().toast('erro', `A aba "${aba}" não está disponível para o ano ${ano}.`);
-      return false;
+      return null;
     }
     if (lote && lote.total > 1) {
       try {
@@ -480,14 +480,14 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
         if (!resp.sucesso) {
           const msg = 'erro' in resp ? String((resp as { erro?: unknown }).erro ?? '') : '';
           ui().toast('erro', msg || 'Falha ao criar lançamentos.');
-          return false;
+          return null;
         }
         ui().toast('sucesso', `${lote.total} lançamentos criados (${lote.tipo}).`);
         await get().revalidar();
-        return true;
+        return 'lote';
       } catch (e) {
         ui().toast('erro', msgDeErro(e));
-        return false;
+        return null;
       }
     }
 
@@ -498,8 +498,9 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
       dados: dados as LancamentoMensal,
     };
     const valor = Number(dados.VALOR) || 0;
+    let linhaCriada: number | string | null = null;
 
-    return executarEscrita({
+    const ok = await executarEscrita({
       ano,
       payload: { acao: 'adicionar', aba, dados },
       otimizar: () =>
@@ -512,6 +513,7 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
       aposSucesso: (resposta) => {
         if (!('linha' in resposta)) return;
         const linhaReal = resposta.linha;
+        linhaCriada = linhaReal;
         const dadosConfirmados =
           'registro' in resposta && resposta.registro
             ? (resposta.registro as LancamentoMensal)
@@ -525,6 +527,7 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
       },
       mensagemSucesso: 'Lançamento adicionado.',
     });
+    return ok ? linhaCriada : null;
   },
 
   editarLancamento: async (ano, aba, linha, dados) => {
@@ -634,8 +637,8 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
       DATA: addMeses(baseData, 1) ?? '',
     };
 
-    const ok = await get().adicionarLancamento(anoAlvo, abaAlvo, dados);
-    return ok;
+    const criado = await get().adicionarLancamento(anoAlvo, abaAlvo, dados);
+    return !!criado;
   },
 
   // -------------------------------------------------------------------------

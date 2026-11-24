@@ -78,6 +78,7 @@ export function FormLancamento({
   const [estado, setEstado] = useState<EstadoForm>(() => paraEstado(registro?.dados));
   const [erros, setErros] = useState<Erros>({});
   const [enviando, setEnviando] = useState(false);
+  const [criado, setCriado] = useState<Registro<LancamentoMensal> | null>(null);
 
   const adicionarLancamento = useStoreAno((s) => s.adicionarLancamento);
   const editarLancamento = useStoreAno((s) => s.editarLancamento);
@@ -89,7 +90,8 @@ export function FormLancamento({
   const opcoesTipo = useOpcoes('TIPO');
   const opcoesQuem = useOpcoes('QUEM PAGA');
 
-  const modoEdicao = !!registro;
+  const registroAtual = registro ?? criado;
+  const modoEdicao = !!registroAtual;
 
   const sugestaoRecorrente = useMemo(() => {
     if (modoEdicao || estado.modoRepeticao !== 'nenhum') return null;
@@ -140,24 +142,31 @@ export function FormLancamento({
         : undefined;
 
     setEnviando(true);
-    const ok =
-      registro !== null && registro !== undefined
-        ? await editarLancamento(ano, aba, registro.linha, dados)
-        : await adicionarLancamento(ano, aba, dados, lote);
-    setEnviando(false);
+    if (registroAtual) {
+      const ok = await editarLancamento(ano, aba, registroAtual.linha, dados);
+      setEnviando(false);
+      if (ok) aoFechar();
+      return;
+    }
 
-    if (ok) aoFechar();
+    const resultado = await adicionarLancamento(ano, aba, dados, lote);
+    setEnviando(false);
+    if (resultado && resultado !== 'lote') {
+      setCriado({ linha: resultado, dados });
+      return; // mantém modal aberto para anexar (opcional)
+    }
+    if (resultado) aoFechar();
   };
 
   return (
     <Modal
       aberto
-      titulo={modoEdicao ? `Editar lançamento · ${aba}` : `Novo lançamento · ${aba}`}
+      titulo={criado ? `Lançamento salvo · ${aba}` : modoEdicao ? `Editar lançamento · ${aba}` : `Novo lançamento · ${aba}`}
       aoFechar={aoFechar}
       rodape={
         <>
           <Botao onClick={aoFechar} disabled={enviando}>
-            Cancelar
+            {criado ? 'Concluir' : 'Cancelar'}
           </Botao>
           <Botao variante="primario" carregando={enviando} onClick={() => void enviar()}>
             {modoEdicao ? 'Salvar alterações' : 'Adicionar'}
@@ -306,9 +315,12 @@ export function FormLancamento({
           </div>
         )}
 
-        {modoEdicao && registro?.linha != null && (
+        {modoEdicao && registroAtual?.linha != null && (
           <div className="sm:col-span-2">
-            <AnexosCampo entidadeTipo="lancamento" entidadeId={String(registro.linha)} />
+            {criado && (
+              <p className="mb-2 text-xs text-emerald-300">Lançamento salvo. Você pode anexar comprovantes agora (opcional) ou clicar em Concluir.</p>
+            )}
+            <AnexosCampo entidadeTipo="lancamento" entidadeId={String(registroAtual.linha)} />
           </div>
         )}
       </div>
