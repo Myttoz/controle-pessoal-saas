@@ -37,7 +37,7 @@ export function TitleBar() {
 
   return (
     <header
-      className="titlebar-drag grid h-9 shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b border-slate-800 bg-slate-900 text-slate-200"
+      className="titlebar-drag grid h-9 shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b border-slate-800 bg-slate-900 text-slate-200 print:hidden"
       onDoubleClick={alternarMaximizar}
     >
       {/* coluna esquerda: ícone do app (o nome fica centralizado na coluna do meio) */}

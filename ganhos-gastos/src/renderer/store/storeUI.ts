@@ -18,6 +18,7 @@ export type Pagina =
   | 'manutencao'
   | 'anos'
   | 'lembretes'
+  | 'relatorios'
   | 'sincronizacao';
 
 export interface Filtros {

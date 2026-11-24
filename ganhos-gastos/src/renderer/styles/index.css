@@ -68,3 +68,48 @@ input[type='date']::-webkit-calendar-picker-indicator {
   filter: invert(0.8);
   cursor: pointer;
 }
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  html,
+  body,
+  #root {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #0f172a !important;
+  }
+
+  body {
+    -webkit-print-color-adjust: economy;
+    print-color-adjust: economy;
+  }
+
+  /* libera containers que cortam o conteúdo na tela */
+  .h-screen,
+  .h-full {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  .overflow-hidden,
+  .overflow-y-auto,
+  .overflow-auto {
+    overflow: visible !important;
+  }
+
+  /* tabelas: não cortar lateralmente */
+  table {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  th,
+  td {
+    color: #0f172a !important;
+  }
+}

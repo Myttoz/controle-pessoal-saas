@@ -25,6 +25,7 @@ import { RecuperarSenhaPage } from '@/features/auth/RecuperarSenhaPage';
 import { supabase } from '@/lib/supabase';
 import { ManutencaoPage } from '@/features/manutencao/ManutencaoPage';
 import { PagamentosPage } from '@/features/pagamentos/PagamentosPage';
+import { RelatoriosPage } from '@/features/relatorios/RelatoriosPage';
 import { SincronizacaoPage } from '@/features/sincronizacao/SincronizacaoPage';
 
 export default function App() {
@@ -123,6 +124,7 @@ export default function App() {
       manutencao: <ManutencaoPage />,
       anos: <AnosPage />,
       lembretes: <LembretesPage />,
+      relatorios: <RelatoriosPage />,
       sincronizacao: <SincronizacaoPage />,
     }),
     [],
@@ -164,9 +166,9 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-slate-950">
+    <div className="flex h-screen flex-col overflow-hidden bg-slate-950 print:h-auto print:overflow-visible print:bg-white">
       <TitleBar />
-      <div className="min-h-0 flex-1 overflow-hidden">{conteudo}</div>
+      <div className="min-h-0 flex-1 overflow-hidden print:overflow-visible">{conteudo}</div>
     </div>
   );
 }

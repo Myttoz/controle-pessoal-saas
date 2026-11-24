@@ -4,6 +4,7 @@ import {
   BellRing,
   CalendarRange,
   Car,
+  FileText,
   LayoutDashboard,
   LayoutGrid,
   LogOut,
@@ -35,6 +36,7 @@ const PAGINAS: Record<Pagina, { rotulo: string; icone: LucideIcon }> = {
   manutencao: { rotulo: 'Registro Manutenção', icone: Car },
   anos: { rotulo: 'Gestão Anual', icone: CalendarRange },
   lembretes: { rotulo: 'LEMBRETES', icone: BellRing },
+  relatorios: { rotulo: 'Relatório IR / Contador', icone: FileText },
   sincronizacao: { rotulo: 'Sincronização e Backup', icone: RefreshCw },
 };
 
@@ -65,6 +67,7 @@ const NAVEGACAO: ElementoNavegacao[] = [
   { tipo: 'item', id: 'kanbanCategoria' },
   { tipo: 'item', id: 'kanban' },
   { tipo: 'item', id: 'pagamentos' },
+  { tipo: 'item', id: 'relatorios' },
 
   { tipo: 'separador' },
   { tipo: 'subtitulo', rotulo: 'Extras' },
@@ -111,9 +114,9 @@ export function Layout({ children, usuario, aoLogout }: Props) {
   const irPara = useStoreUI((s) => s.irPara);
 
   return (
-    <div className="flex h-full overflow-hidden bg-slate-950 text-slate-100">
+    <div className="flex h-full overflow-hidden bg-slate-950 text-slate-100 print:h-auto print:overflow-visible print:bg-white print:text-slate-900">
       {/* ---------- lateral ---------- */}
-      <aside className="flex w-16 shrink-0 flex-col border-r border-slate-800 bg-slate-900/60 md:w-60">
+      <aside className="flex w-16 shrink-0 flex-col border-r border-slate-800 bg-slate-900/60 md:w-60 print:hidden">
         <div className="flex h-14 items-center gap-2.5 border-b border-slate-800 px-4">
           <img
             src={iconeApp}
@@ -176,13 +179,13 @@ export function Layout({ children, usuario, aoLogout }: Props) {
 
       {/* ---------- principal ---------- */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-slate-800 bg-slate-900/50 px-4">
+        <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-slate-800 bg-slate-900/50 px-4 print:border-slate-300 print:bg-white">
           <div className="min-w-0">
-            <h1 className="truncate text-sm font-semibold text-slate-200 sm:text-base">
+            <h1 className="truncate text-sm font-semibold text-slate-200 sm:text-base print:text-slate-900">
               {PAGINAS[pagina].rotulo}
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 print:hidden">
             <StatusApi />
             <SeletorAno />
             <div className="flex items-center gap-2 rounded-lg border border-slate-700/30 bg-slate-800/50 px-2 py-1 text-xs text-slate-300">
@@ -198,7 +201,7 @@ export function Layout({ children, usuario, aoLogout }: Props) {
           </div>
         </header>
 
-        <main className="min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-5 lg:px-7">{children}</main>
+        <main className="min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-5 lg:px-7 print:overflow-visible">{children}</main>
       </div>
 
       <Toasts />
