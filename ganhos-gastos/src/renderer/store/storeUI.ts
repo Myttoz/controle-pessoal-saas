@@ -20,6 +20,7 @@ export type Pagina =
   | 'lembretes'
   | 'relatorios'
   | 'conciliacao'
+  | 'importacao'
   | 'sincronizacao';
 
 export interface Filtros {

@@ -27,6 +27,7 @@ import { ManutencaoPage } from '@/features/manutencao/ManutencaoPage';
 import { PagamentosPage } from '@/features/pagamentos/PagamentosPage';
 import { RelatoriosPage } from '@/features/relatorios/RelatoriosPage';
 import { ConciliacaoPage } from '@/features/conciliacao/ConciliacaoPage';
+import { ImportacaoPage } from '@/features/importacao/ImportacaoPage';
 import { SincronizacaoPage } from '@/features/sincronizacao/SincronizacaoPage';
 
 export default function App() {
@@ -127,6 +128,7 @@ export default function App() {
       lembretes: <LembretesPage />,
       relatorios: <RelatoriosPage />,
       conciliacao: <ConciliacaoPage />,
+      importacao: <ImportacaoPage />,
       sincronizacao: <SincronizacaoPage />,
     }),
     [],

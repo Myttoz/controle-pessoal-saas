@@ -5,6 +5,7 @@ import {
   CalendarRange,
   Car,
   ClipboardCheck,
+  FileSpreadsheet,
   FileText,
   LayoutDashboard,
   LayoutGrid,
@@ -39,6 +40,7 @@ const PAGINAS: Record<Pagina, { rotulo: string; icone: LucideIcon }> = {
   lembretes: { rotulo: 'LEMBRETES', icone: BellRing },
   relatorios: { rotulo: 'Relatório IR / Contador', icone: FileText },
   conciliacao: { rotulo: 'Conciliação', icone: ClipboardCheck },
+  importacao: { rotulo: 'Importação CSV', icone: FileSpreadsheet },
   sincronizacao: { rotulo: 'Sincronização e Backup', icone: RefreshCw },
 };
 
@@ -71,6 +73,7 @@ const NAVEGACAO: ElementoNavegacao[] = [
   { tipo: 'item', id: 'pagamentos' },
   { tipo: 'item', id: 'relatorios' },
   { tipo: 'item', id: 'conciliacao' },
+  { tipo: 'item', id: 'importacao' },
 
   { tipo: 'separador' },
   { tipo: 'subtitulo', rotulo: 'Extras' },
