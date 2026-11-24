@@ -71,6 +71,8 @@ export interface ConfigLocal {
   orcamentosCategoria?: Record<string, number>;
   /** Percentual para avisar consumo de orçamento (padrão 80). */
   alertaOrcamentoPercentual?: number;
+  /** Conciliação: chave `${ano}:${aba}:${linha}` => conferido. Reversível. */
+  conciliacao?: Record<string, boolean>;
 }
 
 // ---------------------------------------------------------------------------
@@ -156,6 +158,7 @@ export const CONFIG_PADRAO: ConfigLocal = {
   alertasInteligentesAtivo: false,
   orcamentosCategoria: {},
   alertaOrcamentoPercentual: 80,
+  conciliacao: {},
 };
 
 export function dadosLocaisVazios(): DadosLocais {

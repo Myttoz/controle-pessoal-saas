@@ -26,6 +26,7 @@ import { supabase } from '@/lib/supabase';
 import { ManutencaoPage } from '@/features/manutencao/ManutencaoPage';
 import { PagamentosPage } from '@/features/pagamentos/PagamentosPage';
 import { RelatoriosPage } from '@/features/relatorios/RelatoriosPage';
+import { ConciliacaoPage } from '@/features/conciliacao/ConciliacaoPage';
 import { SincronizacaoPage } from '@/features/sincronizacao/SincronizacaoPage';
 
 export default function App() {
@@ -125,6 +126,7 @@ export default function App() {
       anos: <AnosPage />,
       lembretes: <LembretesPage />,
       relatorios: <RelatoriosPage />,
+      conciliacao: <ConciliacaoPage />,
       sincronizacao: <SincronizacaoPage />,
     }),
     [],

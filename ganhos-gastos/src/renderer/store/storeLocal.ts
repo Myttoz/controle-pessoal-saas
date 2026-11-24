@@ -139,6 +139,10 @@ function normalizar(carregado: DadosLocais | null | undefined): DadosLocais | nu
         typeof configDaVez.alertaOrcamentoPercentual === 'number' && configDaVez.alertaOrcamentoPercentual > 0
           ? configDaVez.alertaOrcamentoPercentual
           : 80,
+      conciliacao:
+        configDaVez.conciliacao && typeof configDaVez.conciliacao === 'object'
+          ? configDaVez.conciliacao
+          : {},
     },
     horasExtras: Array.isArray(carregado.horasExtras) ? carregado.horasExtras : [],
     ferias: Array.isArray(carregado.ferias) ? carregado.ferias : [],

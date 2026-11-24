@@ -4,6 +4,7 @@ import {
   BellRing,
   CalendarRange,
   Car,
+  ClipboardCheck,
   FileText,
   LayoutDashboard,
   LayoutGrid,
@@ -37,6 +38,7 @@ const PAGINAS: Record<Pagina, { rotulo: string; icone: LucideIcon }> = {
   anos: { rotulo: 'Gestão Anual', icone: CalendarRange },
   lembretes: { rotulo: 'LEMBRETES', icone: BellRing },
   relatorios: { rotulo: 'Relatório IR / Contador', icone: FileText },
+  conciliacao: { rotulo: 'Conciliação', icone: ClipboardCheck },
   sincronizacao: { rotulo: 'Sincronização e Backup', icone: RefreshCw },
 };
 
@@ -68,6 +70,7 @@ const NAVEGACAO: ElementoNavegacao[] = [
   { tipo: 'item', id: 'kanban' },
   { tipo: 'item', id: 'pagamentos' },
   { tipo: 'item', id: 'relatorios' },
+  { tipo: 'item', id: 'conciliacao' },
 
   { tipo: 'separador' },
   { tipo: 'subtitulo', rotulo: 'Extras' },
