@@ -157,12 +157,10 @@ export function FormSalario({
 
       {erros && <p className="mt-3 text-sm text-rose-400">{erros}</p>}
 
-      <p className="mt-4 rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2 text-xs text-slate-500">
-        O <strong>TICKET</strong> e a <strong>HORA EXTRA (info)</strong> são informativos: a hora
+      <p className="mt-4 rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2 text-xs text-slate-500 hidden" title="O TICKET e a HORA EXTRA (info) são informativos: a hora         extra é calculada automaticamente (plantões + ponto eletrônico do mês, sempre a 50%) e não         entra no TOTAL GANHOS. A coluna FREELANCE vem dos         Serviços lançados na aba Extras (mesmo mês) e também não é editada.">O <strong>TICKET</strong> e a <strong>HORA EXTRA (info)</strong> são informativos: a hora
         extra é calculada automaticamente (plantões + ponto eletrônico do mês, sempre a 50%) e não
         entra no TOTAL GANHOS. A coluna <strong>FREELANCE</strong> vem dos
-        Serviços lançados na aba <strong>Extras</strong> (mesmo mês) e também não é editada.
-      </p>
+        Serviços lançados na aba <strong>Extras</strong> (mesmo mês) e também não é editada.</p>
     </Modal>
   );
 }

@@ -54,7 +54,7 @@ export function SaudeFinanceira() {
         <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-200">Saúde financeira e alertas</h3>
         <span className="text-xs text-slate-500">({mes})</span>
       </div>
-      <p className="mt-1 text-xs text-slate-400">Reversível — desative em Sincronização e Backup. Orçamentos comparados com gastos do mês selecionado.</p>
+      <p className="mt-1 text-xs text-slate-400 hidden" title="Reversível — desative em Sincronização e Backup. Orçamentos comparados com gastos do mês selecionado.">Saúde financeira</p>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <div className="rounded-lg border border-slate-800 bg-slate-950/40 p-3">

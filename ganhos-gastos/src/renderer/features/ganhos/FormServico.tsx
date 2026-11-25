@@ -236,11 +236,9 @@ export function FormServico({
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-slate-500">
-        O mês do lançamento é derivado da <strong>data</strong> — o FREELANCE da aba{' '}
+      <p className="mt-4 text-xs text-slate-500 hidden" title="O mês do lançamento é derivado da data — o FREELANCE da aba{' '}         Recebidos → Salário soma estes totais por mês automaticamente.         A coluna 'Despesas do cliente' é só registro e nunca entra nos cálculos.">O mês do lançamento é derivado da <strong>data</strong> — o FREELANCE da aba{' '}
         <strong>Recebidos → Salário</strong> soma estes totais por mês automaticamente.
-        A coluna "Despesas do cliente" é só registro e nunca entra nos cálculos.
-      </p>
+        A coluna "Despesas do cliente" é só registro e nunca entra nos cálculos.</p>
     </Modal>
   );
 }

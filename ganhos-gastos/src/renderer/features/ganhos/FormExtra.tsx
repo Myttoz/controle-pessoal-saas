@@ -165,10 +165,8 @@ export function FormExtra({
         </Campo>
       </div>
 
-      <p className="mt-4 text-xs text-slate-500">
-        O mês é obrigatório para que os totais da planilha (SUMIF) continuem corretos.
-        Padrão sugerido: <strong>{mesAtual()}</strong>.
-      </p>
+      <p className="mt-4 text-xs text-slate-500 hidden" title="O mês é obrigatório para que os totais da planilha (SUMIF) continuem corretos.         Padrão sugerido: {mesAtual()}.">O mês é obrigatório para que os totais da planilha (SUMIF) continuem corretos.
+        Padrão sugerido: <strong>{mesAtual()}</strong>.</p>
     </Modal>
   );
 }

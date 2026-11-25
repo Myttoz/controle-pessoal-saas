@@ -190,7 +190,7 @@ export function RelatoriosPage() {
 
       <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 print:border-slate-300 print:bg-white">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-200 print:text-slate-900">Lançamentos PIX</h3>
-        <p className="mt-1 mb-3 text-xs text-slate-400 print:text-slate-600">Lançamentos mensais com TIPO = PIX. A coluna Observação vem do lançamento.</p>
+        <p className="mt-1 mb-3 text-xs text-slate-400 print:text-slate-600 hidden" title="Lançamentos mensais com TIPO = PIX. A coluna Observação vem do lançamento.">Lançamentos PIX</p>
         {pix.length === 0 ? <p className="text-sm text-slate-500">Nenhum lançamento PIX no período.</p> : (
           <div className="overflow-auto rounded-lg border border-slate-800 print:overflow-visible print:border-slate-300">
             <table className="w-full min-w-[700px] text-sm print:min-w-0">

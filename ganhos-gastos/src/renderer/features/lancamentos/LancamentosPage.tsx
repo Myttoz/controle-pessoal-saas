@@ -7,9 +7,8 @@ import { AreaErro, Carregando, EstadoVazio } from '@/components/Estados';
 import { MesTabs } from '@/components/MesTabs';
 import { Modal } from '@/components/Modal';
 import { formatarMoeda, nomeFormaPgto, arredondar2 } from '@/lib/formatar';
-import { NOMES_MESES } from '@/lib/meses';
 import { sugestoesDescricoes, sugestoesObservacoes } from '@/lib/sugestoes';
-import { calcularResumo, gastosProximoMes } from '@/lib/resumo';
+import { calcularRestantePagamento, gastosProximoMes } from '@/lib/resumo';
 import { DespesasProximoMes } from './DespesasProximoMes';
 import type { ReactNode } from 'react';
 import { resumirDivisao } from '@/lib/divisao';
@@ -17,7 +16,6 @@ import { useRegistrosFiltrados } from '@/hooks/useRegistrosFiltrados';
 import { usePedidoNovo } from '@/hooks/usePedidoNovo';
 import { useOpcoes } from '@/hooks/useOpcoes';
 import { useStoreAno } from '@/store/storeAno';
-import { useStoreLocal } from '@/store/storeLocal';
 import { useStoreUI, type Filtros } from '@/store/storeUI';
 import { FormLancamento } from './FormLancamento';
 import { TabelaLancamentos, type OpcoesColunas } from './TabelaLancamentos';
@@ -129,15 +127,16 @@ export function LancamentosPage() {
     'QUEM PAGA': opcoesQuem,
   };
 
-  // ---- Restante do mês (mesmos números do Resumo Pagamentos) ----
-  const dadosLocais = useStoreLocal((s) => s.dados);
-  const resumoMesConfig = useMemo(
-    () =>
-      ano != null && snapshot ? calcularResumo(snapshot, dadosLocais.config, ano, NOMES_MESES) : null,
-    [ano, snapshot, dadosLocais.config],
-  );
-  const linhaRestanteMes = resumoMesConfig?.linhas.find((l) => l.mes === mes) ?? null;
+  // ---- Gastos do próximo mês (somente Fatura futura) ----
   const gastosProximoMesValor = gastosProximoMes(mesSnapshot?.registros ?? []);
+
+  // Restante a pagar no mês — nova regra:
+  //   Total Ganho(M) − Fatura futura(M−1) + Recebo Lívia(M−1) − PIX(M)
+  const snapshotsAno = useStoreAno((s) => s.snapshots);
+  const restantePagamento = useMemo(
+    () => ano != null ? calcularRestantePagamento(snapshotsAno, ano, mes) : null,
+    [snapshotsAno, ano, mes],
+  );
 
   // valores EXISTENTES no mês (sem filtro algum) — base dos menus multi-seleção
   const opcoesColunas = useMemo<OpcoesColunas>(() => {
@@ -359,8 +358,8 @@ export function LancamentosPage() {
       </div>
 
       {/* ------- restante do mês (mesmos números de Resumo Pagamentos) ------- */}
-      {linhaRestanteMes && ano != null && (
-        <DespesasProximoMes ano={ano} mes={mes} restante={linhaRestanteMes.restante} />
+      {restantePagamento && ano != null && (
+        <DespesasProximoMes ano={ano} mes={mes} restante={restantePagamento.restante} detalhes={restantePagamento} />
       )}
 
       {/* ------- tabela ------- */}
@@ -445,9 +444,7 @@ export function LancamentosPage() {
               Remover <strong className="text-slate-100">{paraExcluir.dados.DESCRIÇÃO}</strong> (
               {formatarMoeda(paraExcluir.dados.VALOR)}) da aba {aba}?
             </p>
-            <p className="text-xs text-slate-500">
-              A linha {paraExcluir.linha} será apagada da planilha. Esta ação não pode ser desfeita.
-            </p>
+            <p className="text-xs text-slate-500">A linha {paraExcluir.linha} será apagada da planilha. Esta ação não pode ser desfeita.</p>
           </div>
         )}
       </Modal>

@@ -52,7 +52,7 @@ export function Comparativo() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-200">Comparativo</h3>
-          <p className="mt-1 text-xs text-slate-400">Mês a mês (vs mês anterior) e ano a ano (vs outro ano carregado).</p>
+          <p className="mt-1 text-xs text-slate-400 hidden" title="Mês a mês (vs mês anterior) e ano a ano (vs outro ano carregado).">Comparativo</p>
         </div>
         <div className="flex items-center gap-2">
           <select

@@ -237,10 +237,8 @@ export function ManutencaoPage() {
           />
         </Campo>
         {kmErro && <p className="pb-1 text-sm text-rose-400">{kmErro}</p>}
-        <p className="pb-1 text-xs text-slate-500">
-          O status de cada manutenção é comparado com este valor (limiar de urgência: ≤ KM da próxima revisão ·
-          próximo: +1.000 km).
-        </p>
+        <p className="pb-1 text-xs text-slate-500 hidden" title="O status de cada manutenção é comparado com este valor (limiar de urgência: ≤ KM da próxima revisão ·           próximo: +1.000 km).">O status de cada manutenção é comparado com este valor (limiar de urgência: ≤ KM da próxima revisão ·
+          próximo: +1.000 km).</p>
       </div>
 
       {/* ------- KPIs ------- */}
@@ -512,9 +510,7 @@ export function ManutencaoPage() {
         }
       >
         {paraExcluir && (
-          <p className="text-sm text-slate-300">
-            Remover “{paraExcluir.descricao}” de {formatarData(paraExcluir.data)}?
-          </p>
+          <p className="text-sm text-slate-300">Remover “{paraExcluir.descricao}” de {formatarData(paraExcluir.data)}?</p>
         )}
       </Modal>
     </div>

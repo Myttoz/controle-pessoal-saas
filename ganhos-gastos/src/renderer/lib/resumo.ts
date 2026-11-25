@@ -151,6 +151,52 @@ export function calcularResumo(
   return { linhas, totais };
 }
 
+/**
+ * Restante a pagar no mês M (ex.: dezembro):
+ *   Total Ganho(M)
+ *   − Gastos próximo mês de M−1 (somente TIPO = 'Fatura futura')
+ *   + Recebo Lívia de M−1 (já calculado por resumirDivisao)
+ *   − PIX de M (TIPO = 'PIX')
+ *
+ * M−1 = mês anterior; se M = JAN, usa DEZ do ano anterior.
+ */
+export interface RestantePagamento {
+  totalGanho: number;
+  faturaMesAnterior: number;
+  receboLiviaAnterior: number;
+  pixMes: number;
+  restante: number;
+  mesAnterior: SiglaMes;
+  anoAnterior: number;
+}
+
+export function calcularRestantePagamento(
+  snapshots: Record<number, SnapshotAno | undefined>,
+  ano: number,
+  mes: SiglaMes,
+): RestantePagamento {
+  const snapAtual = snapshots[ano];
+  const mapaSalario = snapAtual ? salarioPorMes(snapAtual) : new Map<SiglaMes, number>();
+  const totalGanho = arredondar2(mapaSalario.get(mes) ?? 0);
+
+  const idx = MESES_RESUMO.indexOf(mes);
+  const mesAnterior = idx > 0 ? MESES_RESUMO[idx - 1] : 'DEZ';
+  const anoAnterior = idx > 0 ? ano : ano - 1;
+  const snapAnterior = snapshots[anoAnterior];
+  const registrosAnteriores = snapAnterior?.meses?.[mesAnterior]?.registros ?? [];
+
+  const faturaMesAnterior = arredondar2(gastosProximoMes(registrosAnteriores));
+  const receboLiviaAnterior = arredondar2(resumirDivisao(registrosAnteriores).receboLivia);
+
+  // PIX real = total PIX − parte da Lívia dentro da própria seleção PIX
+  const registrosPix = (snapAtual?.meses?.[mes]?.registros ?? []).filter((r) => r.dados.TIPO === 'PIX');
+  const divisaoPix = resumirDivisao(registrosPix);
+  const pixMes = arredondar2(divisaoPix.totalReal);
+
+  const restante = arredondar2(totalGanho - faturaMesAnterior + receboLiviaAnterior - pixMes);
+  return { totalGanho, faturaMesAnterior, receboLiviaAnterior, pixMes, restante, mesAnterior, anoAnterior };
+}
+
 /** Soma dos valores lançados como 'Fatura futura' no mês (= "Gastos próximo mês"). */
 export function gastosProximoMes(registros: Registro<import('@/types/api-types').LancamentoMensal>[]): number {
   return arredondar2(

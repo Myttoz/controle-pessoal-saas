@@ -143,6 +143,18 @@ function normalizar(carregado: DadosLocais | null | undefined): DadosLocais | nu
         configDaVez.conciliacao && typeof configDaVez.conciliacao === 'object'
           ? configDaVez.conciliacao
           : {},
+      pagamentosBoleto:
+        configDaVez.pagamentosBoleto && typeof configDaVez.pagamentosBoleto === 'object'
+          ? configDaVez.pagamentosBoleto
+          : {},
+      importacoesCsv:
+        configDaVez.importacoesCsv && typeof configDaVez.importacoesCsv === 'object'
+          ? configDaVez.importacoesCsv
+          : {},
+      importacaoDefaults:
+        configDaVez.importacaoDefaults && typeof configDaVez.importacaoDefaults === 'object'
+          ? configDaVez.importacaoDefaults
+          : {},
     },
     horasExtras: Array.isArray(carregado.horasExtras) ? carregado.horasExtras : [],
     ferias: Array.isArray(carregado.ferias) ? carregado.ferias : [],

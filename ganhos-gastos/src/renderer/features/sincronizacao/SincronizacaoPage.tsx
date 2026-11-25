@@ -105,10 +105,8 @@ export function SincronizacaoPage() {
       {/* ---------- ações ---------- */}
       <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
         <h2 className="text-sm font-semibold text-slate-200">Ações</h2>
-        <p className="mt-1 text-xs text-slate-500">
-          Use o mesmo login nos computadores Linux, Windows e no navegador para manter
-          Horas Extras, Férias, Manutenção e salário iguais em todos eles.
-        </p>
+        <p className="mt-1 text-xs text-slate-500 hidden" title="Use o mesmo login nos computadores Linux, Windows e no navegador para manter           Horas Extras, Férias, Manutenção e salário iguais em todos eles.">Use o mesmo login nos computadores Linux, Windows e no navegador para manter
+          Horas Extras, Férias, Manutenção e salário iguais em todos eles.</p>
 
         <div className="mt-4 flex flex-wrap gap-2">
           <Botao
@@ -156,9 +154,7 @@ export function SincronizacaoPage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold text-slate-200">Orçamento e alertas inteligentes</h2>
-            <p className="mt-1 text-xs text-slate-500">
-              Reversível: desligue a chave para ocultar o painel e ignorar os alertas. Os orçamentos são salvos localmente/sincronizados.
-            </p>
+            <p className="mt-1 text-xs text-slate-500 hidden" title="Reversível: desligue a chave para ocultar o painel e ignorar os alertas. Os orçamentos são salvos localmente/sincronizados.">Reversível: desligue a chave para ocultar o painel e ignorar os alertas. Os orçamentos são salvos localmente/sincronizados.</p>
           </div>
           <label className="flex items-center gap-2 text-sm text-slate-300">
             <input

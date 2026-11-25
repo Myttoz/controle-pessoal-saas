@@ -87,9 +87,7 @@ export function AnosPage() {
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold text-slate-200">Criar novo ano</h2>
-            <p className="text-xs text-slate-500">
-              Gera as 12 abas de mês, Salário, Extras e Anual na planilha (ação <code>criarAno</code>).
-            </p>
+            <p className="text-xs text-slate-500 hidden" title="Gera as 12 abas de mês, Salário, Extras e Anual na planilha (ação criarAno).">Gera as 12 abas de mês, Salário, Extras e Anual na planilha (ação <code>criarAno</code>).</p>
           </div>
           <Botao
             icone={RefreshCw}
@@ -250,9 +248,7 @@ export function AnosPage() {
             <li>Saldo inicial do ano</li>
             <li>Anos &quot;sentados&quot; via Gestão Anual</li>
           </ul>
-          <p className="text-xs text-slate-500">
-            Os demais anos (por exemplo 2026) <strong>não são afetados</strong> de nenhuma forma.
-          </p>
+          <p className="text-xs text-slate-500 hidden" title="Os demais anos (por exemplo 2026) não são afetados de nenhuma forma.">Os demais anos (por exemplo 2026) <strong>não são afetados</strong> de nenhuma forma.</p>
         </div>
       </Modal>
 
@@ -278,14 +274,10 @@ export function AnosPage() {
           </>
         }
       >
-        <p className="text-sm text-slate-300">
-          As abas do ano foram criadas na planilha. Deseja gerar agora a aba{' '}
-          <strong>Dashboard</strong> com os gráficos deste ano?
-        </p>
-        <p className="mt-2 text-xs text-slate-500">
-          A ação <code>atualizarDashboard</code> desenha a pizza de categorias e as colunas por mês
-          direto no Google Sheets.
-        </p>
+        <p className="text-sm text-slate-300" title="As abas do ano foram criadas na planilha. Deseja gerar agora a aba{' '}           Dashboard com os gráficos deste ano?">As abas do ano foram criadas na planilha. Deseja gerar agora a aba{' '}
+          <strong>Dashboard</strong> com os gráficos deste ano?</p>
+        <p className="mt-2 text-xs text-slate-500 hidden" title="A ação atualizarDashboard desenha a pizza de categorias e as colunas por mês           direto no Google Sheets.">A ação <code>atualizarDashboard</code> desenha a pizza de categorias e as colunas por mês
+          direto no Google Sheets.</p>
       </Modal>
     </div>
   );

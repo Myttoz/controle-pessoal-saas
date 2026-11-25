@@ -96,9 +96,7 @@ export function PagamentosPage() {
   return (
     <div className="space-y-5">
       {/* ---------- cabeçalho ---------- */}
-      <p className="text-xs text-slate-500">
-        Salário do mês − <strong>Despesas</strong> + <strong>Recebido da Lívia</strong> = Restante · Saldo = Saldo inicial do ano + Σ Restante. Tudo automático a partir dos Lançamentos e do Salário do mês.
-      </p>
+      <p className="text-xs text-slate-500 hidden" title="Salário − Despesas + Recebido Lívia = Restante. Saldo = Saldo inicial + Σ Restante.">Resumo de pagamentos</p>
 
       {ano == null ? (
         <EstadoVazio
@@ -219,10 +217,7 @@ export function PagamentosPage() {
                 ) : null}
               </table>
             </div>
-            <p className="border-t border-slate-800 px-4 py-2.5 text-xs text-slate-500">
-              <Wallet className="mr-1 inline h-3.5 w-3.5" />
-              Automático — Despesas e Recebido Lívia são calculados pela soma dos Lançamentos do mês.
-            </p>
+            <p className="border-t border-slate-800 px-4 py-2.5 text-xs text-slate-500 hidden" title="Automático — Despesas e Recebido Lívia são calculados pela soma dos Lançamentos do mês.">Automático</p>
           </section>
 
           <div className="flex items-center justify-between gap-2 pt-2">

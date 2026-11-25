@@ -165,18 +165,14 @@ export function FormFerias({ registro, aoFechar }: Props) {
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500">Férias gozadas (+1/3)</p>
           <p className="text-lg font-semibold text-slate-100">{formatarMoeda(calc.valorFerias)}</p>
-          <p className="text-xs text-slate-500">
-            {estado.diasRetirados} dias · {formatarMoeda(calc.baseFerias)} + 1/3{' '}
-            {formatarMoeda(calc.tercoFerias)}
-          </p>
+          <p className="text-xs text-slate-500" title="{estado.diasRetirados} dias · {formatarMoeda(calc.baseFerias)} + 1/3{' '}             {formatarMoeda(calc.tercoFerias)}">{estado.diasRetirados} dias · {formatarMoeda(calc.baseFerias)} + 1/3{' '}
+            {formatarMoeda(calc.tercoFerias)}</p>
         </div>
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500">Abono vendidos (+1/3)</p>
           <p className="text-lg font-semibold text-slate-100">{formatarMoeda(calc.valorAbono)}</p>
-          <p className="text-xs text-slate-500">
-            {estado.diasVendidos} dias · {formatarMoeda(calc.baseAbono)} + 1/3{' '}
-            {formatarMoeda(calc.tercoAbono)}
-          </p>
+          <p className="text-xs text-slate-500" title="{estado.diasVendidos} dias · {formatarMoeda(calc.baseAbono)} + 1/3{' '}             {formatarMoeda(calc.tercoAbono)}">{estado.diasVendidos} dias · {formatarMoeda(calc.baseAbono)} + 1/3{' '}
+            {formatarMoeda(calc.tercoAbono)}</p>
         </div>
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500">Total a receber</p>
@@ -186,16 +182,12 @@ export function FormFerias({ registro, aoFechar }: Props) {
       </div>
 
       {excedente > 0 && (
-        <p className="mt-2 text-xs text-amber-400">
-          {excedente} {excedente === 1 ? 'dia restante não é vendido' : 'dias restantes não são vendidos'} (o abono é limitado a{' '}
-          {MAX_DIAS_VENDIDOS} dias) — apenas não são gozados.
-        </p>
+        <p className="mt-2 text-xs text-amber-400 hidden" title="{excedente} {excedente === 1 ? 'dia restante não é vendido' : 'dias restantes não são vendidos'} (o abono é limitado a{' '}           {MAX_DIAS_VENDIDOS} dias) — apenas não são gozados.">{excedente} {excedente === 1 ? 'dia restante não é vendido' : 'dias restantes não são vendidos'} (o abono é limitado a{' '}
+          {MAX_DIAS_VENDIDOS} dias) — apenas não são gozados.</p>
       )}
 
       {salarioBruto <= 0 && (
-        <p className="mt-3 text-xs text-amber-400">
-          Informe o salário bruto no painel de configuração para que os valores sejam calculados.
-        </p>
+        <p className="mt-3 text-xs text-amber-400 hidden" title="Informe o salário bruto no painel de configuração para que os valores sejam calculados.">Informe o salário bruto no painel de configuração para que os valores sejam calculados.</p>
       )}
     </Modal>
   );

@@ -231,9 +231,7 @@ export function DashboardPage() {
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Mês</span>
           <MesTabs meses={snapshot.meses} selecionado={mes} aoSelecionar={setMes} />
         </div>
-        <p className="text-xs text-slate-500">
-          Selecione o mês para ver os totais, rankings e exportar os lançamentos desse período.
-        </p>
+        <p className="text-xs text-slate-500 hidden" title="Selecione o mês para ver os totais, rankings e exportar os lançamentos desse período.">Mês</p>
       </section>
 
       <AlertasBoletos />
@@ -246,11 +244,7 @@ export function DashboardPage() {
         <Botao icone={Printer} onClick={imprimirPdf} variante="fantasma">
           Imprimir PDF
         </Botao>
-        <p className="text-xs text-slate-500 flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-slate-500" />
-          O CSV traz os lançamentos do mês {NOMES_MESES[mes]}/{snapshot.ano}.
-          O PDF abre a janela de impressão do sistema.
-        </p>
+        <p className="text-xs text-slate-500 hidden" title={`CSV: lançamentos de ${NOMES_MESES[mes]}/${snapshot.ano}. PDF: janela de impressão do sistema.`}>Exportar</p>
       </section>
 
       {/* ------- gráficos ------- */}

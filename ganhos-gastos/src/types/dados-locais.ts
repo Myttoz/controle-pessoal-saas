@@ -73,6 +73,17 @@ export interface ConfigLocal {
   alertaOrcamentoPercentual?: number;
   /** Conciliação: chave `${ano}:${aba}:${linha}` => conferido. Reversível. */
   conciliacao?: Record<string, boolean>;
+  /** Pagamento de boletos: chave `${ano}:${linha}` => pago. Reversível. */
+  pagamentosBoleto?: Record<string, boolean>;
+  /** Importação CSV: chave única da linha => id do lançamento criado (evita duplicados). */
+  importacoesCsv?: Record<string, number | string>;
+  /** Defaults usados ao gravar linhas importadas como novos lançamentos. */
+  importacaoDefaults?: {
+    categoria?: string;
+    formaPgto?: string;
+    tipo?: string;
+    quemPaga?: string;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -159,6 +170,9 @@ export const CONFIG_PADRAO: ConfigLocal = {
   orcamentosCategoria: {},
   alertaOrcamentoPercentual: 80,
   conciliacao: {},
+  pagamentosBoleto: {},
+  importacoesCsv: {},
+  importacaoDefaults: {},
 };
 
 export function dadosLocaisVazios(): DadosLocais {
