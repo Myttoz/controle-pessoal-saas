@@ -1,0 +1,50 @@
+CONTROLE PESSOAL — USO EM OUTRO PC (Linux / Windows)
+=====================================================
+
+1) Clonar o projeto
+   git clone https://github.com/Myttoz/controle-pessoal-saas.git
+   cd controle-pessoal-saas
+
+2) Instalar dependencias
+   cd ganhos-gastos
+   npm install
+   cd ..
+
+3) Configurar Supabase (apenas se for um PC novo)
+   - Crie o arquivo ganhos-gastos/.env com:
+     VITE_SUPABASE_URL=https://SEU_PROJETO.supabase.co
+     VITE_SUPABASE_ANON_KEY=sb_publishable_XXXX
+   - Use o mesmo projeto Supabase para compartilhar os dados entre PCs.
+
+4) Rodar em desenvolvimento
+   cd ganhos-gastos && npm run dev
+   Acesse: http://localhost:5173
+
+5) Gerar build web (producao local)
+   npm run build:web
+   Saida em ganhos-gastos/dist-web/
+
+6) Atalhos globais para converter PDF de extrato (opcional, recomendado)
+   mkdir -p ~/bin
+   ln -sf "$PWD/scripts/converterpdf" ~/bin/converterpdf
+   ln -sf "$PWD/scripts/desprotegerpdf" ~/bin/desprotegerpdf
+   # Depois, em qualquer pasta:
+   #   converterpdf extrato.pdf
+   #   desprotegerpdf extrato.pdf
+
+7) Requisitos do sistema
+   - Node.js 18+
+   - Python 3
+   - pdftotext (poppler-utils): sudo apt install poppler-utils
+   - Ghostscript (para desproteger PDF): sudo apt install ghostscript
+   - LibreOffice (opcional, para editar CSV)
+
+8) Banco de dados
+   - Execute os scripts sql/ no Supabase (002 a 008), se ainda nao rodou.
+   - Confirme RLS ativo: select count(*) from public.anexos;
+
+9) Atualizar para a versao mais recente
+   git pull origin master
+   cd ganhos-gastos && npm install && npm run dev
+
+SaaS by Myttoz

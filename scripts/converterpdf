@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Converte um extrato em PDF (Mercado Pago) para CSV.
+# Uso: ./scripts/converterpdf <arquivo.pdf> [saida.csv]
+# Se a saida nao for informada, salva "mesmo-nome.csv" ao lado do PDF.
+set -euo pipefail
+
+if [ "$#" -lt 1 ]; then
+  echo "Uso: converterpdf <arquivo.pdf> [saida.csv]"
+  echo "Ex.: converterpdf ~/Documentos/extrato.pdf"
+  exit 1
+fi
+
+PDF="$1"
+if [ ! -f "$PDF" ]; then
+  echo "Arquivo nao encontrado: $PDF"
+  exit 1
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT="$SCRIPT_DIR/pdf2csv.py"
+if [ ! -f "$SCRIPT" ]; then
+  echo "Script pdf2csv.py nao encontrado em $SCRIPT"
+  exit 1
+fi
+
+if [ "$#" -ge 2 ]; then
+  SAIDA="$2"
+else
+  SAIDA="${PDF%.*}.csv"
+fi
+
+python3 "$SCRIPT" "$PDF" "$SAIDA"
+echo "CSV salvo em: $SAIDA"

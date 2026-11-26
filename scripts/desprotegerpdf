@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Remove restricoes de copia/impressao de um PDF (para abrir no LibreOffice).
+# Uso: ./scripts/desprotegerpdf <entrada.pdf> [saida.pdf]
+set -euo pipefail
+if [ "$#" -lt 1 ]; then
+  echo "Uso: desprotegerpdf <entrada.pdf> [saida.pdf]"
+  exit 1
+fi
+ENTRADA="$1"
+SAIDA="${2:-${ENTRADA%.*}-desprotegido.pdf}"
+gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 \
+   -dPDFSETTINGS=/ebook -dNOPDFMARKS \
+   -sOutputFile="$SAIDA" "$ENTRADA"
+echo "PDF desprotegido salvo em: $SAIDA"
