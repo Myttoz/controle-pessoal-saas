@@ -55,15 +55,14 @@ function Indicador({
   tom?: Tom;
 }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3" title={detalhe}>
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{titulo}</p>
-        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ring-1 ring-inset ${TONS[tom]}`}>
+        <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ring-1 ring-inset ${TONS[tom]}`}>
           <Icone className="h-4 w-4" />
         </span>
       </div>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-100">{valor}</p>
-      {detalhe && <p className="mt-1 truncate text-xs text-slate-500">{detalhe}</p>}
+      <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-100">{valor}</p>
     </div>
   );
 }
@@ -174,7 +173,7 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       {/* ------- indicadores ------- */}
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Indicador
@@ -226,7 +225,7 @@ export function DashboardPage() {
       </section>
 
       {/* ------- seletor de mês ------- */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 flex items-center justify-between gap-4 flex-wrap">
+      <section className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Mês</span>
           <MesTabs meses={snapshot.meses} selecionado={mes} aoSelecionar={setMes} />
@@ -249,16 +248,16 @@ export function DashboardPage() {
 
       {/* ------- gráficos ------- */}
       <section className="grid gap-4 xl:grid-cols-2">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-slate-200">Gastos por categoria</h2>
             <span className="text-xs text-slate-500">{snapshot.ano}</span>
           </div>
           <GraficoCategorias resumo={resumo} />
         </div>
 
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-slate-200">Gastos por mês</h2>
             <span className="text-xs text-slate-500">{snapshot.ano}</span>
           </div>
@@ -282,8 +281,8 @@ export function DashboardPage() {
 
       {/* ------- top categorias (lista) ------- */}
       {(resumo?.categorias.length ?? 0) > 0 && (
-        <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-200">Ranking de categorias</h2>
+        <section className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
+          <h2 className="mb-2 text-sm font-semibold text-slate-200">Ranking de categorias</h2>
           <ul className="space-y-2">
             {resumo.categorias.map((c) => {
               const proporcao = totalAno > 0 ? Math.min(100, (Number(c.total) / totalAno) * 100) : 0;
@@ -320,8 +319,8 @@ export function DashboardPage() {
         const totalAnoRank = arredondar2(ranking.reduce((s, [, v]) => s + v, 0));
         const maxTipo = Math.max(...ranking.map(([, v]) => v), 0);
         return (
-          <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <div className="mb-3 flex items-center justify-between gap-2">
+          <section className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-slate-200">Ranking por tipo de pagamento</h2>
               <span className="text-xs text-slate-500">{snapshot.ano} · ano inteiro</span>
             </div>
@@ -353,8 +352,8 @@ export function DashboardPage() {
       })()}
 
       {/* ------- divisão Lívia + Dividido 50/50 (mês selecionado) ------- */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-        <div className="mb-3 flex items-center justify-between gap-2">
+      <section className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
+        <div className="mb-2 flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-slate-200">
             Divisão com Lívia — {NOMES_MESES[mes]} {snapshot.ano}
           </h2>
@@ -402,8 +401,8 @@ export function DashboardPage() {
       </section>
 
       {/* ------- ranking "Eu" (apenas quem paga = Eu) ------- */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-        <div className="mb-3 flex items-center justify-between gap-2">
+      <section className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
+        <div className="mb-2 flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-slate-200">Ranking — Meus gastos ("Eu")</h2>
           <span className="text-xs text-slate-500">
             Apenas lançamentos com QUEM PAGA = Eu
@@ -460,8 +459,8 @@ export function DashboardPage() {
       </section>
 
       {/* ------- ranking por tipo (fatura / pix / boleto-débito) ------- */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-        <div className="mb-3 flex items-center justify-between gap-2">
+      <section className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
+        <div className="mb-2 flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-slate-200">Ranking por tipo de pagamento</h2>
           <span className="text-xs text-slate-500">{NOMES_MESES[mes]} · mês selecionado</span>
         </div>
@@ -528,9 +527,7 @@ export function DashboardPage() {
             </tfoot>
           </table>
         </div>
-        <p className="mt-2 text-[10px] text-slate-500">
-          Última coluna = quanto de cada tipo foi pago por você ("Eu"); o restante é da Lívia ou dividido.
-        </p>
+        <p className="mt-1.5 text-[10px] text-slate-500 hidden" title="Última coluna = quanto de cada tipo foi pago por você ('Eu'); o restante é da Lívia ou dividido.">Última coluna = quanto de cada tipo foi pago por você ("Eu"); o restante é da Lívia ou dividido.</p>
       </section>
 
 

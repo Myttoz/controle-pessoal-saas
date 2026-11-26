@@ -48,7 +48,7 @@ export function SaudeFinanceira() {
   if (!ativo) return null;
 
   return (
-    <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
       <div className="flex items-center gap-2">
         <HeartPulse className="h-4 w-4 text-sky-300" />
         <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-200">Saúde financeira e alertas</h3>

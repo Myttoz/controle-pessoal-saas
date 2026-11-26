@@ -161,12 +161,12 @@ export function ConciliacaoPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-        <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="space-y-3">
+      <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-slate-100">Conciliação completa</h2>
-            <p className="mt-1 text-sm text-slate-400">Marque lançamentos como conferidos. Status salvo localmente/sincronizado e reversível.</p>
+            <p className="mt-1 text-sm text-slate-400 hidden" title="Marque lançamentos como conferidos. Status salvo localmente/sincronizado e reversível.">Marque lançamentos como conferidos. Status salvo localmente/sincronizado e reversível.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <label className="flex items-center gap-2 text-xs text-slate-300"><input type="checkbox" checked={escopoAno} onChange={(e) => setEscopoAno(e.target.checked)} />Ano inteiro</label>
@@ -175,14 +175,16 @@ export function ConciliacaoPage() {
             <Botao icone={Eraser} onClick={limparEscopo}>Limpar escopo</Botao>
           </div>
         </div>
-        {!escopoAno && <div className="mt-3"><MesTabs meses={snapshot.meses} selecionado={mes} aoSelecionar={setMes} /></div>}
-        <div className="mt-3 flex flex-wrap gap-2">
-          <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar descrição, categoria, obs..." className="w-72 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100" />
-          <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value as FiltroStatus)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100">
-            <option value="todos">Todos</option>
-            <option value="pendentes">Pendentes</option>
-            <option value="conferidos">Conferidos</option>
-          </select>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            {!escopoAno && <MesTabs meses={snapshot.meses} selecionado={mes} aoSelecionar={setMes} />}
+            <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value as FiltroStatus)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-slate-100">
+              <option value="todos">Todos</option>
+              <option value="pendentes">Pendentes</option>
+              <option value="conferidos">Conferidos</option>
+            </select>
+          </div>
+          <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar descrição, categoria, obs..." className="w-64 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-slate-100" />
         </div>
       </div>
 
@@ -197,7 +199,18 @@ export function ConciliacaoPage() {
         <table className="w-full min-w-[980px] text-sm">
           <thead>
             <tr className="border-b border-slate-800 bg-slate-950/80 text-left text-[11px] uppercase tracking-wider text-slate-500 [&>th]:px-3 [&>th]:py-2">
-              <th className="px-3 py-2">Ok</th>
+              <th className="px-3 py-2">
+                <span className="flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => marcarVisiveis(!linhas.every((l) => l.conferido))}
+                    title={linhas.every((l) => l.conferido) ? 'Desmarcar todos os visíveis' : 'Conferir todos os visíveis'}
+                    className="rounded p-1 hover:bg-slate-800"
+                  >
+                    {linhas.every((l) => l.conferido) ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <Circle className="h-4 w-4 text-slate-500" />}
+                  </button>
+                </span>
+              </th>
               <th className="p-0"><ThOrdenavel rotulo="Mês" direcao={dirDe('mes')} aoOrdenar={() => alternarOrdem('mes')} filtro={filtroDe('mes')} className="px-3 py-2" /></th>
               <th className="p-0"><ThOrdenavel rotulo="Data" direcao={dirDe('data')} aoOrdenar={() => alternarOrdem('data')} filtro={filtroDe('data')} className="px-3 py-2" /></th>
               <th className="p-0"><ThOrdenavel rotulo="Descrição" direcao={dirDe('descricao')} aoOrdenar={() => alternarOrdem('descricao')} filtro={filtroDe('descricao')} className="px-3 py-2" /></th>
@@ -241,7 +254,7 @@ export function ConciliacaoPage() {
 function Kpi({ titulo, valor, tom }: { titulo: string; valor: string; tom?: 'ok' | 'warn' }) {
   const cor = tom === 'ok' ? 'text-emerald-300' : tom === 'warn' ? 'text-amber-300' : 'text-slate-100';
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
       <p className="text-xs uppercase tracking-wider text-slate-500">{titulo}</p>
       <p className={`mt-1 text-lg font-semibold ${cor}`}>{valor}</p>
     </div>

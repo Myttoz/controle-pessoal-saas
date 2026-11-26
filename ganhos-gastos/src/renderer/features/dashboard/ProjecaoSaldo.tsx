@@ -81,13 +81,11 @@ export function ProjecaoSaldo({ snapshot, config, mesSelecionado }: Props) {
   const vazio = dados.every((d) => d.ganhos === 0 && d.gastos === 0);
 
   return (
-    <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+    <section className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-sm font-semibold text-slate-200">Projeção de saldo</h2>
-          <p className="text-[11px] text-slate-500">
-            Acumulado = saldo inicial + ganhos − gastos (Despesas − Recebido Lívia). Meses futuros já incluem lançamentos, parcelas e recorrentes cadastrados.
-          </p>
+          <p className="text-[11px] text-slate-500 hidden" title="Acumulado = saldo inicial + ganhos − gastos (Despesas − Recebido Lívia). Meses futuros já incluem lançamentos, parcelas e recorrentes cadastrados.">Acumulado = saldo inicial + ganhos − gastos (Despesas − Recebido Lívia). Meses futuros já incluem lançamentos, parcelas e recorrentes cadastrados.</p>
         </div>
         <span className="text-xs text-slate-500">{snapshot.ano}</span>
       </div>

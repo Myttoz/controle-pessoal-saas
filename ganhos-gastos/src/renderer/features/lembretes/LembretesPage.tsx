@@ -149,7 +149,7 @@ export function LembretesPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       {/* ---------- cabeçalho ---------- */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -157,10 +157,6 @@ export function LembretesPage() {
             <BellRing className="h-5 w-5 text-amber-400" />
             Lembretes
           </h2>
-          <p className="mt-1 max-w-2xl text-sm text-slate-500">
-            Crie o lembrete aqui; na hora de criar ele abre a <strong>Google Agenda</strong> com o
-            evento já preenchido — você só clica <em>Salvar</em> e o Google te avisa na data.
-          </p>
         </div>
         <div className="flex items-center gap-2">
           <Botao
@@ -178,27 +174,12 @@ export function LembretesPage() {
         </div>
       </div>
 
-      {/* ---------- como funciona ---------- */}
-      <section className="rounded-xl border border-amber-800/40 bg-amber-950/20 p-4 text-xs leading-relaxed text-amber-200/90">
-        <p className="font-semibold text-amber-200">Como funciona</p>
-        <ol className="mt-2 list-decimal space-y-1 pl-4">
-          <li>
-            Você cria o lembrete aqui → o app abre a <strong>Google Agenda</strong> com o evento já
-            preenchido → você clica <strong>Salvar</strong> (uma vez).
-          </li>
-          <li>
-            Ao abrir a Google Agenda — tanto na criação quanto pelo botão <strong>Agenda</strong> do
-            cartão — o lembrete é marcado como <strong>Enviado</strong>. Sem abrir a agenda, ele
-            fica como <strong>Pendente</strong>.
-          </li>
-          <li>
-            O Google envia o aviso na data marcada (e-mail + notificação no celular). O site não
-            envia e-mail — a própria Google Agenda faz isso de graça.
-          </li>
-          <li>
-            O WhatsApp fica salvo para uso futuro; hoje não enviamos mensagens.
-          </li>
-        </ol>
+      {/* ---------- como funciona (tooltip) ---------- */}
+      <section
+        className="rounded-lg border border-amber-800/40 bg-amber-950/20 px-3 py-1.5 text-xs text-amber-200"
+        title="Como funciona: 1) Crie o lembrete aqui; o app abre a Google Agenda com o evento preenchido e você clica em Salvar. 2) Ao abrir a Agenda (na criação ou pelo botão Agenda do cartão), o lembrete vira Enviado; sem abrir, fica Pendente. 3) O Google envia o aviso na data (e-mail e notificação). O site não envia e-mail. 4) O WhatsApp fica só registrado para uso futuro."
+      >
+        Como funciona
       </section>
 
       {/* ---------- lembretes fixos (recorrências) ---------- */}
@@ -260,7 +241,7 @@ export function LembretesPage() {
           {listaFiltrada.map((lembrete) => (
             <li
               key={lembrete.id}
-              className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition-colors hover:border-slate-700"
+              className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3 transition-colors hover:border-slate-700"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
@@ -275,8 +256,7 @@ export function LembretesPage() {
                     </span>
                   </div>
 
-                  <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
-                    <span className="inline-flex items-center gap-1.5">
+                  <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500" title="{formatarData(lembrete.dataLembrete)} {lembrete.email && ( {lembrete.email} )} {lembrete.whatsapp && ( {lembrete.whatsapp} (não envia) )}"><span className="inline-flex items-center gap-1.5">
                       <CalendarDays className="h-3.5 w-3.5" />
                       {formatarData(lembrete.dataLembrete)}
                     </span>
@@ -294,15 +274,14 @@ export function LembretesPage() {
                           (não envia)
                         </span>
                       </span>
-                    )}
-                  </p>
+                    )}</p>
 
-                  <p className="mt-2 whitespace-pre-wrap text-sm text-slate-300">
+                  <p className="mt-1.5 whitespace-pre-wrap text-sm text-slate-300">
                     {lembrete.mensagem}
                   </p>
 
                   {lembrete.erro && (
-                    <p className="mt-2 text-xs text-rose-300">Erro no último envio: {lembrete.erro}</p>
+                    <p className="mt-1.5 text-xs text-rose-300">Erro no último envio: {lembrete.erro}</p>
                   )}
                   {lembrete.enviadoEm && (
                     <p className="mt-1 text-xs text-slate-600">

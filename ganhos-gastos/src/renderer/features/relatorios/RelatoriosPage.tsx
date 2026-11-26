@@ -1,30 +1,19 @@
+/** Relatório para IR / contador: ganhos diversos e freelances. O PIX sai no extrato anual do banco. */
 import { useMemo, useState } from 'react';
 import { Download, FileText, Printer } from 'lucide-react';
+import { ThOrdenavel, type DirecaoOrdem } from '@/components/ThOrdenavel';
 import { Botao } from '@/components/Botoes';
 import { EstadoVazio } from '@/components/Estados';
-import { ThOrdenavel, type DirecaoOrdem } from '@/components/ThOrdenavel';
 import { formatarData, formatarMoeda } from '@/lib/formatar';
 import { SIGLAS, NOMES_MESES } from '@/lib/meses';
 import { useStoreAno } from '@/store/storeAno';
 import { useStoreUI } from '@/store/storeUI';
-import type { LancamentoMensal, LinhaExtra, LinhaSalario, Registro, SiglaMes } from '@/types/api-types';
+import type { LinhaExtra, LinhaSalario, Registro, SiglaMes } from '@/types/api-types';
 
 const nomeMes = (m: SiglaMes) => NOMES_MESES[m];
 
-interface LinhaPix {
-  mes: SiglaMes;
-  data: string;
-  descricao: string;
-  categoria: string;
-  quem: string;
-  valor: number;
-  observacao: string;
-}
-
 interface LinhaOutroSalario { mes: SiglaMes; valor: number; observacao: string; }
 interface LinhaFreelance { mes: SiglaMes; data: string; descricao: string; cliente: string; valor: number; }
-
-type CampoPix = 'mes' | 'data' | 'descricao' | 'categoria' | 'quem' | 'valor' | 'observacao';
 
 function escapeCsv(valor: string | number): string {
   const s = String(valor ?? '');
@@ -39,80 +28,12 @@ function baixarCsv(nome: string, linhas: string[][]): void {
   a.href = url; a.download = nome; a.click();
   URL.revokeObjectURL(url);
 }
-function cmpTxt(a: string, b: string) { return a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }); }
 
 export function RelatoriosPage() {
   const ano = useStoreAno((s) => s.anoSelecionado);
   const snapshot = useStoreAno((s) => (ano != null ? s.snapshots[ano] : undefined));
   const toast = useStoreUI((s) => s.toast);
   const [filtroMes, setFiltroMes] = useState<SiglaMes | ''>('');
-  const [ordemPix, setOrdemPix] = useState<{ campo: CampoPix; direcao: DirecaoOrdem } | null>(null);
-  const [filtrosPix, setFiltrosPix] = useState<Record<string, string[]>>({});
-
-  const pixBase = useMemo<LinhaPix[]>(() => {
-    if (!snapshot) return [];
-    const linhas: LinhaPix[] = [];
-    for (const sigla of SIGLAS) {
-      if (filtroMes && sigla !== filtroMes) continue;
-      const mes = snapshot.meses[sigla];
-      if (!mes) continue;
-      for (const r of mes.registros) {
-        const d = r.dados as LancamentoMensal;
-        if (d.TIPO !== 'PIX') continue;
-        linhas.push({
-          mes: sigla, data: d.DATA || '', descricao: d.DESCRIÇÃO || '', categoria: d.CATEGORIA || '',
-          quem: d['QUEM PAGA'] || '', valor: Number(d.VALOR) || 0, observacao: d.OBSERVAÇÃO || '',
-        });
-      }
-    }
-    return linhas;
-  }, [snapshot, filtroMes]);
-
-  const valorColPix = (r: LinhaPix, campo: string): string => {
-    switch (campo) {
-      case 'mes': return nomeMes(r.mes);
-      case 'data': return r.data ? formatarData(r.data) : '';
-      case 'descricao': return r.descricao;
-      case 'categoria': return r.categoria;
-      case 'quem': return r.quem;
-      case 'observacao': return r.observacao;
-      default: return '';
-    }
-  };
-  const opcoesPix = (campo: string) => [...new Set(pixBase.map((r) => valorColPix(r, campo)).filter(Boolean))].sort(cmpTxt);
-  const alternarFiltroPix = (campo: string, valor: string) => setFiltrosPix((p) => {
-    const atual = p[campo] ?? []; const prox = atual.includes(valor) ? atual.filter((v) => v !== valor) : [...atual, valor]; return { ...p, [campo]: prox };
-  });
-  const limparFiltroPix = (campo: string) => setFiltrosPix((p) => ({ ...p, [campo]: [] }));
-  const alternarOrdemPix = (campo: CampoPix) => setOrdemPix((a) => !a || a.campo !== campo ? { campo, direcao: 'asc' } : a.direcao === 'asc' ? { campo, direcao: 'desc' } : null);
-  const dirPix = (campo: CampoPix) => ordemPix?.campo === campo ? ordemPix.direcao : null;
-  const filtroPix = (campo: string) => ({ opcoes: opcoesPix(campo), selecionados: filtrosPix[campo] ?? [], aoAlternar: (v: string) => alternarFiltroPix(campo, v), aoLimpar: () => limparFiltroPix(campo) });
-
-  const pix = useMemo(() => {
-    let out = pixBase.filter((r) => {
-      for (const [campo, sel] of Object.entries(filtrosPix)) {
-        if (!sel || sel.length === 0) continue;
-        if (!sel.includes(valorColPix(r, campo))) return false;
-      }
-      return true;
-    });
-    if (ordemPix) {
-      const dir = ordemPix.direcao === 'asc' ? 1 : -1;
-      out = [...out].sort((a, b) => {
-        let c = 0;
-        switch (ordemPix.campo) {
-          case 'mes': c = SIGLAS.indexOf(a.mes) - SIGLAS.indexOf(b.mes); break;
-          case 'data': c = a.data.localeCompare(b.data); break;
-          case 'valor': c = a.valor - b.valor; break;
-          default: c = cmpTxt(valorColPix(a, ordemPix.campo), valorColPix(b, ordemPix.campo));
-        }
-        return c * dir;
-      });
-    } else {
-      out = [...out].sort((a, b) => a.data.localeCompare(b.data) || cmpTxt(a.descricao, b.descricao));
-    }
-    return out;
-  }, [pixBase, filtrosPix, ordemPix]);
 
   const outrosSalario = useMemo<LinhaOutroSalario[]>(() => {
     if (!snapshot?.salario) return [];
@@ -136,7 +57,6 @@ export function RelatoriosPage() {
       .sort((a, b) => SIGLAS.indexOf(a.mes) - SIGLAS.indexOf(b.mes) || a.data.localeCompare(b.data));
   }, [snapshot, filtroMes]);
 
-  const totalPix = pix.reduce((s, r) => s + r.valor, 0);
   const totalOutros = outrosSalario.reduce((s, r) => s + r.valor, 0);
   const totalFreelances = freelances.reduce((s, r) => s + r.valor, 0);
 
@@ -145,17 +65,12 @@ export function RelatoriosPage() {
     const linhas: string[][] = [];
     linhas.push([`Relatório IR / Contador - ${ano ?? ''}${filtroMes ? ` - ${nomeMes(filtroMes)}` : ''}`]);
     linhas.push([]);
-    linhas.push(['LANÇAMENTOS PIX']);
-    linhas.push(['Mês', 'Data', 'Descrição', 'Categoria', 'Quem paga', 'Valor', 'Observação']);
-    for (const r of pix) linhas.push([nomeMes(r.mes), r.data ? formatarData(r.data) : '', r.descricao, r.categoria, r.quem, r.valor.toFixed(2).replace('.', ','), r.observacao]);
-    linhas.push(['', '', '', '', 'TOTAL PIX', totalPix.toFixed(2).replace('.', ','), '']);
-    linhas.push([]);
-    linhas.push(['SALÁRIO - OUTROS (MANUAL)']);
+    linhas.push(['GANHOS DIVERSOS (SALÁRIO - OUTROS)']);
     linhas.push(['Mês', 'Valor', 'Observação/Descrição']);
     for (const r of outrosSalario) linhas.push([nomeMes(r.mes), r.valor.toFixed(2).replace('.', ','), r.observacao]);
-    linhas.push(['TOTAL OUTROS', totalOutros.toFixed(2).replace('.', ','), '']);
+    linhas.push(['TOTAL GANHOS DIVERSOS', totalOutros.toFixed(2).replace('.', ','), '']);
     linhas.push([]);
-    linhas.push(['FREELANCES / EXTRAS (GANHOS)']);
+    linhas.push(['FREELANCES E SERVIÇOS']);
     linhas.push(['Mês', 'Data', 'Descrição', 'Cliente', 'Valor']);
     for (const r of freelances) linhas.push([nomeMes(r.mes), r.data ? formatarData(r.data) : '', r.descricao, r.cliente, r.valor.toFixed(2).replace('.', ',')]);
     linhas.push(['', '', '', 'TOTAL FREELANCES', totalFreelances.toFixed(2).replace('.', ',')]);
@@ -166,12 +81,9 @@ export function RelatoriosPage() {
   if (!snapshot) return <EstadoVazio icone={FileText} titulo="Sem dados do ano" descricao="Selecione um ano com dados carregados para gerar o relatório." />;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/60 p-4 print:border-slate-300 print:bg-white">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-100 print:text-slate-900">Relatório IR / Contador</h2>
-          <p className="mt-1 text-sm text-slate-400 print:text-slate-600">Ano {ano}. Foco em lançamentos PIX, salário OUTROS (manual) e freelances/extras.</p>
-        </div>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 print:border-slate-300 print:bg-white">
+        <h2 className="text-lg font-semibold text-slate-100 print:text-slate-900" title="Ganhos diversos (Salário > OUTROS) e freelances/extras. O PIX não entra: já está no extrato anual do banco.">Relatório IR / Contador</h2>
         <div className="flex flex-wrap items-center gap-2 print:hidden">
           <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value as SiglaMes | '')} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100">
             <option value="">Ano inteiro</option>
@@ -182,61 +94,18 @@ export function RelatoriosPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Kpi titulo="Total PIX" valor={formatarMoeda(totalPix)} detalhe={`${pix.length} lançamento(s)`} />
-        <Kpi titulo="Salário OUTROS" valor={formatarMoeda(totalOutros)} detalhe={`${outrosSalario.length} mês(es) com valor/obs`} />
-        <Kpi titulo="Freelances/Extras" valor={formatarMoeda(totalFreelances)} detalhe={`${freelances.length} registro(s)`} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Kpi titulo="Ganhos diversos" valor={formatarMoeda(totalOutros)} detalhe={`${outrosSalario.length} mês(es)`} />
+        <Kpi titulo="Freelances e serviços" valor={formatarMoeda(totalFreelances)} detalhe={`${freelances.length} registro(s)`} />
       </div>
 
-      <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 print:border-slate-300 print:bg-white">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-200 print:text-slate-900">Lançamentos PIX</h3>
-        <p className="mt-1 mb-3 text-xs text-slate-400 print:text-slate-600 hidden" title="Lançamentos mensais com TIPO = PIX. A coluna Observação vem do lançamento.">Lançamentos PIX</p>
-        {pix.length === 0 ? <p className="text-sm text-slate-500">Nenhum lançamento PIX no período.</p> : (
-          <div className="overflow-auto rounded-lg border border-slate-800 print:overflow-visible print:border-slate-300">
-            <table className="w-full min-w-[700px] text-sm print:min-w-0">
-              <thead>
-                <tr className="border-b border-slate-800 bg-slate-950/80 text-left text-[11px] uppercase tracking-wider text-slate-500 print:border-slate-300 print:bg-slate-100 print:text-slate-700 [&>th]:p-0">
-                  <th><ThOrdenavel rotulo="Mês" direcao={dirPix('mes')} aoOrdenar={() => alternarOrdemPix('mes')} filtro={filtroPix('mes')} className="px-3 py-2" /></th>
-                  <th><ThOrdenavel rotulo="Data" direcao={dirPix('data')} aoOrdenar={() => alternarOrdemPix('data')} filtro={filtroPix('data')} className="px-3 py-2" /></th>
-                  <th><ThOrdenavel rotulo="Descrição" direcao={dirPix('descricao')} aoOrdenar={() => alternarOrdemPix('descricao')} filtro={filtroPix('descricao')} className="px-3 py-2" /></th>
-                  <th><ThOrdenavel rotulo="Categoria" direcao={dirPix('categoria')} aoOrdenar={() => alternarOrdemPix('categoria')} filtro={filtroPix('categoria')} className="px-3 py-2" /></th>
-                  <th><ThOrdenavel rotulo="Quem paga" direcao={dirPix('quem')} aoOrdenar={() => alternarOrdemPix('quem')} filtro={filtroPix('quem')} className="px-3 py-2" /></th>
-                  <th><ThOrdenavel rotulo="Valor" direcao={dirPix('valor')} aoOrdenar={() => alternarOrdemPix('valor')} alinhamento="right" className="px-3 py-2" /></th>
-                  <th><ThOrdenavel rotulo="Observação" direcao={dirPix('observacao')} aoOrdenar={() => alternarOrdemPix('observacao')} filtro={filtroPix('observacao')} className="px-3 py-2" /></th>
-                </tr>
-              </thead>
-              <tbody>
-                {pix.map((r, i) => (
-                  <tr key={i} className="border-b border-slate-800/60 text-slate-300 print:border-slate-200 print:text-slate-800">
-                    <td className="px-3 py-2">{nomeMes(r.mes)}</td>
-                    <td className="px-3 py-2">{r.data ? formatarData(r.data) : '—'}</td>
-                    <td className="px-3 py-2">{r.descricao}</td>
-                    <td className="px-3 py-2">{r.categoria}</td>
-                    <td className="px-3 py-2">{r.quem}</td>
-                    <td className="px-3 py-2 text-right">{formatarMoeda(r.valor)}</td>
-                    <td className="px-3 py-2">{r.observacao || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="bg-slate-950/60 font-semibold text-slate-100 print:bg-slate-100 print:text-slate-900">
-                  <td className="px-3 py-2" colSpan={5}>Total</td>
-                  <td className="px-3 py-2 text-right">{formatarMoeda(totalPix)}</td>
-                  <td className="px-3 py-2"></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        )}
-      </section>
-
-      <Secao titulo="Salário — OUTROS (manual)" descricao="Valores manuais em Salário > OUTROS. Use Observação para descrição.">
-        <TabelaSimples colunas={['Mês', 'Valor', 'Observação/Descrição']} vazia="Nenhum OUTROS manual no período."
+      <Secao titulo="Ganhos diversos" descricao="Valores manuais em Salário > OUTROS. Observação detalha cada item.">
+        <TabelaSimples colunas={['Mês', 'Valor', 'Observação/Descrição']} vazia="Nenhum valor manual no período."
           linhas={outrosSalario.map((r) => [nomeMes(r.mes), formatarMoeda(r.valor), r.observacao || '—'])}
           rodape={['Total', formatarMoeda(totalOutros), '']} />
       </Secao>
 
-      <Secao titulo="Freelances / Serviços (Extras - Ganhos)" descricao="Registros da aba Extras (ganhos).">
+      <Secao titulo="FREELANCES E SERVIÇOS" descricao="Registros da aba Extras (ganhos).">
         <TabelaSimples colunas={['Mês', 'Data', 'Descrição', 'Cliente', 'Valor']} vazia="Nenhum freelance/extra no período."
           linhas={freelances.map((r) => [nomeMes(r.mes), r.data ? formatarData(r.data) : '—', r.descricao, r.cliente || '—', formatarMoeda(r.valor)])}
           rodape={['', '', '', 'Total', formatarMoeda(totalFreelances)]} />
@@ -247,29 +116,54 @@ export function RelatoriosPage() {
 
 function Kpi({ titulo, valor, detalhe }: { titulo: string; valor: string; detalhe: string }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 print:border-slate-300 print:bg-white">
-      <p className="text-xs uppercase tracking-wider text-slate-500">{titulo}</p>
-      <p className="mt-1 text-xl font-semibold text-slate-100 print:text-slate-900">{valor}</p>
-      <p className="mt-1 text-xs text-slate-400 print:text-slate-600">{detalhe}</p>
+    <div className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2" title={detalhe}>
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">{titulo}</p>
+      <p className="text-xl font-semibold text-slate-100">{valor}</p>
     </div>
   );
 }
 function Secao({ titulo, descricao, children }: { titulo: string; descricao: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 print:border-slate-300 print:bg-white">
-      <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-200 print:text-slate-900">{titulo}</h3>
-      <p className="mt-1 mb-3 text-xs text-slate-400 print:text-slate-600">{descricao}</p>
-      {children}
+    <section className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3 print:border-slate-300 print:bg-white">
+      <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-200 print:text-slate-900" title={descricao}>{titulo}</h3>
+      <div className="mt-2">{children}</div>
     </section>
   );
 }
 function TabelaSimples({ colunas, linhas, vazia, rodape }: { colunas: string[]; linhas: string[][]; vazia: string; rodape: string[] }) {
+  const [ordem, setOrdem] = useState<{ indice: number; direcao: DirecaoOrdem } | null>(null);
+  const [filtros, setFiltros] = useState<Record<number, string[]>>({});
+
+  const opcoes = (i: number) => [...new Set(linhas.map((l) => l[i]))].filter(Boolean).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+  const alternar = (i: number, v: string) => setFiltros((p) => {
+    const atual = p[i] ?? [];
+    return { ...p, [i]: atual.includes(v) ? atual.filter((x) => x !== v) : [...atual, v] };
+  });
+
+  let visiveis = linhas.filter((l) => Object.entries(filtros).every(([i, sel]) => !sel?.length || sel.includes(l[Number(i)])));
+  if (ordem) visiveis = [...visiveis].sort((a, b) => {
+    const c = a[ordem.indice].localeCompare(b[ordem.indice], 'pt-BR', { sensitivity: 'base' });
+    return c * (ordem.direcao === 'asc' ? 1 : -1);
+  });
+
   if (linhas.length === 0) return <p className="text-sm text-slate-500 print:text-slate-600">{vazia}</p>;
   return (
     <div className="overflow-auto rounded-lg border border-slate-800 print:overflow-visible print:border-slate-300">
       <table className="w-full min-w-[700px] text-sm print:min-w-0">
-        <thead><tr className="border-b border-slate-800 bg-slate-950/80 text-left text-[11px] uppercase tracking-wider text-slate-500 print:border-slate-300 print:bg-slate-100 print:text-slate-700">{colunas.map((c) => <th key={c} className="px-3 py-2 font-semibold">{c}</th>)}</tr></thead>
-        <tbody>{linhas.map((l, i) => <tr key={i} className="border-b border-slate-800/60 text-slate-300 print:border-slate-200 print:text-slate-800">{l.map((c, j) => <td key={j} className="px-3 py-2 align-top">{c}</td>)}</tr>)}</tbody>
+        <thead><tr className="border-b border-slate-800 bg-slate-950/80 text-left text-[11px] uppercase tracking-wider text-slate-500 print:border-slate-300 print:bg-slate-100 print:text-slate-700 [&>th]:p-0">
+          {colunas.map((c, i) => (
+            <th key={c}>
+              <ThOrdenavel
+                rotulo={c}
+                direcao={ordem?.indice === i ? ordem.direcao : null}
+                aoOrdenar={() => setOrdem((o) => !o || o.indice !== i ? { indice: i, direcao: 'asc' } : o.direcao === 'asc' ? { indice: i, direcao: 'desc' } : null)}
+                filtro={{ opcoes: opcoes(i), selecionados: filtros[i] ?? [], aoAlternar: (v) => alternar(i, v), aoLimpar: () => setFiltros((p) => ({ ...p, [i]: [] })) }}
+                className="px-3 py-2"
+              />
+            </th>
+          ))}
+        </tr></thead>
+        <tbody>{visiveis.map((l, i) => <tr key={i} className="border-b border-slate-800/60 text-slate-300 print:border-slate-200 print:text-slate-800">{l.map((c, j) => <td key={j} className="px-3 py-2 align-top">{c}</td>)}</tr>)}</tbody>
         <tfoot><tr className="bg-slate-950/60 font-semibold text-slate-100 print:bg-slate-100 print:text-slate-900">{rodape.map((c, j) => <td key={j} className="px-3 py-2">{c}</td>)}</tr></tfoot>
       </table>
     </div>

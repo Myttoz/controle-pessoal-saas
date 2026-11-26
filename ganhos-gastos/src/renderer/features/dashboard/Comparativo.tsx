@@ -48,7 +48,7 @@ export function Comparativo() {
   if (!snapshot || ano == null) return null;
 
   return (
-    <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-4">
+    <section className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3 space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-200">Comparativo</h3>

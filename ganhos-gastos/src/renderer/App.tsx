@@ -6,6 +6,7 @@ import { TitleBar } from '@/components/TitleBar';
 import { Carregando } from '@/components/Estados';
 import { useAtalhosGlobais } from '@/hooks/useAtalhosGlobais';
 import { useLembretesFixosAlerta } from '@/hooks/useLembretesFixosAlerta';
+import { useAlertaLembretesProximos } from '@/hooks/useAlertaLembretesProximos';
 import { useStoreAno } from '@/store/storeAno';
 import { useStoreLocal } from '@/store/storeLocal';
 import { useStoreUI } from '@/store/storeUI';
@@ -28,6 +29,7 @@ import { PagamentosPage } from '@/features/pagamentos/PagamentosPage';
 import { RelatoriosPage } from '@/features/relatorios/RelatoriosPage';
 import { ConciliacaoPage } from '@/features/conciliacao/ConciliacaoPage';
 import { ImportacaoPage } from '@/features/importacao/ImportacaoPage';
+import { OpcoesPage } from '@/features/opcoes/OpcoesPage';
 import { SincronizacaoPage } from '@/features/sincronizacao/SincronizacaoPage';
 
 export default function App() {
@@ -46,6 +48,7 @@ export default function App() {
 
   useAtalhosGlobais();
   useLembretesFixosAlerta();
+  useAlertaLembretesProximos();
 
   // 1. Inicializa stores (cache + dados locais)
   useEffect(() => {
@@ -129,6 +132,7 @@ export default function App() {
       relatorios: <RelatoriosPage />,
       conciliacao: <ConciliacaoPage />,
       importacao: <ImportacaoPage />,
+      opcoes: <OpcoesPage />,
       sincronizacao: <SincronizacaoPage />,
     }),
     [],

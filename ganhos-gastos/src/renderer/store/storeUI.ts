@@ -21,6 +21,7 @@ export type Pagina =
   | 'relatorios'
   | 'conciliacao'
   | 'importacao'
+  | 'opcoes'
   | 'sincronizacao';
 
 export interface Filtros {

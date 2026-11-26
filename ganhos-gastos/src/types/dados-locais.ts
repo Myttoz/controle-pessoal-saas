@@ -30,6 +30,8 @@ export interface DespesasProximoMesConfig {
   faturaCartao: number | null;
   /** Despesas em Pix (contas fixas etc.) a pagar no próximo mês. */
   despesasPix: number | null;
+  /** Recebido da Lívia informado à mão (abatido do total). */
+  recebidoLivia: number | null;
 }
 
 /**
@@ -84,6 +86,24 @@ export interface ConfigLocal {
     tipo?: string;
     quemPaga?: string;
   };
+  /**
+   * Opções editáveis pela UI (aditivo/reversível).
+   * Renomes são APENAS rótulos de exibição: o valor gravado nos lançamentos não muda.
+   * `ativo: false` oculta a opção nos selects (dados antigos continuam legíveis).
+   */
+  opcoesPersonalizadas?: Record<string, OpcaoPersonalizada[]>;
+}
+
+/** Uma opção de lista (Categoria, Forma de Pgto, Tipo, Quem paga). */
+export interface OpcaoPersonalizada {
+  /** Valor gravado nos dados (original da API ou criado pelo usuário). */
+  valor: string;
+  /** Rótulo exibido na UI; ausente = mostrar o próprio valor. */
+  rotulo?: string;
+  /** false = opção oculta nos selects. */
+  ativo: boolean;
+  /** true = criada pelo usuário (pode ser removida). */
+  criada?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -173,6 +193,7 @@ export const CONFIG_PADRAO: ConfigLocal = {
   pagamentosBoleto: {},
   importacoesCsv: {},
   importacaoDefaults: {},
+  opcoesPersonalizadas: {},
 };
 
 export function dadosLocaisVazios(): DadosLocais {

@@ -221,7 +221,7 @@ export function ManutencaoPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* ------- configuração: km atual ------- */}
       <div className="flex flex-wrap items-end gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-3.5">
         <Campo rotulo="KM atual do veículo" className="w-52">
@@ -548,7 +548,7 @@ function Kpi({
           ? 'text-amber-300'
           : 'text-slate-100';
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{titulo}</p>
       <p className={`mt-2 text-2xl font-semibold tracking-tight ${cor}`}>{valor}</p>
       {detalhe && <p className="mt-1 text-xs text-slate-500">{detalhe}</p>}

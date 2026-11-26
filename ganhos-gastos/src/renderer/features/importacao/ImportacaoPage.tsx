@@ -376,22 +376,21 @@ export function ImportacaoPage() {
       </div>
 
       <div className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-end gap-2">
           <div>
-            <span className="block text-[10px] font-medium text-slate-400">Tipo</span>
-            <div className="flex gap-1 rounded-lg border border-slate-700 bg-slate-900 p-1">
-              <button type="button" onClick={() => imp.setModo('cartao')} className={`rounded-md px-3 py-1.5 text-xs font-medium ${imp.modo === 'cartao' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Cartão (vs Fatura futura)</button>
-              <button type="button" onClick={() => imp.setModo('pix')} className={`rounded-md px-3 py-1.5 text-xs font-medium ${imp.modo === 'pix' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>PIX (vs TIPO = PIX)</button>
+            <span className="mb-1 block text-[11px] font-medium text-slate-400">Tipo</span>
+            <div className="flex h-9 items-center gap-1 rounded-lg border border-slate-700 bg-slate-900 p-1">
+              <button type="button" onClick={() => imp.setModo('cartao')} className={`h-full rounded-md px-3 text-xs font-medium ${imp.modo === 'cartao' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Cartão (vs Fatura futura)</button>
+              <button type="button" onClick={() => imp.setModo('pix')} className={`h-full rounded-md px-3 text-xs font-medium ${imp.modo === 'pix' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>PIX (vs TIPO = PIX)</button>
             </div>
           </div>
-          <label className="block">
-            <span className="block text-[10px] font-medium text-slate-400">Arquivo</span>
-            <input type="file" accept=".csv,text/csv,text/plain" onChange={(e) => void aoArquivo(e.target.files?.[0] ?? null)} className="block text-sm text-slate-300" />
-          </label>
-          <label className="flex items-center gap-1.5 text-xs text-slate-300">
-            <input type="checkbox" checked={imp.temCabecalho} onChange={(e) => imp.setTemCabecalho(e.target.checked)} />
-            Primeira linha é cabeçalho
-          </label>
+          <div>
+            <span className="mb-1 block text-[11px] font-medium text-slate-400">Arquivo</span>
+            <label className="flex h-9 cursor-pointer items-center rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-300">
+              <input type="file" accept=".csv,text/csv,text/plain" onChange={(e) => void aoArquivo(e.target.files?.[0] ?? null)} className="hidden" />
+              Escolher arquivo{imp.nomeArquivo ? ` · ${imp.nomeArquivo}` : ''}
+            </label>
+          </div>
           <Campo rotulo="Delimitador">
             <Selecao value={imp.delim} onChange={(e) => imp.setDelim(e.target.value)}>
               <option value=";">; (ponto e vírgula)</option>
@@ -399,6 +398,17 @@ export function ImportacaoPage() {
               <option value={'\t'}>Tab</option>
             </Selecao>
           </Campo>
+          <div>
+            <span className="mb-1 block text-[11px] font-medium text-slate-400">Primeira linha é cabeçalho</span>
+            <button
+              type="button"
+              onClick={() => imp.setTemCabecalho(!imp.temCabecalho)}
+              title={imp.temCabecalho ? 'Primeira linha é cabeçalho' : 'Primeira linha é dado'}
+              className={`flex h-9 w-12 items-center rounded-lg border border-slate-700 bg-slate-900 px-1 ${imp.temCabecalho ? 'justify-end' : 'justify-start'}`}
+            >
+              <span className={`h-6 w-5 rounded ${imp.temCabecalho ? 'bg-sky-600' : 'bg-slate-600'}`} />
+            </button>
+          </div>
           {imp.nomeArquivo && <span className="pb-2 text-xs text-slate-500">{imp.nomeArquivo} · {dados.length} linha(s)</span>}
         </div>
 

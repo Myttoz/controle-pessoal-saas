@@ -2,9 +2,8 @@
  * DESPESAS PRÓXIMO MÊS — planejamento manual do que virá no mês seguinte
  * ("chego em dezembro pagando a fatura do cartão que usei em novembro").
  *
- * Dois valores digitados à mão pelo usuário:
- *   - Fatura cartão (a fatura do cartão do mês anterior, paga no recebimento)
- *   - Despesas Pix  (contas fixas etc. pagas em Pix ao receber o salário)
+ * Valores digitados à mão pelo usuário:
+ *   - Fatura cartão, Despesas Pix e Recebido Lívia (abatido do total)
  *
  * O rodapé mostra o RESTANTE A PAGAR no mês vigente:
  *   Total Ganho(mês) − Fatura futura(mês anterior) + Recebo Lívia(mês anterior) − PIX(mês)
@@ -38,6 +37,7 @@ export function DespesasProximoMes({
   const cfg = dados.config.despesasProximoMes?.[chave] ?? {
     faturaCartao: null,
     despesasPix: null,
+    recebidoLivia: null,
   };
 
   const [faturaDigitos, setFaturaDigitos] = useState(
@@ -46,20 +46,25 @@ export function DespesasProximoMes({
   const [pixDigitos, setPixDigitos] = useState(
     cfg.despesasPix != null ? String(Math.round(cfg.despesasPix * 100)) : '',
   );
+  const [liviaDigitos, setLiviaDigitos] = useState(
+    cfg.recebidoLivia != null ? String(Math.round(cfg.recebidoLivia * 100)) : '',
+  );
 
   // recarrega o quadro ao trocar de mês (sem sobrescrever o que está sendo digitado)
   useEffect(() => {
     const atual = dados.config.despesasProximoMes?.[chave] ?? {
       faturaCartao: null,
       despesasPix: null,
+      recebidoLivia: null,
     };
     setFaturaDigitos(atual.faturaCartao != null ? String(Math.round(atual.faturaCartao * 100)) : '');
     setPixDigitos(atual.despesasPix != null ? String(Math.round(atual.despesasPix * 100)) : '');
+    setLiviaDigitos(atual.recebidoLivia != null ? String(Math.round(atual.recebidoLivia * 100)) : '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chave]);
 
   // salva somente ao sair do campo — evita que a sincronização sobrescreva a digitação
-  const salvarCampo = (campo: 'faturaCartao' | 'despesasPix', digitos: string) => {
+  const salvarCampo = (campo: 'faturaCartao' | 'despesasPix' | 'recebidoLivia', digitos: string) => {
     const n = digitos === '' ? null : Math.round((Number(digitos) / 100) * 100) / 100;
     salvar(chave, { [campo]: n });
   };
@@ -67,25 +72,18 @@ export function DespesasProximoMes({
   const totalDespesas =
     Math.round((
       (faturaDigitos === '' ? 0 : Number(faturaDigitos) / 100) +
-      (pixDigitos === '' ? 0 : Number(pixDigitos) / 100)
+      (pixDigitos === '' ? 0 : Number(pixDigitos) / 100) -
+      (liviaDigitos === '' ? 0 : Number(liviaDigitos) / 100)
     ) * 100) / 100;
-
-  const mesSeguinteSigla = SIGLAS[(idx + 1) % 12];
-  const anoSeguinte = idx === 11 ? ano + 1 : ano;
 
   return (
     <section className="overflow-hidden rounded-xl border border-sky-800/50 bg-sky-950/15 text-sm">
       {/* ------- cabeçalho ------- */}
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-800/40 px-4 py-2.5">
         <h3 className="text-[12px] font-semibold uppercase tracking-wider text-sky-200">
-          Despesas próximo mês
-          <span className="ml-2 font-medium normal-case text-sky-400/80">
-            (pagas em {NOMES_MESES[mesSeguinteSigla]}/{anoSeguinte})
-          </span>
+          Conferência {NOMES_MESES[mes]}
         </h3>
-        <p className="max-w-[28rem] text-right text-[10px] leading-tight text-sky-400/60">
-          Planejamento — não entra em nenhum cálculo automático.
-        </p>
+        <p className="max-w-[28rem] text-right text-[10px] leading-tight text-sky-400/60 hidden" title="Planejamento manual — não entra em nenhum cálculo automático. Total = Fatura cartão + Despesas Pix − Recebido Lívia.">Total = Fatura + Pix − Lívia</p>
       </header>
 
       {/* ------- campos (compactos) ------- */}
@@ -111,6 +109,19 @@ export function DespesasProximoMes({
             value={pixDigitos}
             onChange={setPixDigitos}
             onBlur={() => salvarCampo('despesasPix', pixDigitos)}
+            placeholder="0,00"
+            className="w-32 !px-2 !py-1.5 !text-sm"
+          />
+        </label>
+
+        <label className="flex flex-col gap-0.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            Recebido Lívia (R$)
+          </span>
+          <EntradaMoeda
+            value={liviaDigitos}
+            onChange={setLiviaDigitos}
+            onBlur={() => salvarCampo('recebidoLivia', liviaDigitos)}
             placeholder="0,00"
             className="w-32 !px-2 !py-1.5 !text-sm"
           />

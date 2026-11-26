@@ -181,7 +181,7 @@ export function ExtrasArea() {
   ) => ({ opcoes, selecionados, aoAlternar, aoLimpar });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* abas internas + novo */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1.5">
@@ -212,13 +212,11 @@ export function ExtrasArea() {
       </div>
 
       {ehServico && (
-        <p className="text-[11px] leading-relaxed text-slate-500">
-          O total de cada serviço (ganhos peças + ganhos serviços − minhas despesas) entra
+        <p className="text-[11px] leading-relaxed text-slate-500 hidden" title="O total de cada serviço (ganhos peças + ganhos serviços − minhas despesas) entra automaticamente como FREELANCE na aba Salário do mês correspondente. A coluna 'Despesas cliente' é informativa e não entra nos cálculos. Novos campos exigem a migração sql/002-servicos-extras.sql{' '} (uma vez no SQL Editor do Supabase).">O total de cada serviço (ganhos peças + ganhos serviços − minhas despesas) entra
           automaticamente como <strong>FREELANCE</strong> na aba Salário do mês correspondente.
           A coluna "Despesas cliente" é informativa e não entra nos cálculos. Novos campos exigem
           a migração <code className="rounded bg-slate-800 px-1 py-0.5 text-slate-300">sql/002-servicos-extras.sql</code>{' '}
-          (uma vez no SQL Editor do Supabase).
-        </p>
+          (uma vez no SQL Editor do Supabase).</p>
       )}
 
       {/* ---------- busca + limpeza ---------- */}

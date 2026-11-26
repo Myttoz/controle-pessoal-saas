@@ -4,7 +4,7 @@ import { Botao } from '@/components/Botoes';
 import { Campo, EntradaMoeda, Entrada, EntradaSugestoes, Selecao } from '@/components/Campos';
 import { Modal } from '@/components/Modal';
 import { AnexosCampo } from '@/components/AnexosCampo';
-import { useOpcoes } from '@/hooks/useOpcoes';
+import { useOpcoes, useRotuloOpcao, useValorOpcao } from '@/hooks/useOpcoes';
 import { hojeISO } from '@/lib/calculos';
 import { useStoreAno } from '@/store/storeAno';
 
@@ -75,7 +75,16 @@ export function FormLancamento({
   sugestoesObservacao,
   aoFechar,
 }: Props) {
-  const [estado, setEstado] = useState<EstadoForm>(() => paraEstado(registro?.dados));
+  const [estado, setEstado] = useState<EstadoForm>(() => {
+    const e = paraEstado(registro?.dados);
+    return {
+      ...e,
+      categoria: rotuloCategoria(e.categoria),
+      forma: rotuloForma(e.forma),
+      tipo: rotuloTipo(e.tipo),
+      quem: rotuloQuem(e.quem),
+    };
+  });
   const [erros, setErros] = useState<Erros>({});
   const [enviando, setEnviando] = useState(false);
   const [criado, setCriado] = useState<Registro<LancamentoMensal> | null>(null);
@@ -89,6 +98,14 @@ export function FormLancamento({
   const opcoesForma = useOpcoes('FORMA DE PGTO');
   const opcoesTipo = useOpcoes('TIPO');
   const opcoesQuem = useOpcoes('QUEM PAGA');
+  const rotuloCategoria = useRotuloOpcao('CATEGORIA');
+  const rotuloForma = useRotuloOpcao('FORMA DE PGTO');
+  const rotuloTipo = useRotuloOpcao('TIPO');
+  const rotuloQuem = useRotuloOpcao('QUEM PAGA');
+  const valorCategoria = useValorOpcao('CATEGORIA');
+  const valorForma = useValorOpcao('FORMA DE PGTO');
+  const valorTipo = useValorOpcao('TIPO');
+  const valorQuem = useValorOpcao('QUEM PAGA');
 
   const registroAtual = registro ?? criado;
   const modoEdicao = !!registroAtual;
@@ -126,12 +143,12 @@ export function FormLancamento({
     if (modoEdicao && registro === null) return;
 
     const dados: LancamentoMensal = {
-      CATEGORIA: estado.categoria as LancamentoMensal['CATEGORIA'],
+      CATEGORIA: valorCategoria(estado.categoria) as LancamentoMensal['CATEGORIA'],
       VALOR: Number(String(estado.valor ?? '').replace(/\D/g, '') || '0') / 100,
       DESCRIÇÃO: estado.descricao.trim(),
-      'FORMA DE PGTO': estado.forma as LancamentoMensal['FORMA DE PGTO'],
-      TIPO: estado.tipo as LancamentoMensal['TIPO'],
-      'QUEM PAGA': estado.quem as LancamentoMensal['QUEM PAGA'],
+      'FORMA DE PGTO': valorForma(estado.forma) as LancamentoMensal['FORMA DE PGTO'],
+      TIPO: valorTipo(estado.tipo) as LancamentoMensal['TIPO'],
+      'QUEM PAGA': valorQuem(estado.quem) as LancamentoMensal['QUEM PAGA'],
       DATA: estado.data,
       OBSERVAÇÃO: estado.observacao.trim(),
     };
@@ -266,7 +283,7 @@ export function FormLancamento({
               Repetição (opcional)
             </p>
             {sugestaoRecorrente && (
-              <div className="mb-3 rounded-md border border-sky-900/60 bg-sky-950/20 px-3 py-2 text-[11px] text-sky-200">
+              <div className="mb-2 rounded-md border border-sky-900/60 bg-sky-950/20 px-3 py-2 text-[11px] text-sky-200">
                 Possível recorrente detectado ({sugestaoRecorrente} meses com mesma descrição/valor).{' '}
                 <button
                   type="button"
@@ -307,10 +324,8 @@ export function FormLancamento({
               )}
             </div>
             {estado.modoRepeticao !== 'nenhum' && (
-              <p className="mt-2 text-[11px] text-slate-500">
-                Serão criados {parseInt(estado.quantidadeRepeticao, 10) || 0} lançamentos vinculados, um por mês.
-                {estado.modoRepeticao === 'parcela' ? ' A observação receberá a numeração 1/N, 2/N...' : ''}
-              </p>
+              <p className="mt-1.5 text-[11px] text-slate-500 hidden" title="Serão criados {parseInt(estado.quantidadeRepeticao, 10) || 0} lançamentos vinculados, um por mês. {estado.modoRepeticao === 'parcela' ? ' A observação receberá a numeração 1/N, 2/N...' : ''}">Serão criados {parseInt(estado.quantidadeRepeticao, 10) || 0} lançamentos vinculados, um por mês.
+                {estado.modoRepeticao === 'parcela' ? ' A observação receberá a numeração 1/N, 2/N...' : ''}</p>
             )}
           </div>
         )}

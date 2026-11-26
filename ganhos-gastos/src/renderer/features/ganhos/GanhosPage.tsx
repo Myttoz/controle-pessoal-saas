@@ -130,7 +130,7 @@ export function GanhosPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1.5">
           {ABAS.map(({ id, rotulo, icone: Icone }) => (
@@ -150,7 +150,7 @@ export function GanhosPage() {
           ))}
         </div>
         <p className="text-xs text-slate-500">
-          Ano {snapshot.ano} · {salario ? `aba ${salario.aba}` : 'sem aba de salário'}
+          {salario?.aba ?? `Salário ${snapshot.ano}`}
         </p>
       </div>
 
@@ -255,13 +255,11 @@ export function GanhosPage() {
               )}
             </table>
           </div>
-          <p className="border-t border-slate-800 px-4 py-2.5 text-xs text-slate-600">
-            * <strong>TOTAL GANHOS</strong> é recalculado pelo
+          <p className="border-t border-slate-800 px-4 py-2.5 text-xs text-slate-600 hidden" title="* TOTAL GANHOS é recalculado pelo app a partir da base + 13º + férias + outros + freelance — TICKET, AJUDA DE CUSTO e HORA EXTRA são informativos e não entram na conta. FREELANCE vem dos Serviços lançados na aba Extras (mesmo mês); HORA EXTRA{' '} vem da soma dos plantões e do ponto eletrônico do mês.">* <strong>TOTAL GANHOS</strong> é recalculado pelo
             app a partir da base + 13º + férias + outros + freelance — TICKET, AJUDA DE CUSTO e
             HORA EXTRA são informativos e não entram na conta. <strong>FREELANCE</strong> vem dos
             Serviços lançados na aba <strong>Extras</strong> (mesmo mês); <strong>HORA EXTRA</strong>{' '}
-            vem da soma dos plantões e do ponto eletrônico do mês.
-          </p>
+            vem da soma dos plantões e do ponto eletrônico do mês.</p>
         </div>
       )}
 

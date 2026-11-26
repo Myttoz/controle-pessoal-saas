@@ -84,7 +84,7 @@ export function SincronizacaoPage() {
   const IconeEstado = estado.icone;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
+    <div className="space-y-3">
       {/* ---------- status ---------- */}
       <section className={`rounded-xl border p-4 ${estado.fundo}`}>
         <div className="flex items-start gap-3">
@@ -92,7 +92,7 @@ export function SincronizacaoPage() {
           <div className="min-w-0">
             <h2 className={`text-sm font-semibold ${estado.cor}`}>{estado.titulo}</h2>
             <p className="mt-0.5 text-xs text-slate-400">{estado.detalhe}</p>
-            <p className="mt-2 text-[11px] text-slate-500">
+            <p className="mt-1.5 text-[11px] text-slate-500">
               Última sincronização: <strong className="text-slate-400">{quando(ultima)}</strong>
             </p>
             {erroSync && (
@@ -103,7 +103,7 @@ export function SincronizacaoPage() {
       </section>
 
       {/* ---------- ações ---------- */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+      <section className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
         <h2 className="text-sm font-semibold text-slate-200">Ações</h2>
         <p className="mt-1 text-xs text-slate-500 hidden" title="Use o mesmo login nos computadores Linux, Windows e no navegador para manter           Horas Extras, Férias, Manutenção e salário iguais em todos eles.">Use o mesmo login nos computadores Linux, Windows e no navegador para manter
           Horas Extras, Férias, Manutenção e salário iguais em todos eles.</p>
@@ -150,7 +150,7 @@ export function SincronizacaoPage() {
       </section>
 
       {/* ---------- orçamento e alertas (Bloco 8, reversível) ---------- */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+      <section className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold text-slate-200">Orçamento e alertas inteligentes</h2>
@@ -166,7 +166,7 @@ export function SincronizacaoPage() {
           </label>
         </div>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Campo rotulo="Avisar ao atingir (%)" dica="Ex.: 80 = alerta quando categoria chega a 80% do orçamento">
             <Entrada
               type="number"
@@ -215,34 +215,12 @@ export function SincronizacaoPage() {
         </div>
       </section>
 
-      {/* ---------- como funciona ---------- */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 text-xs leading-relaxed text-slate-400">
-        <h2 className="text-sm font-semibold text-slate-200">Como funciona</h2>
-        <ul className="mt-2 list-disc space-y-1.5 pl-5">
-          <li>
-            <strong className="text-slate-300">Automático:</strong> toda alteração em Horas
-            Extras, Férias, Manutenção ou salário é salva na hora no dispositivo e enviada
-            para a planilha em segundo plano.
-          </li>
-          <li>
-            <strong className="text-slate-300">Offline:</strong> sem internet, a alteração
-            continua salva. Quando a conexão volta (ou ao abrir o app), ela é enviada.
-          </li>
-          <li>
-            <strong className="text-slate-300">Outro dispositivo:</strong> ao abrir o app
-            nele, os dados mais recentes da planilha são baixados automaticamente.
-          </li>
-          <li>
-            <strong className="text-slate-300">Conflitos:</strong> se dois dispositivos
-            editarem o mesmo item offline, vale a última gravação. Por isso, use o backup
-            antes de grandes mudanças.
-          </li>
-          <li>
-            <strong className="text-slate-300">Backup:</strong> o arquivo .json gerado aqui
-            pode ser guardado no pendrive e importado em qualquer versão (web, Linux ou
-            Windows).
-          </li>
-        </ul>
+      {/* ---------- como funciona (tooltip) ---------- */}
+      <section
+        className="rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-xs text-slate-400"
+        title="Como funciona: as alterações são salvas no dispositivo e enviadas em segundo plano; sem internet ficam guardadas e sobem quando a conexão volta. Em outro dispositivo, os dados mais recentes são baixados ao abrir. Conflitos: vale a última gravação — use o backup antes de mudanças grandes. O .json pode ser guardado e importado em qualquer versão."
+      >
+        Como funciona
       </section>
     </div>
   );

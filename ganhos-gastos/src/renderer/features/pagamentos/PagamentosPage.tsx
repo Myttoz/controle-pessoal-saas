@@ -94,7 +94,7 @@ export function PagamentosPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       {/* ---------- cabeçalho ---------- */}
       <p className="text-xs text-slate-500 hidden" title="Salário − Despesas + Recebido Lívia = Restante. Saldo = Saldo inicial + Σ Restante.">Resumo de pagamentos</p>
 
@@ -107,36 +107,13 @@ export function PagamentosPage() {
       ) : (
         <>
           {/* ---------- saldo inicial do ano ---------- */}
-          <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <CampoEditavel
-                rotulo="Saldo inicial em 1º de janeiro"
-                valor={dados.config.saldoInicial?.[String(ano)] ?? null}
-                placeholder="Ex.: 10.000,00"
-                dica={`Valor a partir do qual o saldo do ${ano} é calculado. Fica salvo na nuvem, veja Sincronização.`}
-                onSalvar={salvarSaldoInicial}
-              />
-              <div className="flex flex-col justify-end gap-1.5 text-xs text-slate-400">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                  Como funciona (automático)
-                </p>
-                <ul className="list-disc pl-4 leading-relaxed">
-                  <li>Você define o saldo uma vez por ano.</li>
-                  <li>
-                    <strong>Salário vem automático</strong> da aba Recebidos (Total Ganhos).
-                  </li>
-                  <li>
-                    <strong>Despesas</strong> = soma automática dos lançamentos do mês
-                    (Total Gasto do Lançamentos).
-                  </li>
-                  <li>
-                    <strong>Recebido da Lívia</strong> = metade do que está em
-                    &quot;Dividido 50/50&quot; + tudo que está como &quot;Livia&quot; nos Lançamentos.
-                  </li>
-                  <li>O Saldo acumula de janeiro até dezembro.</li>
-                </ul>
-              </div>
-            </div>
+          <section className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-2.5" title="Salário vem automático da aba Recebidos (Total Ganhos). Despesas = Total Gasto dos Lançamentos do mês. Recebido da Lívia = metade do 'Dividido 50/50' + tudo como 'Livia'. O saldo acumula de janeiro a dezembro a partir do saldo inicial informado.">
+            <CampoEditavel
+              rotulo="Saldo inicial em 1º de janeiro"
+              valor={dados.config.saldoInicial?.[String(ano)] ?? null}
+              placeholder="Ex.: 10.000,00"
+              onSalvar={salvarSaldoInicial}
+            />
           </section>
 
           {/* ---------- tabela de todos os meses ---------- */}
@@ -217,16 +194,14 @@ export function PagamentosPage() {
                 ) : null}
               </table>
             </div>
-            <p className="border-t border-slate-800 px-4 py-2.5 text-xs text-slate-500 hidden" title="Automático — Despesas e Recebido Lívia são calculados pela soma dos Lançamentos do mês.">Automático</p>
+
           </section>
 
           <div className="flex items-center justify-between gap-2 pt-2">
             <Botao icone={RefreshCw} onClick={() => void revalidar()} tamanho="sm">
               Atualizar
             </Botao>
-            <span className="text-xs text-slate-600">
-              Despesas e Recebido Lívia calculados a partir dos Lançamentos Mensais · Salário vem de Recebidos
-            </span>
+            <span className="hidden text-xs text-slate-600" title="Despesas e Recebido Lívia calculados a partir dos Lançamentos Mensais · Salário vem de Recebidos">Como funciona</span>
           </div>
         </>
       )}

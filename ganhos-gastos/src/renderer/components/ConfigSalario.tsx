@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Info } from 'lucide-react';
 import { Campo, EntradaMoeda } from './Campos';
 import { formatarMoeda } from '@/lib/formatar';
 import { HORAS_MES } from '@/lib/calculos';
@@ -45,8 +44,9 @@ export function ConfigSalario() {
   const valorHora100 = valorHora * 2;
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5">
+    <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
       <div className="flex flex-wrap items-end gap-4">
+        <div title={`Cálculo: salário bruto ÷ ${HORAS_MES} h/mês (44 h/semana, padrão CLT). Hora extra a 100% = hora × 2 · Hora a 50% (plantão) = hora × 1,5 · Férias = valor proporcional + 1/3 constitucional.`}>
         <Campo rotulo="Salário bruto mensal (R$)" className="w-52">
           <EntradaMoeda
             value={texto}
@@ -58,8 +58,9 @@ export function ConfigSalario() {
             placeholder="Ex.: 2830"
           />
         </Campo>
+        </div>
 
-        <div className="flex flex-wrap gap-2 pb-0.5">
+        <div className="flex flex-wrap gap-2">
           <IndicadorHora
             rotulo="Valor da hora"
             valor={valorHora}
@@ -83,15 +84,7 @@ export function ConfigSalario() {
         {erro && <p className="pb-1 text-sm text-rose-400">{erro}</p>}
       </div>
 
-      <p className="mt-2 flex items-start gap-1.5 text-xs text-slate-500">
-        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        <span>
-          Cálculo: salário bruto ÷ {HORAS_MES} h/mês (44 h/semana, padrão CLT). Hora extra a{' '}
-          <strong className="text-slate-300">100%</strong> = hora × 2 · Hora a{' '}
-          <strong className="text-slate-300">50%</strong> (plantão) = hora × 1,5 · Férias = valor
-          proporcional + 1/3 constitucional.
-        </span>
-      </p>
+      <p className="hidden text-xs text-slate-500" title={`Cálculo: salário bruto ÷ ${HORAS_MES} h/mês. Hora 100% = ×2; Hora 50% = ×1,5; Férias = proporcional + 1/3.`}>Cálculo do salário</p>
     </div>
   );
 }

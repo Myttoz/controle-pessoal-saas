@@ -155,6 +155,10 @@ function normalizar(carregado: DadosLocais | null | undefined): DadosLocais | nu
         configDaVez.importacaoDefaults && typeof configDaVez.importacaoDefaults === 'object'
           ? configDaVez.importacaoDefaults
           : {},
+      opcoesPersonalizadas:
+        configDaVez.opcoesPersonalizadas && typeof configDaVez.opcoesPersonalizadas === 'object'
+          ? configDaVez.opcoesPersonalizadas
+          : {},
     },
     horasExtras: Array.isArray(carregado.horasExtras) ? carregado.horasExtras : [],
     ferias: Array.isArray(carregado.ferias) ? carregado.ferias : [],
@@ -484,7 +488,7 @@ export const useStoreLocal = create<EstadoLocal>((set, get) => {
     setDespesasProximoMes: (chave, parcial) =>
       mutar((d) => {
         const mapa = { ...(d.config.despesasProximoMes ?? {}) };
-        const atual = mapa[chave] ?? { faturaCartao: null, despesasPix: null };
+        const atual = mapa[chave] ?? { faturaCartao: null, despesasPix: null, recebidoLivia: null };
         mapa[chave] = {
           ...atual,
           ...parcial,

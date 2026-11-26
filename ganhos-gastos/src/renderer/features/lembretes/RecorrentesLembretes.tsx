@@ -73,12 +73,10 @@ export function RecorrentesLembretes() {
       </div>
 
       {lembretes.length === 0 ? (
-        <p className="mt-2 text-xs leading-relaxed text-amber-200/70">
-          Nenhum lembrete fixo cadastrado. Ex.: "Backup da pasta do projeto (Drive)" a cada 15 dias
-          — ao vencer, um aviso aparece 3x ao dia (09h, 16h e 20h) até você concluir.
-        </p>
+        <p className="mt-1.5 text-xs leading-relaxed text-amber-200/70" title="Nenhum lembrete fixo cadastrado. Ex.: 'Backup da pasta do projeto (Drive)' a cada 15 dias — ao vencer, um aviso aparece 3x ao dia (09h, 16h e 20h) até você concluir.">Nenhum lembrete fixo cadastrado. Ex.: "Backup da pasta do projeto (Drive)" a cada 15 dias
+          — ao vencer, um aviso aparece 3x ao dia (09h, 16h e 20h) até você concluir.</p>
       ) : (
-        <ul className="mt-2 space-y-2">
+        <ul className="mt-1.5 space-y-2">
           {lembretes.map((l) => {
             const ultima = l.ultimaConclusao;
             const prox = proximo(l);
@@ -101,14 +99,12 @@ export function RecorrentesLembretes() {
                   >
                     {l.titulo}
                   </p>
-                  <p className="mt-0.5 text-[11px] leading-snug text-amber-200/70">
-                    a cada {l.intervaloDias} dias
+                  <p className="mt-0.5 text-[11px] leading-snug text-amber-200/70" title="a cada {l.intervaloDias} dias {' · '}última: {ultima ? formatarData(ultima) : 'nunca'} {' · '}próxima: {formatarData(prox)} {vencido && ( VENCIDO )}">a cada {l.intervaloDias} dias
                     {' · '}última: {ultima ? formatarData(ultima) : 'nunca'}
                     {' · '}próxima: {formatarData(prox)}
                     {vencido && (
                       <span className="ml-1.5 font-semibold text-rose-300">VENCIDO</span>
-                    )}
-                  </p>
+                    )}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
                   <Botao
@@ -152,7 +148,7 @@ export function RecorrentesLembretes() {
           </>
         }
       >
-        <div className="space-y-4">
+        <div className="space-y-3">
           <Campo rotulo="O que precisa ser feito*">
             <Entrada
               autoFocus

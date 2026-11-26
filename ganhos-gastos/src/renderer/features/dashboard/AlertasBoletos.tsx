@@ -82,7 +82,7 @@ export function AlertasBoletos() {
   if (!snapshot || (visiveis.length === 0 && pagosNoMes === 0)) return null;
 
   return (
-    <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <CalendarClock className="h-4 w-4 text-amber-300" />

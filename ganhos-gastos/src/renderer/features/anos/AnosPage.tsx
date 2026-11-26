@@ -81,10 +81,10 @@ export function AnosPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       {/* ------- criação ------- */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-        <div className="mb-3 flex items-center justify-between gap-3">
+      <section className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
+        <div className="mb-2 flex items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold text-slate-200">Criar novo ano</h2>
             <p className="text-xs text-slate-500 hidden" title="Gera as 12 abas de mês, Salário, Extras e Anual na planilha (ação criarAno).">Gera as 12 abas de mês, Salário, Extras e Anual na planilha (ação <code>criarAno</code>).</p>
@@ -103,7 +103,6 @@ export function AnosPage() {
           <Campo
             rotulo="Ano"
             className="w-40"
-            dica={`Em branco = ${proximoAno}`}
           >
             <Entrada
               value={novoAno}
@@ -115,6 +114,7 @@ export function AnosPage() {
               inputMode="numeric"
               id="novo-ano-input"
               autoComplete="off"
+              title={`Em branco = ${proximoAno}`}
             />
           </Campo>
           <Botao
@@ -122,6 +122,7 @@ export function AnosPage() {
             icone={CalendarPlus}
             carregando={criando}
             onClick={() => void criar()}
+            className="!mb-0"
           >
             Criar ano
           </Botao>
@@ -131,7 +132,7 @@ export function AnosPage() {
 
       {/* ------- lista ------- */}
       <section>
-        <h2 className="mb-3 text-sm font-semibold text-slate-200">
+        <h2 className="mb-2 text-sm font-semibold text-slate-200">
           Anos existentes <span className="text-slate-500">({anos.length})</span>
         </h2>
 
@@ -276,7 +277,7 @@ export function AnosPage() {
       >
         <p className="text-sm text-slate-300" title="As abas do ano foram criadas na planilha. Deseja gerar agora a aba{' '}           Dashboard com os gráficos deste ano?">As abas do ano foram criadas na planilha. Deseja gerar agora a aba{' '}
           <strong>Dashboard</strong> com os gráficos deste ano?</p>
-        <p className="mt-2 text-xs text-slate-500 hidden" title="A ação atualizarDashboard desenha a pizza de categorias e as colunas por mês           direto no Google Sheets.">A ação <code>atualizarDashboard</code> desenha a pizza de categorias e as colunas por mês
+        <p className="mt-1.5 text-xs text-slate-500 hidden" title="A ação atualizarDashboard desenha a pizza de categorias e as colunas por mês           direto no Google Sheets.">A ação <code>atualizarDashboard</code> desenha a pizza de categorias e as colunas por mês
           direto no Google Sheets.</p>
       </Modal>
     </div>

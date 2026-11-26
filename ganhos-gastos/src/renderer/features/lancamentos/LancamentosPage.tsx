@@ -272,7 +272,7 @@ export function LancamentosPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* ------- mês + novo ------- */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <MesTabs meses={snapshot.meses} selecionado={mes} aoSelecionar={setMes} />

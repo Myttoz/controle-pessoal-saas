@@ -1,8 +1,9 @@
 /**
- * Checkbox de "selecionar todos os visíveis" para cabeçalhos de tabelas
- * (Lançamentos e Horas Extras). Marca/desmarca tudo que está visível;
- * preserva seleção de itens fora do filtro atual.
+ * Bolinha de "selecionar todos os visíveis" para cabeçalhos de tabelas.
+ * Marca/desmarca tudo que está visível; preserva seleção de itens fora do filtro.
  */
+import { CheckCircle2, Circle, CircleDashed } from 'lucide-react';
+
 export function SelecaoTodos({
   visiveis,
   selecionados,
@@ -18,22 +19,28 @@ export function SelecaoTodos({
   const alguns = qtdSel > 0 && !todos;
 
   return (
-    <input
-      type="checkbox"
-      checked={todos}
-      ref={(el) => {
-        if (el) el.indeterminate = alguns;
-      }}
-      onChange={() => {
+    <span className="flex justify-center">
+    <button
+      type="button"
+      onClick={() => {
         if (todos) {
           aoDefinirSelecao(selecionados.filter((id) => !visiveis.includes(id)));
         } else {
           aoDefinirSelecao([...new Set([...selecionados, ...visiveis])]);
         }
       }}
-      aria-label="Selecionar todos os registros visíveis"
-      title="Selecionar todos os registros visíveis"
-      className="h-4 w-4 cursor-pointer accent-sky-500"
-    />
+      aria-label={todos ? 'Desmarcar todos os visíveis' : 'Selecionar todos os registros visíveis'}
+      title={todos ? 'Desmarcar todos os visíveis' : 'Selecionar todos os registros visíveis'}
+      className="rounded-full p-0.5"
+    >
+      {todos ? (
+        <CheckCircle2 className="h-4 w-4 text-sky-400" />
+      ) : alguns ? (
+        <CircleDashed className="h-4 w-4 text-sky-400" />
+      ) : (
+        <Circle className="h-4 w-4 text-slate-500 hover:text-slate-300" />
+      )}
+    </button>
+    </span>
   );
 }

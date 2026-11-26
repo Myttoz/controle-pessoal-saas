@@ -7,6 +7,7 @@ import {
   ClipboardCheck,
   FileSpreadsheet,
   FileText,
+  ListPlus,
   LayoutDashboard,
   LayoutGrid,
   LogOut,
@@ -41,6 +42,7 @@ const PAGINAS: Record<Pagina, { rotulo: string; icone: LucideIcon }> = {
   relatorios: { rotulo: 'Relatório IR / Contador', icone: FileText },
   conciliacao: { rotulo: 'Conciliação', icone: ClipboardCheck },
   importacao: { rotulo: 'Importação CSV', icone: FileSpreadsheet },
+  opcoes: { rotulo: 'Categorias e opções', icone: ListPlus },
   sincronizacao: { rotulo: 'Sincronização e Backup', icone: RefreshCw },
 };
 
@@ -61,19 +63,20 @@ const NAVEGACAO: ElementoNavegacao[] = [
   { tipo: 'separador' },
   { tipo: 'subtitulo', rotulo: 'Lançamentos' },
   { tipo: 'item', id: 'ferias' },
+  { tipo: 'item', id: 'ganhos' },
+  { tipo: 'item', id: 'anos' },
   { tipo: 'item', id: 'horasextras' },
   { tipo: 'item', id: 'lancamentos' },
-  { tipo: 'item', id: 'ganhos' },
 
   { tipo: 'separador' },
   { tipo: 'subtitulo', rotulo: 'Conferência' },
-  { tipo: 'item', id: 'anos' },
   { tipo: 'item', id: 'kanbanCategoria' },
   { tipo: 'item', id: 'kanban' },
   { tipo: 'item', id: 'pagamentos' },
   { tipo: 'item', id: 'relatorios' },
   { tipo: 'item', id: 'conciliacao' },
   { tipo: 'item', id: 'importacao' },
+  { tipo: 'item', id: 'opcoes' },
 
   { tipo: 'separador' },
   { tipo: 'subtitulo', rotulo: 'Extras' },

@@ -57,26 +57,26 @@ export function FeriasPage() {
   }, [dados.ferias]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <ConfigSalario />
 
       {/* ------- KPIs ------- */}
       <section className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+        <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Total a receber (férias + abono)</p>
-          <p className="mt-2 text-2xl font-semibold tracking-tight text-emerald-300">{formatarMoeda(totalRecebido)}</p>
+          <p className="mt-1.5 text-2xl font-semibold tracking-tight text-emerald-300">{formatarMoeda(totalRecebido)}</p>
           <p className="mt-1 text-xs text-slate-500">{linhas.length} retirada(s)</p>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+        <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Dias gozados</p>
-          <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-100">
+          <p className="mt-1.5 text-2xl font-semibold tracking-tight text-slate-100">
             {linhas.reduce((s, l) => s + l.registro.diasRetirados, 0)}
           </p>
           <p className="mt-1 text-xs text-slate-500">Em {periodos.length} período(s)</p>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+        <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Dias vendidos (abono)</p>
-          <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-100">
+          <p className="mt-1.5 text-2xl font-semibold tracking-tight text-slate-100">
             {linhas.reduce((s, l) => s + l.registro.diasVendidos, 0)}
           </p>
           <p className="mt-1 text-xs text-slate-500">Máx. 10 por período</p>
@@ -85,8 +85,8 @@ export function FeriasPage() {
 
       {/* ------- saldo por período ------- */}
       {periodos.length > 0 && (
-        <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-200">Saldo por período aquisitivo</h2>
+        <section className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
+          <h2 className="mb-2 text-sm font-semibold text-slate-200">Saldo por período aquisitivo</h2>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {periodos.map(([periodo, { gozados, vendidos, aGozar }]) => {
               const usados = gozados + vendidos;
@@ -94,10 +94,7 @@ export function FeriasPage() {
               return (
                 <div key={periodo} className="rounded-lg border border-slate-800 bg-slate-950/40 p-3">
                   <p className="text-sm font-medium text-slate-200">{periodo}</p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {gozados} gozados + {vendidos} vendidos = {usados} de 30 dias ·{' '}
-                    <span className={saldo > 0 ? 'text-amber-300' : 'text-emerald-300'}>{saldo} restantes</span>
-                  </p>
+                  <p className="hidden text-xs text-slate-500" title={`${gozados} gozados + ${vendidos} vendidos = ${usados} de 30 dias · ${saldo} restantes`}>Cálculo do saldo</p>
                   <p className="mt-1 text-[11px] font-semibold">
                     {aGozar ? (
                       <span className="text-amber-400">Status: Férias a gozar</span>
@@ -105,7 +102,7 @@ export function FeriasPage() {
                       <span className="text-emerald-300">Status: Férias já gozadas</span>
                     )}
                   </p>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-800">
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-800">
                     <span className="block h-full rounded-full bg-sky-500/80" style={{ width: `${Math.min(100, (usados / 30) * 100)}%` }} />
                   </div>
                 </div>
@@ -116,9 +113,7 @@ export function FeriasPage() {
       )}
 
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-slate-500">
-          O valor é calculado a partir do salário bruto: férias gozadas + 1/3 constitucional e abono (dias vendidos) + 1/3.
-        </p>
+        <p className="hidden text-xs text-slate-500" title="O valor é calculado a partir do salário bruto: férias gozadas + 1/3 constitucional e abono (dias vendidos) + 1/3.">Cálculo</p>
         <Botao variante="primario" icone={Plus} onClick={() => setModal({ modo: 'novo' })}>
           Nova retirada
         </Botao>

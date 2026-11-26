@@ -201,7 +201,7 @@ export function FormHoraExtra({ registro, aoFechar }: Props) {
       </div>
 
       {/* prévia do cálculo */}
-      <div className="mt-4 grid gap-3 rounded-xl border border-slate-800 bg-slate-950/50 p-3.5 sm:grid-cols-3">
+      <div className="mt-3 grid gap-3 rounded-xl border border-slate-800 bg-slate-950/50 p-3.5 sm:grid-cols-3">
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500">Período 100%</p>
           <p className="text-lg font-semibold text-slate-100">{previa.horas100.toFixed(2)} h</p>

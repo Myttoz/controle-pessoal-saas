@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { ArrowDown, ArrowUp, Check, Eye, EyeOff, Pencil, Plus, Timer, Trash2, ClipboardSignature } from 'lucide-react';
+import { CheckCircle2, Circle, ArrowDown, ArrowUp, Check, Eye, EyeOff, Pencil, Plus, Timer, Trash2, ClipboardSignature } from 'lucide-react';
 import type { RegistroHoraExtra } from '@/types/dados-locais';
 import { Botao } from '@/components/Botoes';
 import { ConfigSalario } from '@/components/ConfigSalario';
@@ -116,7 +116,10 @@ function TabelaPontoEletronico({
         </p>
       </div>
       <div className="max-h-[34vh] overflow-auto">
-        <table className="w-full min-w-[520px] text-sm">
+        <table className="w-full min-w-[520px] table-fixed text-sm">
+          <colgroup>
+            <col className="w-[52px]" /><col className="w-[150px]" /><col className="w-[120px]" /><col className="w-[170px]" /><col className="w-[100px]" /><col className="w-[130px]" /><col className="w-[130px]" /><col className="w-[150px]" /><col className="w-[90px]" />
+          </colgroup>
           <thead>
             <tr className="sticky top-0 z-10 border-b border-slate-800 bg-slate-950 text-left text-[11px] uppercase tracking-wider text-slate-500 [&>th]:bg-slate-950">
               <th className="px-3 py-2.5 text-center font-semibold">
@@ -126,9 +129,9 @@ function TabelaPontoEletronico({
                   aoDefinirSelecao={(ids) => aoDefinirSelecao(ids)}
                 />
               </th>
-              <th className="px-4 py-2.5 font-semibold">Mês</th>
+              <th colSpan={2} className="px-4 py-2.5 font-semibold">Mês</th>
               <th className="px-4 py-2.5 text-right font-semibold">Horas</th>
-              <th className="px-4 py-2.5 text-right font-semibold">Valor (50%)</th>
+              <th colSpan={4} aria-hidden />
               <th className="px-4 py-2.5 text-right font-semibold">Ações</th>
             </tr>
           </thead>
@@ -139,20 +142,15 @@ function TabelaPontoEletronico({
                 className="border-b border-slate-800/70 transition hover:bg-slate-800/25"
               >
                 <td className="px-3 py-2.5 text-center">
-                  <input
-                    type="checkbox"
-                    checked={selecionados.includes(chave)}
-                    onChange={() => aoAlternarSelecao(chave)}
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label="Selecionar lançamento"
-                    className="h-4 w-4 cursor-pointer accent-sky-500"
-                  />
+                  <button type="button" onClick={(e) => { e.stopPropagation(); aoAlternarSelecao(chave); }} title={selecionados.includes(chave) ? 'Remover seleção' : 'Selecionar'} className="rounded-full p-0.5">
+                    {selecionados.includes(chave) ? <CheckCircle2 className="h-4 w-4 text-sky-400" /> : <Circle className="h-4 w-4 text-slate-500 hover:text-slate-300" />}
+                  </button>
                 </td>
-                <td className="px-4 py-2.5 font-medium text-slate-300">{rotuloMes(chave)}</td>
+                <td colSpan={2} className="px-4 py-2.5 font-medium text-slate-300">{rotuloMes(chave)}</td>
                 <td className="px-4 py-2.5 text-right tabular-nums text-slate-300">
                   {Number(horas).toFixed(2).replace('.', ',')} h
                 </td>
-                <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-sky-300">
+                <td colSpan={4} className="px-4 py-2.5 text-right font-semibold tabular-nums text-sky-300">
                   {formatarMoeda(valorPonto(Number(horas) || 0, salarioBruto))}
                 </td>
                 <td className="px-4 py-2.5">
@@ -432,7 +430,7 @@ export function HorasExtrasPage() {
   ].filter((d) => d.valor > 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <ConfigSalario />
 
       {/* ------- KPIs ------- */}
@@ -446,8 +444,8 @@ export function HorasExtrasPage() {
       {/* ------- gráficos ------- */}
       {porMes.length > 0 && (
         <section className="grid gap-4 xl:grid-cols-[2fr_1fr]">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <h2 className="mb-3 text-sm font-semibold text-slate-200">Ganhos por mês</h2>
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
+            <h2 className="mb-2 text-sm font-semibold text-slate-200">Ganhos por mês</h2>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={porMes} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
@@ -461,8 +459,8 @@ export function HorasExtrasPage() {
             </ResponsiveContainer>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <h2 className="mb-3 text-sm font-semibold text-slate-200">Composição 100% × 50%</h2>
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
+            <h2 className="mb-2 text-sm font-semibold text-slate-200">Composição 100% × 50%</h2>
             {dadosPizza.length > 0 ? (
               <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
@@ -554,7 +552,10 @@ export function HorasExtrasPage() {
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60">
           <div className="max-h-[55vh] overflow-auto">
-            <table className="w-full min-w-[940px] text-sm">
+            <table className="w-full min-w-[940px] table-fixed text-sm">
+              <colgroup>
+                <col className="w-[52px]" /><col className="w-[150px]" /><col className="w-[170px]" /><col className="w-[120px]" /><col className="w-[100px]" /><col className="w-[130px]" /><col className="w-[130px]" /><col className="w-[150px]" /><col className="w-[90px]" />
+              </colgroup>
               <thead>
                 <tr className="sticky top-0 z-10 border-b border-slate-800 bg-slate-950 text-left text-[11px] uppercase tracking-wider text-slate-500 [&>th]:bg-slate-950">
                   <th className="px-3 py-2.5 text-center font-semibold">
@@ -592,28 +593,17 @@ export function HorasExtrasPage() {
                 {visiveis.map((l) => (
                   <tr key={l.registro.id} className="border-b border-slate-800/70 transition hover:bg-slate-800/25">
                     <td className="px-3 py-2.5 text-center">
-                      <input
-                        type="checkbox"
-                        checked={selHe.includes(l.registro.id)}
-                        onChange={() =>
-                          setSelHe((atual) =>
-                            atual.includes(l.registro.id)
-                              ? atual.filter((id) => id !== l.registro.id)
-                              : [...atual, l.registro.id],
-                          )
-                        }
-                        onClick={(e) => e.stopPropagation()}
-                        aria-label="Selecionar plantão"
-                        className="h-4 w-4 cursor-pointer accent-sky-500"
-                      />
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setSelHe((atual) => atual.includes(l.registro.id) ? atual.filter((id) => id !== l.registro.id) : [...atual, l.registro.id]); }} title={selHe.includes(l.registro.id) ? 'Remover seleção' : 'Selecionar'} className="rounded-full p-0.5">
+                        {selHe.includes(l.registro.id) ? <CheckCircle2 className="h-4 w-4 text-sky-400" /> : <Circle className="h-4 w-4 text-slate-500 hover:text-slate-300" />}
+                      </button>
                     </td>
                     <td className="px-4 py-2.5 tabular-nums text-slate-300">{formatarData(l.registro.data)}</td>
                     <td className="px-3 py-2.5 text-xs text-slate-400">
                       {l.registro.chegada} → {l.registro.saidaEmpresa}
                       {l.registro.fimPlantao ? ` (+${l.registro.fimPlantao})` : ''}
                     </td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-slate-300">{l.h100.toFixed(2)}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-slate-300">{l.h50.toFixed(2)}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-slate-300">{l.h100.toFixed(2).replace('.', ',')} h</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-slate-300">{l.h50.toFixed(2).replace('.', ',')} h</td>
                     <td className="px-3 py-2.5 text-right tabular-nums text-sky-300">{formatarMoeda(l.v100)}</td>
                     <td className="px-3 py-2.5 text-right tabular-nums text-violet-300">{formatarMoeda(l.v50)}</td>
                     <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-emerald-300">{formatarMoeda(l.total)}</td>
@@ -641,8 +631,8 @@ export function HorasExtrasPage() {
                       : `${visiveis.length} plantão(ões)`}
                   </td>
                   <td className="px-3 py-2.5 text-xs text-slate-500">—</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums text-slate-400">{totaisRodape.h100.toFixed(2)}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums text-slate-400">{totaisRodape.h50.toFixed(2)}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-slate-400">{totaisRodape.h100.toFixed(2).replace('.', ',')} h</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-slate-400">{totaisRodape.h50.toFixed(2).replace('.', ',')} h</td>
                   <td className="px-3 py-2.5 text-right tabular-nums text-sky-300">{formatarMoeda(totaisRodape.v100)}</td>
                   <td className="px-3 py-2.5 text-right tabular-nums text-violet-300">{formatarMoeda(totaisRodape.v50)}</td>
                   <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-emerald-300">{formatarMoeda(totaisRodape.total)}</td>
@@ -672,7 +662,7 @@ export function HorasExtrasPage() {
 
 function Kpi({ titulo, valor, detalhe, tom = 'sky' }: { titulo: string; valor: string; detalhe?: string; tom?: 'sky' | 'emerald' }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{titulo}</p>
       <p className={`mt-2 text-2xl font-semibold tracking-tight ${tom === 'emerald' ? 'text-emerald-300' : 'text-slate-100'}`}>{valor}</p>
       {detalhe && <p className="mt-1 text-xs text-slate-500">{detalhe}</p>}

@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Copy, Pencil, Trash2 } from 'lucide-react';
+import { CheckCircle2, Circle, Copy, Pencil, Trash2 } from 'lucide-react';
 import type { LancamentoMensal, Registro } from '@/types/api-types';
 import { BadgeCategoria } from '@/components/BadgeCategoria';
 import { ThOrdenavel, type DirecaoOrdem } from '@/components/ThOrdenavel';
@@ -158,15 +158,18 @@ const Linha = memo(function Linha({ registro, colunas, linha, sugestoesObservaca
       }}
     >
       <span className="flex items-center justify-center">
-        <input
-          type="checkbox"
-          checked={selecionado}
-          onChange={() => aoAlternarSelecao(registro.linha)}
-          onClick={(e) => e.stopPropagation()}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); aoAlternarSelecao(registro.linha); }}
           onContextMenu={(e) => e.stopPropagation()}
-          aria-label="Selecionar lançamento"
-          className="h-4 w-4 accent-sky-500 cursor-pointer"
-        />
+          aria-label={selecionado ? 'Remover seleção' : 'Selecionar lançamento'}
+          title={selecionado ? 'Remover seleção' : 'Selecionar lançamento'}
+          className="rounded-full p-0.5"
+        >
+          {selecionado
+            ? <CheckCircle2 className="h-4 w-4 text-sky-400" />
+            : <Circle className="h-4 w-4 text-slate-500 hover:text-slate-300" />}
+        </button>
       </span>
       <span className="tabular-nums text-slate-400">{formatarData(d.DATA)}</span>
       <span className="min-w-0">

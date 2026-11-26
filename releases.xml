@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Controle Pessoal — novidades</title>
+    <link>https://github.com/Myttoz/controle-pessoal-saas/releases</link>
+    <description>Versões e novidades do Controle Pessoal (SaaS by Myttoz).</description>
+    <language>pt-BR</language>
+    <atom:link href="https://myttoz.github.io/controle-pessoal-saas/releases.rss" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 25 Nov 2026 15:05:32 GMT</lastBuildDate>
+<item>
+  <title>v3.0.0</title>
+  <link>https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v3.0.0</link>
+  <guid isPermaLink="true">https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v3.0.0</guid>
+  <pubDate>Wed, 25 Nov 2026 13:38:04 GMT</pubDate>
+  <description><![CDATA[<h2>Controle Pessoal — v3.0.0</h2>
+<p>Release de funcionalidades novas e revisão do painel de conferência. <strong>Sem alteração destrutiva de banco</strong>: todos os novos campos locais são aditivos e reversíveis.</p>
+<h2>Importação CSV (nova aba em Conferência)</h2>
+<ul><li>Leitura de extratos CSV (detecção de delimitador, BOM UTF-8 e valores em pt-BR).</li><li><strong>Matching inteligente</strong>: cruza data, valor, estabelecimento e observações já anotadas para sugerir vínculo com lançamentos existentes — útil para nomes genéricos (ex.: “Mercado Pago”).</li><li><strong>Comparação lado a lado</strong>: lançamentos mensais × extrato importado, com scroll sincronizado, filtros/ordenação por cabeçalho e destaque em âmbar nas divergências.</li><li><strong>Seleção cruzada</strong>: clicar numa linha destaca a correspondente na outra tabela.</li><li><strong>Gravação segura</strong>: só linhas marcadas como *Novo* viram lançamentos, com defaults configuráveis (categoria, forma de pagamento, tipo, quem paga) e confirmação explícita. Linhas já importadas são ignoradas ao reimportar (anti-duplicado).</li><li>Filtro por mês, ações em lote e botão “Limpar tudo”. O estado da aba persiste ao trocar de página.</li></ul>
+<h2>Conferência e conferência financeira</h2>
+<ul><li><strong>Conciliação completa</strong>: marcação de conferido por lançamento, filtros/ordenação por coluna e limpeza por escopo.</li><li><strong>Relatório IR / Contador</strong> com filtros de cabeçalho na tabela de PIX, impressão corrigida e exportação CSV.</li><li><strong>Alertas de vencimento</strong> para <code>Forma de Pgto = Boleto</code>, com opção <strong>Pago</strong> para ocultar itens quitados.</li><li><strong>Comparativo mês a mês / ano a ano</strong> no Dashboard.</li><li><strong>Orçamento e alertas inteligentes</strong> (reversíveis, desligáveis em Sincronização e Backup).</li><li><strong>Anexos</strong> em lançamentos e manutenção, inclusive no cadastro novo (opcional).</li><li><strong>Recorrência e parcelas</strong> com quantidade escolhida pelo usuário; <strong>projeção de saldo</strong>; filtro rápido 50/50 + Lívia; data atual preenchida automaticamente no novo lançamento.</li></ul>
+<h2>Correção do “Restante”</h2>
+<p>O restante exibido em Lançamentos segue agora a regra definida pelo usuário:</p>
+<p><code>Total Ganho(mês) − Fatura(mês anterior) + Recebo Lívia(mês anterior) − PIX real(mês)</code></p>
+<p>O PIX considera o <strong>total real</strong> (PIX − parte da Lívia dentro da seleção PIX). Os detalhes do cálculo ficam em tooltip.</p>
+<h2>Interface</h2>
+<ul><li>Explicações de cálculo e textos auxiliares movidos para tooltips, deixando as telas mais enxutas.</li><li>Campos “Despesas próximo mês” passam a salvar ao sair do campo, evitando sobrescrever a digitação durante a sincronização.</li><li>Ajustes de alinhamento, altura de painéis e tabelas.</li></ul>
+<h2>Como atualizar</h2>
+<p><code>master</code> é produção. Após o push, o deploy do Pages acontece automaticamente — faça hard refresh (Ctrl+Shift+R) no app.</p>]]></description>
+</item>
+<item>
+  <title>v2.2.1</title>
+  <link>https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v2.2.1</link>
+  <guid isPermaLink="true">https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v2.2.1</guid>
+  <pubDate>Mon, 23 Nov 2026 14:16:22 GMT</pubDate>
+  <description><![CDATA[<h2>Controle Pessoal — v2.2.1</h2>
+<p>Release de correções (patch) sobre a v2.2.0. Sem mudança de banco.</p>
+<h2>Correções</h2>
+<ul><li><strong>Segurança</strong>: remoção de logs no console do fluxo de autenticação que podiam expor o token de sessão/resposta de login no browser.</li></ul>
+<h2>Como atualizar</h2>
+<p><code>master</code> é produção. Após o push no master, o deploy do Pages acontece automaticamente — hard refresh (Ctrl+Shift+R) no app.</p>]]></description>
+</item>
+<item>
+  <title>v2.2.0</title>
+  <link>https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v2.2.0</link>
+  <guid isPermaLink="true">https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v2.2.0</guid>
+  <pubDate>Thu, 19 Nov 2026 20:48:11 GMT</pubDate>
+  <description><![CDATA[<h2>Controle Pessoal — v2.2.0</h2>
+<p>Release de funcionalidades (minor) sobre a v2.1.0. Sem mudança de banco.</p>
+<h2>Novidades</h2>
+<ul><li><strong>Cabeçalho e rodapé fixos nas tabelas</strong> (Lançamentos): a tabela rola na própria área interna com <strong>cabeçalho sticky</strong> (topo) e <strong>rodapé sticky</strong> (fundo) — os totais do mês ficam sempre visíveis.</li><li><strong>Rodapé da tabela de Lançamentos</strong>: agora faixa fixa no fundo do card — registros/selecionados · Total Gasto · Recebo Lívia · Total Real · Gastos próximo mês.</li></ul>
+<h2>Horas Extras</h2>
+<ul><li><strong>Seleção em lote</strong>: caixas de seleção nas linhas de plantões e no ponto eletrônico (com &quot;selecionar todos os visíveis&quot; no cabeçalho); o rodapé soma <strong>somente os selecionados</strong>.</li></ul>
+<h2>Manutenção</h2>
+<ul><li><strong>Rodapé de 1 linha</strong>: mostra a <strong>manutenção mais próxima</strong> (data, km, oficina, peças, próxima revisão e status) + <strong>total geral</strong> (soma de todas) em cor levemente diferente.</li></ul>
+<h2>Resumo Mensal</h2>
+<ul><li><strong>Cabeçalho e rodapé fixos</strong> (abas de mês + totais) durante a rolagem.</li></ul>
+<h2>Como atualizar</h2>
+<p><code>master</code> é produção. Após o push no master, o deploy do Pages acontece automaticamente — hard refresh (Ctrl+Shift+R) no app.</p>]]></description>
+</item>
+<item>
+  <title>v2.1.0</title>
+  <link>https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v2.1.0</link>
+  <guid isPermaLink="true">https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v2.1.0</guid>
+  <pubDate>Thu, 19 Nov 2026 15:10:48 GMT</pubDate>
+  <description><![CDATA[<h2>Controle Pessoal — v2.1.0</h2>
+<p>Release de funcionalidades (minor) sobre a v2.0.0. Sem mudança de banco.</p>
+<h2>Novidades</h2>
+<ul><li><strong>Despesas próximo mês</strong> (Lançamentos): quadro de planejamento manual com <strong>Fatura cartão</strong> e <strong>Despesas Pix</strong> — o valor que você vai pagar ao receber o salário no mês seguinte (ex.: no novembro, o que será pago em dezembro). Persistido por mês, sincroniza na nuvem.</li><li><strong>Seleção em lote nos Lançamentos</strong>: caixa de seleção na primeira coluna (com &quot;selecionar todos os visíveis&quot;); o rodapé passa a mostrar a soma somente dos itens selecionados (&quot;N de M registro(s) selecionado(s) · R$ X&quot;), igual ao comportamento da busca.</li><li><strong>Manutenção com busca livre</strong>: o campo de busca agora cobre TODAS as colunas (descrição, data, km, valor, oficina, loja de peças, intervalos, status).</li><li><strong>Lembretes fixos (recorrentes)</strong> na aba Lembretes: lembretes que reaparecem sozinhos (ex.: “Backup da pasta do projeto” a cada 15 dias, já semeado); no dia do vencimento, um aviso chamativo dispara às 09h, 16h e 20h (botão X, some em 5s) até você marcar como concluído.</li><li><strong>Duplicar lançamento</strong> agora mantém você na mesma tela (não navega mais para o mês seguinte).</li><li><strong>Login</strong>: removida a opção &quot;Criar conta&quot; da tela de entrada — apenas Entrar e Entrar com Google.</li></ul>
+<h2>Manutenção</h2>
+<ul><li>Fluxo de release simplificado: <code>RELEASE_NOTES.md</code> lido no workflow <code>release.yml</code> (sem editar nada no site).</li><li><code>MIRROR-PAGES.txt</code> no repositório: passo a passo para um mirror gratuito no Cloudflare Pages.</li><li>Colinha §4.1 (release) e §8 (checklist de manutenção/segurança) atualizadas.</li></ul>
+<h2>Como atualizar</h2>
+<p><code>master</code> é produção. Após o push no master, o deploy do Pages acontece automaticamente — hard refresh (Ctrl+Shift+R) no app.</p>]]></description>
+</item>
+<item>
+  <title>v2.0.0</title>
+  <link>https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v2.0.0</link>
+  <guid isPermaLink="true">https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v2.0.0</guid>
+  <pubDate>Wed, 18 Nov 2026 19:48:34 GMT</pubDate>
+  <description><![CDATA[<h2>Controle Pessoal — v2.0.0</h2>
+<p>Esta versão consolida a migração do Controle Pessoal para o SaaS (GitHub Pages + Supabase), iniciada na v1.0.0. É o resultado de ~60 commits de melhorias, correções e funcionalidades.</p>
+<h2>Novidades</h2>
+<ul><li><strong>Duplicar lançamento para o mês seguinte</strong> (botão direito na tabela): mesmo lançamento, com a DATA avançada em 1 mês (mesmo dia) e a parcela da observação incrementada (&quot;7/12&quot; → &quot;8/12&quot;).</li><li><strong>Ponto eletrônico (horas) no Horas Extras</strong>: lançamento manual do total de HE do mês (sempre a 50%) + tabela mensal dedicada, integrado ao gráfico; plantões filtrados pelo ano selecionado (zero em ano novo) com &quot;ver todos&quot;; coluna Data ordenável.</li><li><strong>Extras virou Serviços</strong>: data, cliente, serviço realizado, despesas do cliente (informativo), ganhos peças/serviços e minhas despesas; o <strong>total do mês entra automaticamente como FREELANCE</strong> na aba Recebidos → Salário. Gastos extras mantidos à parte.</li><li><strong>Resumo Pagamentos 100% automático</strong> (Salário, Despesas = Total Gasto, Recebido Lívia = ½ do 50/50 + tudo &quot;Livia&quot;) para todos os anos, com saldo acumulado pelo saldo inicial; removidas as abas de mês no topo.</li><li><strong>Resumo Mensal Tipo</strong> e <strong>Resumo Mensal Categoria</strong>: colunas dinâmicas (só aparecem as usadas no mês), totais por coluna e total geral, com rolagem horizontal.</li><li><strong>Dashboard</strong>: Total gasto no ano = Despesas − Recebido Lívia; novo card &quot;Total ganho no ano&quot;; Saldo = ganho − gasto; ranking anual por tipo de pagamento; gráficos por categoria e mês.</li><li><strong>Ctrl+O</strong> abre o &quot;novo registro&quot; do setor atual; <strong>Lembretes</strong> viram Enviado ao abrir o Google Agenda; <strong>Férias</strong> com status de a gozar/já gozadas; máscara R$ com 2 casas automática em todos os campos monetários.</li><li><strong>HORA EXTRA agora é calculada ao vivo</strong>: plantões do mês + ponto eletrônico do mês, sempre a 50%.</li></ul>
+<h2>Correções</h2>
+<ul><li>Tabela de Lançamentos quebrada em 2027 (largura das colunas automática).</li><li>Escalabilidade geral sempre em 100% da tela; Autocomplete com Tab/Enter/Esc corretos (Esc fecha só o painel).</li><li>Extras de ano novo &quot;não existiam&quot;; mês do extra sempre 1 (FREELANCE errado); plantões salvos mas invisíveis no ano selecionado.</li><li>Férias perdiam os dias vendidos (abono) a cada sincronização — nova coluna <code>dias_vendidos</code>.</li><li>TOTAL GANHOS unificado em toda a aplicação (base + 13º + férias + outros + freelance); TOTAL SALÁRIO removido.</li></ul>
+<h2>Banco de dados (já versionado em sql/)</h2>
+<p>002 colunas de Serviços · 003 RLS em todas as tabelas · 004 RLS nas tabelas backup_* · 005 dias_vendidos (ferias) · 006 fim_plantao (horas_extras). Execute quem ainda não rodou.</p>
+<h2>Segurança</h2>
+<p>Row Level Security revisado e aplicado em todas as tabelas do app (incluindo as <code>backup_*</code> que estavam públicas).</p>
+<h2>Como usar</h2>
+<p>Sempre versão <code>master</code> em https://myttoz.github.io/controle-pessoal-saas — hard refresh (Ctrl+Shift+R) após cada deploy.</p>]]></description>
+</item>
+<item>
+  <title>v1.0.0</title>
+  <link>https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v1.0.0</link>
+  <guid isPermaLink="true">https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v1.0.0</guid>
+  <pubDate>Mon, 16 Nov 2026 15:34:35 GMT</pubDate>
+  <description><![CDATA[<h2>Controle Pessoal — v1.0.0</h2>
+<p>Primeira versão do Controle Pessoal como SaaS web — GitHub Pages + Supabase (Postgres + Auth + RLS) — substituindo a versão anterior (Electron + planilha).</p>
+<h2>Consolidada nesta versão</h2>
+<ul><li><strong>Migração para SaaS</strong>: frontend no GitHub Pages (https://myttoz.github.io/controle-pessoal-saas) com Supabase (Postgres + Auth com login por e-mail/senha e Google, Row Level Security em todas as tabelas), deixando para trás o app desktop.</li><li><strong>Importação dos dados de 2026</strong> da planilha para o Supabase (~455 lançamentos entre janeiro e novembro; 2025 e dezembro/2026 descartados por desalinhamento/opções da época).</li><li><strong>Lançamentos Mensais</strong>: tabela com filtros multi-seleção por coluna, ordenação, busca, autocomplete e máscara de valor estilo calculadora; atalho Ctrl+O.</li><li><strong>Recebidos (Salário/Extras)</strong>: aba Salário por mês + Extras (ganhos/gastos); coluna FREELANCE calculada a partir dos extras.</li><li><strong>Horas Extras</strong>: cálculo automático de plantões (100%/50%) a partir do salário bruto e dos horários.</li><li><strong>Resumo Pagamentos</strong> (reformulado): Despesas a partir do Total Gasto do mês (automático), saldo acumulado, rodapé com gastos do mês seguinte; Salário a partir de Recebidos.</li><li><strong>Férias</strong>: controle por período aquisitivo (Abril–Abril), com dias gozados e vendidos (abono) e valores.</li><li><strong>Manutenção</strong>: registro com alerta de próxima revisão (data e km).</li><li><strong>Lembretes</strong>: aba própria; ao criar, abre o Google Agenda pré-preenchido — o aviso chega pelo Google.</li><li><strong>Dashboard</strong>: visão anual por categoria/mês, com ranking &quot;Eu&quot;.</li><li><strong>Backups</strong>: workflow semanal com <code>pg_dump</code> (Docker postgres:17) para repositório privado <code>controle-pessoal-backup</code>.</li><li><strong>CI/CD</strong>: deploy do Pages a cada push no <code>master</code>; releases automáticas por tag (workflow <code>release.yml</code>).</li></ul>
+<h2>Observações</h2>
+<ul><li><code>master</code> é o branch de produção; a publicação é automática a cada push.</li><li>Dados exclusivamente no Supabase — não há servidor; a chave pública do Supabase não concede acesso sem RLS (verificado).</li><li>2025/dez-2026 ficaram de fora da importação; lançamentos de dezembro/2026 são manuais.</li><li>Para uso local, <code>.env</code> com <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code> é necessário (o build não roda sem ele).</li></ul>]]></description>
+</item>
+  </channel>
+</rss>

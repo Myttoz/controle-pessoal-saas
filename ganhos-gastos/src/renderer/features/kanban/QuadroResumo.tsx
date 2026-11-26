@@ -159,14 +159,6 @@ function Coluna({
         ))}
       </div>
 
-      <footer className="border-t border-slate-800 bg-slate-950/40 px-3 py-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-          Total
-        </p>
-        <p className="text-sm font-semibold tabular-nums text-sky-300">
-          {formatarMoeda(total)}
-        </p>
-      </footer>
     </section>
   );
 }
@@ -212,17 +204,6 @@ function ColunaDespesasLivia({
         ))}
       </div>
 
-      <footer className="border-t border-slate-800 bg-amber-950/10 px-3 py-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-500/80">
-          Total (espelho)
-        </p>
-        <p className="text-sm font-semibold tabular-nums text-amber-300">
-          {formatarMoeda(total)}
-        </p>
-        <p className="text-[10px] text-slate-600">
-          Espelho — aparece também nas outras colunas e não entra no Total geral
-        </p>
-      </footer>
     </section>
   );
 }
@@ -242,7 +223,7 @@ function RodapeColunas({
   totalGeral: number;
 }) {
   return (
-    <div className="sticky bottom-0 z-10 mt-1 flex gap-3 border-t border-slate-800 bg-slate-950/95 pt-3 pb-2 backdrop-blur">
+    <div className="sticky bottom-0 z-10 mt-1 flex gap-3 border-t border-slate-800 bg-slate-950/95 py-2 backdrop-blur">
       {espelho && (
         <div
           className="w-[232px] shrink-0 rounded-xl border border-amber-900/60 bg-amber-950/20 px-4 py-3"
@@ -448,13 +429,10 @@ export function QuadroResumo({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="sticky top-0 z-20 -mx-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/95 px-4 py-2 backdrop-blur sm:-mx-5 sm:px-5 lg:-mx-7 lg:px-7">
+    <div className="space-y-3">
+      <div className="sticky top-0 z-20 -mx-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/95 px-4 py-2 backdrop-blur sm:-mx-5 sm:px-5 lg:-mx-7 lg:px-7" title={dica}>
         <MesTabs meses={snapshot.meses} selecionado={mes} aoSelecionar={setMes} />
         <div className="flex items-center gap-2">
-          <p className="hidden max-w-xs truncate text-xs text-slate-500 xl:block" title={dica}>
-            {dica}
-          </p>
           <button
             type="button"
             onClick={() => deslocar(-1)}
@@ -492,7 +470,7 @@ export function QuadroResumo({
         <div
           ref={scrollRef}
           onMouseDown={aoPressionar}
-          className={`max-h-[66vh] overflow-auto pb-1 ${
+          className={`max-h-[calc(100vh-165px)] min-h-[520px] overflow-auto pb-1 ${
             arrastandoScroll ? 'cursor-grabbing select-none' : 'cursor-grab'
           }`}
         >

@@ -51,6 +51,9 @@ jobs:
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
 
+      - name: Copiar feeds RSS/XML para o site
+        run: cp releases.rss releases.xml ganhos-gastos/dist-web/
+
       - name: Enviar artefato do site
         uses: actions/upload-pages-artifact@v3
         with:

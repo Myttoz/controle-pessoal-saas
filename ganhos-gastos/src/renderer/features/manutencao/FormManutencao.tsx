@@ -210,7 +210,7 @@ export function FormManutencao({ registro, aoFechar }: Props) {
           </span>
           <BadgeStatus status={avaliacao.status} />
         </div>
-        <p className="mt-2 text-xs text-slate-500">KM atual do veículo: {kmAtual > 0 ? kmAtual.toLocaleString('pt-BR') : '—'}</p>
+        <p className="mt-1.5 text-xs text-slate-500">KM atual do veículo: {kmAtual > 0 ? kmAtual.toLocaleString('pt-BR') : '—'}</p>
       </div>
     </Modal>
   );
