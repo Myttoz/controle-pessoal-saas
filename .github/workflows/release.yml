@@ -21,6 +21,7 @@ jobs:
       - name: Baixar o código (histórico completo, para gerar as notas)
         uses: actions/checkout@v4
         with:
+          ref: master
           fetch-depth: 0
 
       - name: Gerar Release a partir do RELEASE_NOTES.md

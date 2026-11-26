@@ -52,7 +52,7 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Copiar feeds RSS/XML para o site
-        run: cp releases.rss releases.xml ganhos-gastos/dist-web/
+        run: cp "${{ github.workspace }}/releases.rss" "${{ github.workspace }}/releases.xml" dist-web/
 
       - name: Enviar artefato do site
         uses: actions/upload-pages-artifact@v3
