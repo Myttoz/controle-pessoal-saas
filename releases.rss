@@ -6,7 +6,29 @@
     <description>Versões e novidades do Controle Pessoal (SaaS by Myttoz).</description>
     <language>pt-BR</language>
     <atom:link href="https://myttoz.github.io/controle-pessoal-saas/releases.rss" rel="self" type="application/rss+xml" />
-    <lastBuildDate>Wed, 25 Nov 2026 15:05:32 GMT</lastBuildDate>
+    <lastBuildDate>Thu, 26 Nov 2026 15:16:19 GMT</lastBuildDate>
+<item>
+  <title>v3.1.0</title>
+  <link>https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v3.1.0</link>
+  <guid isPermaLink="true">https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v3.1.0</guid>
+  <pubDate>Thu, 26 Nov 2026 12:56:09 GMT</pubDate>
+  <description><![CDATA[<h2>Controle Pessoal — v3.1.0</h2>
+<p>Release de acabamento e organização sobre a v3.0.0. <strong>Nenhuma mudança destrutiva de banco</strong>: todos os campos novos são aditivos e reversíveis.</p>
+<h2>Categorias e opções editáveis (nova aba)</h2>
+<ul><li>Nova tela <strong>Categorias e opções</strong> para personalizar Categorias, Formas de pagamento, Tipos e Quem paga.</li><li><strong>Renomear</strong> troca apenas o rótulo exibido; o valor gravado nos lançamentos permanece o original — nenhum dado histórico é alterado.</li><li><strong>Desmarcar Ativo</strong> oculta a opção dos formulários sem apagar registros antigos; opções criadas podem ser removidas; <strong>Restaurar</strong> volta ao padrão.</li></ul>
+<h2>Importação CSV — acabamento</h2>
+<ul><li>Controles do topo alinhados (Tipo, Arquivo, Delimitador e “Primeira linha é cabeçalho” com o mesmo padrão de altura).</li><li>Tabelas lado a lado com scroll sincronizado, seleção cruzada, filtros de cabeçalho e destaque de divergências.</li><li>Gravação segura de novos lançamentos e proteção contra duplicados ao reimportar.</li></ul>
+<h2>Conferência e conferência financeira</h2>
+<ul><li>Painel <strong>Conferência {mês}</strong> com campo manual <strong>Recebido Lívia</strong>; total = Fatura cartão + Despesas Pix − Recebido Lívia.</li><li><strong>Conciliação</strong>: busca à direita, meses à esquerda e bolinha para conferir todos no cabeçalho.</li><li><strong>Relatório IR / Contador</strong>: PIX removido (já vem no extrato anual do banco); restam <strong>Ganhos diversos</strong> e <strong>FREELANCES E SERVIÇOS</strong>, ambos com filtro/ordenação por cabeçalho.</li><li><strong>Resumo Pagamentos</strong>: “Como funciona” e o texto do rodapé escondidos em tooltip; painel reduzido.</li><li><strong>Resumo Mensal Tipo/Categoria</strong>: mais linhas visíveis, rodapé fixo e totais duplicados no fim das colunas removidos.</li><li><strong>Recebidos</strong>: título simplificado para <code>Salário {ano}</code> (vale para anos novos).</li><li><strong>Gestão Anual</strong>: movida para a subcategoria Lançamentos, em ordem alfabética, com input e botão alinhados.</li></ul>
+<h2>Lembretes</h2>
+<ul><li>Novo aviso (popup/toast) para lembretes com vencimento em até <strong>3 dias</strong>, uma vez por dia, convidando a conferir a aba Lembretes.</li><li>Texto duplicado removido; “Como funciona” ficou em uma linha, com o tutorial completo no tooltip.</li></ul>
+<h2>Visual mais enxuto</h2>
+<ul><li>Explicações de cálculo, regras e textos auxiliares escondidas em tooltips por todo o app (Dashboard, Férias, Horas Extras, Ganhos, Anos, Importação, Sincronização etc.), sem alterar cores, bordas ou formatos.</li><li>Bolinhas de seleção padronizadas em Lançamentos, Horas Extras e Conciliação, inclusive no cabeçalho.</li><li>Tabelas de Horas Extras alinhadas coluna a coluna (Mês/Data, Horas/H100%, Valor/Total e Ações), com horas no formato <code>5,32 h</code>.</li><li>Menos espaçamento vertical em dezenas de painéis; mais conteúdo cabendo na tela.</li></ul>
+<h2>Feed RSS</h2>
+<ul><li>Feeds <code>releases.rss</code> e <code>releases.xml</code> publicados no GitHub Pages: <strong>https://myttoz.github.io/controle-pessoal-saas/releases.rss</strong></li><li>Workflow de release atualiza o feed e força o deploy; o workflow de deploy copia os arquivos para o site.</li><li>O widget do StartMe pode apontar para essa URL.</li></ul>
+<h2>Como atualizar</h2>
+<p><code>master</code> é produção. Após o push, o deploy do Pages acontece automaticamente — faça hard refresh (Ctrl+Shift+R) no app.</p>]]></description>
+</item>
 <item>
   <title>v3.0.0</title>
   <link>https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v3.0.0</link>
