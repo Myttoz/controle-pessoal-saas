@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { KeyRound, AlertCircle } from 'lucide-react';
 import { Botao } from '@/components/Botoes';
 import { useStoreAuth } from '@/store/storeAuth';
@@ -9,19 +9,24 @@ export function RecuperarSenhaPage() {
   const [senha, setSenha] = useState('');
   const [confirmar, setConfirmar] = useState('');
   const [carregando, setCarregando] = useState(false);
+  const salvandoRef = useRef(false);
   const [erro, setErro] = useState<string | null>(null);
   const setRecuperacao = useStoreAuth((s) => s.setRecuperacaoSenhaPendente);
   const toast = useStoreUI((s) => s.toast);
 
   const salvar = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (salvandoRef.current) return;
+    salvandoRef.current = true;
     setErro(null);
     if (senha.length < 6) {
       setErro('A senha deve ter pelo menos 6 caracteres.');
+      salvandoRef.current = false;
       return;
     }
     if (senha !== confirmar) {
       setErro('As senhas não conferem.');
+      salvandoRef.current = false;
       return;
     }
     setCarregando(true);
@@ -29,6 +34,7 @@ export function RecuperarSenhaPage() {
     setCarregando(false);
     if (error) {
       setErro(error.message || 'Não foi possível atualizar a senha.');
+      salvandoRef.current = false;
       return;
     }
     setRecuperacao(false);

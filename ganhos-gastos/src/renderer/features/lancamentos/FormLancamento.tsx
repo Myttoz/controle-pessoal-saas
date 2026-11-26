@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { LancamentoMensal, Registro } from '@/types/api-types';
 import { Botao } from '@/components/Botoes';
 import { Campo, EntradaMoeda, Entrada, EntradaSugestoes, Selecao } from '@/components/Campos';
@@ -136,11 +136,14 @@ export function FormLancamento({
     setErros((atual) => ({ ...atual, [campo]: undefined }));
   };
 
+  const enviandoRef = useRef(false);
   const enviar = async () => {
+    if (enviandoRef.current) return;
+    enviandoRef.current = true;
     const validacao = validar(estado);
     setErros(validacao);
-    if (Object.keys(validacao).length > 0 || ano == null) return;
-    if (modoEdicao && registro === null) return;
+    if (Object.keys(validacao).length > 0 || ano == null) { enviandoRef.current = false; return; }
+    if (modoEdicao && registro === null) { enviandoRef.current = false; return; }
 
     const dados: LancamentoMensal = {
       CATEGORIA: valorCategoria(estado.categoria) as LancamentoMensal['CATEGORIA'],
@@ -162,12 +165,14 @@ export function FormLancamento({
     if (registroAtual) {
       const ok = await editarLancamento(ano, aba, registroAtual.linha, dados);
       setEnviando(false);
+      enviandoRef.current = false;
       if (ok) aoFechar();
       return;
     }
 
     const resultado = await adicionarLancamento(ano, aba, dados, lote);
     setEnviando(false);
+    enviandoRef.current = false;
     if (resultado && resultado !== 'lote') {
       setCriado({ linha: resultado, dados });
       return; // mantém modal aberto para anexar (opcional)

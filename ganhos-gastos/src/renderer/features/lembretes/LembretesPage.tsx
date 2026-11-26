@@ -4,7 +4,7 @@
  * salva o lembrete e oferece um clique para ele ir para a Google Agenda
  * confirmar o evento (o aviso chega por lá, na data marcada).
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BellRing,
   CalendarDays,
@@ -106,7 +106,9 @@ export function LembretesPage() {
     setModalAberto(true);
   }
 
+  const salvandoRef = useRef(false);
   async function salvar() {
+    if (salvandoRef.current) return;
     if (!form.dataLembrete) {
       setErroForm('Informe a data do lembrete.');
       return;
@@ -128,7 +130,9 @@ export function LembretesPage() {
       mensagem: form.mensagem.trim(),
     };
 
+    salvandoRef.current = true;
     const ok = editando ? await editar(editando.id, dados) : await adicionar(dados);
+    salvandoRef.current = false;
     if (!ok) {
       // erro já foi mostrado em toast pelo store
       return;

@@ -42,7 +42,7 @@ function BlocoOpcoes({ campo }: { campo: Campo }) {
   const adicionar = () => {
     const v = nova.trim();
     if (!v) return;
-    if (linhas.some((o) => o.valor === v)) { toast('erro', 'Essa opção já existe.'); return; }
+    if (listaParaEdicao(base, useStoreLocal.getState().dados.config.opcoesPersonalizadas?.[campo]).some((o) => o.valor === v)) { toast('erro', 'Essa opção já existe.'); return; }
     salvar([...linhas, { valor: v, ativo: true, criada: true }]);
     setNova('');
   };

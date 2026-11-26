@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { RegistroManutencao } from '@/types/dados-locais';
 import { Botao } from '@/components/Botoes';
 import { Campo, Entrada, EntradaMoeda, Selecao } from '@/components/Campos';
@@ -93,7 +93,10 @@ export function FormManutencao({ registro, aoFechar }: Props) {
     kmAtual,
   );
 
+  const enviandoRef = useRef(false);
   const enviar = () => {
+    if (enviandoRef.current) return;
+    enviandoRef.current = true;
     const novos: Partial<Record<keyof Estado, string>> = {};
     if (!estado.descricao.trim()) novos.descricao = 'Descreva a manutenção.';
     if (!estado.data) novos.data = 'Informe a data.';
@@ -120,6 +123,7 @@ export function FormManutencao({ registro, aoFechar }: Props) {
     if (modoEdicao) editar(registro.id, payload);
     else adicionar(payload);
     setEnviando(false);
+    enviandoRef.current = false;
     aoFechar();
   };
 

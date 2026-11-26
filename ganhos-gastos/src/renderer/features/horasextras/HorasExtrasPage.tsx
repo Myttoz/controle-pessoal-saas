@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -199,11 +199,17 @@ function LinhaPontoEletronico() {
   const valor = arred(horasNum * hora50);
   const salvo = ponto[mes] != null;
 
+  const lancandoRef = useRef(false);
+  const timerLancado = useRef<number | null>(null);
   const lancar = () => {
+    if (lancandoRef.current) return;
+    lancandoRef.current = true;
     setPonto(mes, horasDigitos === '' || horasNum <= 0 ? null : horasNum);
     setLancado(true);
-    window.setTimeout(() => setLancado(false), 1500);
+    if (timerLancado.current != null) window.clearTimeout(timerLancado.current);
+    timerLancado.current = window.setTimeout(() => { setLancado(false); lancandoRef.current = false; }, 1500);
   };
+  useEffect(() => () => { if (timerLancado.current != null) window.clearTimeout(timerLancado.current); }, []);
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-sky-800/40 bg-sky-950/20 px-4 py-2.5">

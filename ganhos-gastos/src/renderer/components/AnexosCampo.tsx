@@ -23,6 +23,7 @@ export function AnexosCampo({
   const [carregando, setCarregando] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const enviandoRef = useRef(false);
 
   const carregar = async () => {
     if (!entidadeId) { setAnexos([]); return; }
@@ -39,7 +40,8 @@ export function AnexosCampo({
   useEffect(() => { void carregar(); }, [entidadeTipo, entidadeId]);
 
   const aoEnviar = async (files: FileList | null) => {
-    if (!files || !entidadeId) return;
+    if (!files || !entidadeId || enviandoRef.current) return;
+    enviandoRef.current = true;
     setEnviando(true);
     try {
       for (const file of Array.from(files)) {
@@ -50,6 +52,7 @@ export function AnexosCampo({
     } catch (e) {
       toast('erro', e instanceof Error ? e.message : 'Falha ao enviar anexo.');
     } finally {
+      enviandoRef.current = false;
       setEnviando(false);
       if (inputRef.current) inputRef.current.value = '';
     }
@@ -65,13 +68,17 @@ export function AnexosCampo({
   };
 
   const aoRemover = async (a: Anexo) => {
+    if (enviandoRef.current) return;
     if (!confirm(`Remover anexo "${a.nome}"?`)) return;
+    enviandoRef.current = true;
     try {
       await removerAnexo(a);
       setAnexos((prev) => prev.filter((x) => x.id !== a.id));
       toast('sucesso', 'Anexo removido.');
     } catch (e) {
       toast('erro', e instanceof Error ? e.message : 'Falha ao remover anexo.');
+    } finally {
+      enviandoRef.current = false;
     }
   };
 

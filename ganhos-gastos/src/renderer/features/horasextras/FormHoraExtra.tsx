@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { RegistroHoraExtra } from '@/types/dados-locais';
 import { Botao } from '@/components/Botoes';
 import { Campo, Entrada, EntradaMoeda } from '@/components/Campos';
@@ -99,7 +99,10 @@ export function FormHoraExtra({ registro, aoFechar }: Props) {
   // prévia de cálculo ao vivo
   const previa = calcularHoraExtra(estado, salarioBruto);
 
+  const enviandoRef = useRef(false);
   const enviar = async () => {
+    if (enviandoRef.current) return;
+    enviandoRef.current = true;
     const novos: Partial<Record<keyof Estado, string>> = {};
     if (salarioBruto <= 0) {
       novos.data = 'Informe o salário bruto no campo acima.';
@@ -128,6 +131,7 @@ export function FormHoraExtra({ registro, aoFechar }: Props) {
     if (modoEdicao) editar(registro.id, payload);
     else adicionar(payload);
     setEnviando(false);
+    enviandoRef.current = false;
     aoFechar();
   };
 

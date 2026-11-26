@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { CalendarPlus, CalendarRange, LayoutDashboard, RefreshCw, Trash2 } from 'lucide-react';
 import { AreaErro, Carregando, EstadoVazio } from '@/components/Estados';
 import { Botao } from '@/components/Botoes';
@@ -78,6 +78,13 @@ export function AnosPage() {
   const abrirAno = async (ano: number) => {
     if (ano !== anoSelecionado) await selecionarAno(ano);
     irPara('dashboard');
+  };
+
+  const gerandoDashRef = useRef(false);
+  const gerarComGuard = async (ano: number) => {
+    if (gerandoDashRef.current) return;
+    gerandoDashRef.current = true;
+    try { await gerarDashboard(ano); } finally { gerandoDashRef.current = false; }
   };
 
   return (
@@ -195,7 +202,7 @@ export function AnosPage() {
                       <Botao
                         tamanho="sm"
                         icone={LayoutDashboard}
-                        onClick={() => void gerarDashboard(ano)}
+                        onClick={() => void gerarComGuard(ano)}
                         title={`Gerar/atualizar a aba Dashboard de ${ano} na planilha`}
                       >
                         Dashboard

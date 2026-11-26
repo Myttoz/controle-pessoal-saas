@@ -74,7 +74,7 @@ export function AlertasBoletos() {
   }, [snapshot, ano, pagamentos, escopoAno, mesSel]);
 
   const marcarPago = (chave: string, pago: boolean) => {
-    const prox = { ...pagamentos };
+    const prox = { ...(useStoreLocal.getState().dados.config.pagamentosBoleto ?? {}) };
     if (pago) prox[chave] = true; else delete prox[chave];
     setConfig({ pagamentosBoleto: prox });
   };

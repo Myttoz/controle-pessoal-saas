@@ -38,11 +38,7 @@ function CampoEditavel({
     <Campo rotulo={rotulo}>
       <EntradaMoeda
         value={texto}
-        onChange={(digitos) => {
-          setTexto(digitos);
-          if (digitos.trim() === '') onSalvar(null);
-          else onSalvar(Math.round((Number(digitos) / 100) * 100) / 100);
-        }}
+        onChange={(digitos) => setTexto(digitos)}
         onFocus={() => setEmEdicao(true)}
         onBlur={() => {
           setEmEdicao(false);

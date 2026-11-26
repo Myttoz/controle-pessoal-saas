@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { RegistroFerias } from '@/types/dados-locais';
 import { Botao } from '@/components/Botoes';
 import { Campo, Entrada, Selecao } from '@/components/Campos';
@@ -72,7 +72,10 @@ export function FormFerias({ registro, aoFechar }: Props) {
     setErros((atual) => ({ ...atual, [campo]: undefined }));
   };
 
+  const enviandoRef = useRef(false);
   const enviar = () => {
+    if (enviandoRef.current) return;
+    enviandoRef.current = true;
     const novos: Partial<Record<keyof Estado, string>> = {};
     if (!estado.inicio) novos.inicio = 'Informe a data de início.';
     if (salarioBruto <= 0) novos.inicio = 'Informe o salário bruto no painel acima.';
@@ -92,6 +95,7 @@ export function FormFerias({ registro, aoFechar }: Props) {
     if (modoEdicao) editar(registro.id, payload);
     else adicionar(payload);
     setEnviando(false);
+    enviandoRef.current = false;
     aoFechar();
   };
 

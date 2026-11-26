@@ -130,18 +130,18 @@ export function ConciliacaoPage() {
   }, [linhas]);
 
   const setConferido = (k: string, valor: boolean) => {
-    const prox = { ...(config.conciliacao ?? {}) };
+    const prox = { ...(useStoreLocal.getState().dados.config.conciliacao ?? {}) };
     if (valor) prox[k] = true; else delete prox[k];
     setConfig({ conciliacao: prox });
   };
   const marcarVisiveis = (valor: boolean) => {
-    const prox = { ...(config.conciliacao ?? {}) };
+    const prox = { ...(useStoreLocal.getState().dados.config.conciliacao ?? {}) };
     for (const l of linhas) { if (l.k) { if (valor) prox[l.k] = true; else delete prox[l.k]; } }
     setConfig({ conciliacao: prox });
   };
   const limparEscopo = () => {
     if (!ano) return;
-    const prox = { ...(config.conciliacao ?? {}) };
+    const prox = { ...(useStoreLocal.getState().dados.config.conciliacao ?? {}) };
     for (const l of registros) delete prox[chave(ano, l.aba, l.r.linha)];
     setConfig({ conciliacao: prox });
   };

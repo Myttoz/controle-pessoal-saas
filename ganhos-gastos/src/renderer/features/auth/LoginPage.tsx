@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Botao } from '@/components/Botoes';
@@ -37,6 +37,7 @@ export function LoginPage() {
   const [usuario, setUsuario] = useState('');
   const [senha, setSenha] = useState('');
   const [carregando, setCarregando] = useState(false);
+  const entrandoRef = useRef(false);
 
   const login = useStoreAuth((s) => s.login);
   const erro = useStoreAuth((s) => s.erro);
@@ -46,11 +47,13 @@ export function LoginPage() {
 
   const aoEntrar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!usuario.trim() || !senha.trim()) return;
+    if (entrandoRef.current || !usuario.trim() || !senha.trim()) return;
+    entrandoRef.current = true;
     setCarregando(true);
 
     const sucesso = await login(usuario.trim(), senha);
     setCarregando(false);
+    entrandoRef.current = false;
 
     if (sucesso) {
       limparErro();
@@ -59,6 +62,8 @@ export function LoginPage() {
   };
 
   const aoEntrarComGoogle = async () => {
+    if (entrandoRef.current) return;
+    entrandoRef.current = true;
     const redirectTo = window.location.origin + window.location.pathname;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -66,6 +71,7 @@ export function LoginPage() {
     });
     if (error) {
       toast('erro', error.message);
+      entrandoRef.current = false;
     }
     // O Google redireciona de volta para o app; o Supabase restaura a sessão.
   };

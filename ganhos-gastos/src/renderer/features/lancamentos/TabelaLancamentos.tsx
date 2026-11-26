@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { CheckCircle2, Circle, Copy, Pencil, Trash2 } from 'lucide-react';
 import type { LancamentoMensal, Registro } from '@/types/api-types';
 import { BadgeCategoria } from '@/components/BadgeCategoria';
@@ -138,14 +138,19 @@ const Linha = memo(function Linha({ registro, colunas, linha, sugestoesObservaca
   const [editandoObs, setEditandoObs] = useState(false);
   const [textoObs, setTextoObs] = useState(d.OBSERVAÇÃO ?? '');
 
+  const salvandoObsRef = useRef(false);
   const salvarObs = async () => {
+    if (salvandoObsRef.current) return;
+    salvandoObsRef.current = true;
     const valor = textoObs.trim();
     if (valor === d.OBSERVAÇÃO) {
       setEditandoObs(false);
+      salvandoObsRef.current = false;
       return;
     }
     setEditandoObs(false);
     await aoEditarObservacao(linha, valor);
+    salvandoObsRef.current = false;
   };
 
   return (

@@ -278,8 +278,23 @@ interface OpcaoEscrita {
   mensagemSucesso?: string;
 }
 
+/**
+ * Guard de reentrância: evita que um duplo clique dispare duas escritas
+ * idênticas (ex.: dois lançamentos, dois extras, ano duplicado).
+ * A chave usa aba + ação + conteúdo do payload, então escritas realmente
+ * diferentes continuam livres para rodar em paralelo.
+ */
+const escritasEmVoo = new Set<string>();
+const revalidacoesEmVoo = new Set<number>();
+function chaveEscrita(payload: PayloadEscrita): string {
+  return JSON.stringify(payload);
+}
+
 /** Executa uma escrita com atualização otimista + rollback + toast. */
 async function executarEscrita(op: OpcaoEscrita): Promise<boolean> {
+  const chave = chaveEscrita(op.payload);
+  if (escritasEmVoo.has(chave)) return false;
+  escritasEmVoo.add(chave);
   useStoreAno.setState({ escritasPendentes: useStoreAno.getState().escritasPendentes + 1 });
   op.otimizar();
   try {
@@ -295,6 +310,7 @@ async function executarEscrita(op: OpcaoEscrita): Promise<boolean> {
     void useStoreAno.getState().revalidar(op.ano);
     return false;
   } finally {
+    escritasEmVoo.delete(chave);
     const atual = useStoreAno.getState().escritasPendentes;
     useStoreAno.setState({ escritasPendentes: Math.max(0, atual - 1) });
   }
@@ -424,6 +440,8 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
   revalidar: async (anoPretendido) => {
     const alvo = anoPretendido ?? get().anoSelecionado;
     if (alvo == null) return;
+    if (revalidacoesEmVoo.has(alvo)) return;
+    revalidacoesEmVoo.add(alvo);
 
     set({ revalidacoes: get().revalidacoes + 1 });
     try {
@@ -440,6 +458,7 @@ export const useStoreAno = create<EstadoAno>((set, get) => ({
       if (get().erro !== mensagem) ui().toast('erro', mensagem);
       set({ erro: mensagem, carregando: false });
     } finally {
+      revalidacoesEmVoo.delete(alvo);
       set({ revalidacoes: Math.max(0, get().revalidacoes - 1) });
     }
   },

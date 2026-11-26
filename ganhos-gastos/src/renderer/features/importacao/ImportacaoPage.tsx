@@ -311,10 +311,14 @@ export function ImportacaoPage() {
       toast('erro', 'Preencha Categoria, Forma de Pgto, Tipo e Quem paga antes de gravar.');
       return;
     }
-    const total = novosParaGravar.reduce((s, r) => s + (r.linha.valor ?? 0), 0);
-    if (!confirm(`Gravar ${novosParaGravar.length} novo(s) lançamento(s), totalizando ${formatarMoeda(total)}?\n\nAs linhas já vinculadas/ignoradas não serão alteradas.`)) return;
-
+    if (gravando) return;
     setGravando(true);
+    const total = novosParaGravar.reduce((s, r) => s + (r.linha.valor ?? 0), 0);
+    if (!confirm(`Gravar ${novosParaGravar.length} novo(s) lançamento(s), totalizando ${formatarMoeda(total)}?\n\nAs linhas já vinculadas/ignoradas não serão alteradas.`)) {
+      setGravando(false);
+      return;
+    }
+
     const criados: Record<string, number | string> = { ...(configLocal.importacoesCsv ?? {}) };
     let ok = 0; let falhas = 0;
     try {

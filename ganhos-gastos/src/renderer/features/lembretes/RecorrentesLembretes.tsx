@@ -7,7 +7,7 @@
  * - Quando o lembrete fixo vence, o hook `useLembretesFixosAlerta` dispara
  *   um aviso chamativo 3x ao dia (09h, 16h e 20h) até o usuário concluir.
  */
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { BellRing, Check, Plus, Trash2 } from 'lucide-react';
 import type { LembreteFixo } from '@/types/dados-locais';
 import { Botao } from '@/components/Botoes';
@@ -42,9 +42,12 @@ export function RecorrentesLembretes() {
 
   const hoje = hojeISO();
 
+  const salvandoRef = useRef(false);
   const salvar = () => {
+    if (salvandoRef.current) return;
     const t = titulo.trim();
     if (!t) return;
+    salvandoRef.current = true;
     adicionar({
       titulo: t,
       intervaloDias: intervalo,
@@ -53,6 +56,7 @@ export function RecorrentesLembretes() {
     setTitulo('');
     setIntervalo(15);
     setModalAberto(false);
+    salvandoRef.current = false;
   };
 
   return (
