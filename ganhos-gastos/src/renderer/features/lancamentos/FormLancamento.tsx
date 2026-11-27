@@ -75,6 +75,22 @@ export function FormLancamento({
   sugestoesObservacao,
   aoFechar,
 }: Props) {
+  // Os conversores de rótulo/valor precisam existir antes do useState abaixo:
+  // o inicializador roda imediatamente e referenciá-los depois causaria TDZ
+  // ("can't access lexical declaration before initialization").
+  const opcoesCategoria = useOpcoes('CATEGORIA');
+  const opcoesForma = useOpcoes('FORMA DE PGTO');
+  const opcoesTipo = useOpcoes('TIPO');
+  const opcoesQuem = useOpcoes('QUEM PAGA');
+  const rotuloCategoria = useRotuloOpcao('CATEGORIA');
+  const rotuloForma = useRotuloOpcao('FORMA DE PGTO');
+  const rotuloTipo = useRotuloOpcao('TIPO');
+  const rotuloQuem = useRotuloOpcao('QUEM PAGA');
+  const valorCategoria = useValorOpcao('CATEGORIA');
+  const valorForma = useValorOpcao('FORMA DE PGTO');
+  const valorTipo = useValorOpcao('TIPO');
+  const valorQuem = useValorOpcao('QUEM PAGA');
+
   const [estado, setEstado] = useState<EstadoForm>(() => {
     const e = paraEstado(registro?.dados);
     return {
@@ -93,19 +109,6 @@ export function FormLancamento({
   const editarLancamento = useStoreAno((s) => s.editarLancamento);
   const ano = useStoreAno((s) => s.anoSelecionado);
   const snapshot = useStoreAno((s) => (ano != null ? s.snapshots[ano] : undefined));
-
-  const opcoesCategoria = useOpcoes('CATEGORIA');
-  const opcoesForma = useOpcoes('FORMA DE PGTO');
-  const opcoesTipo = useOpcoes('TIPO');
-  const opcoesQuem = useOpcoes('QUEM PAGA');
-  const rotuloCategoria = useRotuloOpcao('CATEGORIA');
-  const rotuloForma = useRotuloOpcao('FORMA DE PGTO');
-  const rotuloTipo = useRotuloOpcao('TIPO');
-  const rotuloQuem = useRotuloOpcao('QUEM PAGA');
-  const valorCategoria = useValorOpcao('CATEGORIA');
-  const valorForma = useValorOpcao('FORMA DE PGTO');
-  const valorTipo = useValorOpcao('TIPO');
-  const valorQuem = useValorOpcao('QUEM PAGA');
 
   const registroAtual = registro ?? criado;
   const modoEdicao = !!registroAtual;
