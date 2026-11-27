@@ -16,7 +16,10 @@ if [ ! -f "$PDF" ]; then
   exit 1
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve symlinks (ex.: ~/bin/converterpdf -> scripts/converterpdf) para
+# encontrar o pdf2csv.py ao lado do script original, nao ao lado do atalho.
+ORIGEM="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "$ORIGEM")" && pwd)"
 SCRIPT="$SCRIPT_DIR/pdf2csv.py"
 if [ ! -f "$SCRIPT" ]; then
   echo "Script pdf2csv.py nao encontrado em $SCRIPT"
