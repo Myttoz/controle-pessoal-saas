@@ -2,7 +2,7 @@
 # Backup manual do banco do Supabase (pg_dump).
 #
 # Uso:
-#   backup-banco [pasta-de-saida]
+#   backup-financa [pasta-de-saida]
 #
 # Sem argumento, salva em ~/Documentos/Pessoal/backups-saas-financas/.
 # Na primeira execucao, pede apenas a SENHA do banco (a digitacao nao aparece)

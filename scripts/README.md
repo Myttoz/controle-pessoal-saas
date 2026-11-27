@@ -31,15 +31,15 @@ O arquivo resultante abre no LibreOffice sem senha e pode ser exportado para CSV
 O parser é específico do formato de extrato do Mercado Pago. Para outros
 bancos, adapte a função `parsear` em `scripts/pdf2csv.py`.
 
-## `backup-banco` — Backup manual do banco (pg_dump)
+## `backup-financa` — Backup manual do banco (pg_dump)
 
 Gera um `.dump` completo do banco do Supabase na hora, sem esperar o backup
 semanal do GitHub.
 
 ```bash
-backup-banco
+backup-financa
 # ou indicando a pasta de saída:
-backup-banco /caminho/para/salvar
+backup-financa /caminho/para/salvar
 ```
 
 - Sem argumento, salva em `~/Documentos/Pessoal/backups-saas-financas/`.
@@ -52,14 +52,14 @@ backup-banco /caminho/para/salvar
 
 ## Atalhos globais (opcional, recomendado)
 
-Para usar `converterpdf`, `desprotegerpdf` e `backup-banco` de qualquer pasta,
+Para usar `converterpdf`, `desprotegerpdf` e `backup-financa` de qualquer pasta,
 crie links simbólicos na sua pasta `~/bin` (após clonar o repositório):
 
 ```bash
 mkdir -p ~/bin
 ln -sf "$HOME/Documentos/Pessoal/saas-financas/scripts/converterpdf" ~/bin/converterpdf
 ln -sf "$HOME/Documentos/Pessoal/saas-financas/scripts/desprotegerpdf" ~/bin/desprotegerpdf
-ln -sf "$HOME/Documentos/Pessoal/saas-financas/scripts/backup-banco" ~/bin/backup-banco
+ln -sf "$HOME/Documentos/Pessoal/saas-financas/scripts/backup-financa" ~/bin/backup-financa
 ```
 
 Ajuste o caminho se você clonou o repositório em outro lugar.
