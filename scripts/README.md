@@ -50,16 +50,29 @@ backup-financa /caminho/para/salvar
 - Requer `pg_dump` (pacote `postgresql-client`).
 - **Só o banco**: os anexos do Storage são baixados pelo workflow semanal.
 
+## `baixarfinanca` — Atualizar o projeto
+
+Baixa as novidades do GitHub (`git pull --ff-only`) e roda `npm install` sozinho
+quando as dependências mudaram.
+
+```bash
+baixarfinanca
+```
+
+Se houver alterações locais não commitadas, ele avisa e não mexe em nada.
+
 ## Atalhos globais (opcional, recomendado)
 
-Para usar `converterpdf`, `desprotegerpdf` e `backup-financa` de qualquer pasta,
-crie links simbólicos na sua pasta `~/bin` (após clonar o repositório):
+Para usar `converterpdf`, `desprotegerpdf`, `backup-financa` e `baixarfinanca`
+de qualquer pasta, crie links simbólicos na sua pasta `~/bin` (após clonar o
+repositório):
 
 ```bash
 mkdir -p ~/bin
 ln -sf "$HOME/Documentos/Pessoal/saas-financas/scripts/converterpdf" ~/bin/converterpdf
 ln -sf "$HOME/Documentos/Pessoal/saas-financas/scripts/desprotegerpdf" ~/bin/desprotegerpdf
 ln -sf "$HOME/Documentos/Pessoal/saas-financas/scripts/backup-financa" ~/bin/backup-financa
+ln -sf "$HOME/Documentos/Pessoal/saas-financas/scripts/baixarfinanca" ~/bin/baixarfinanca
 ```
 
 Ajuste o caminho se você clonou o repositório em outro lugar.

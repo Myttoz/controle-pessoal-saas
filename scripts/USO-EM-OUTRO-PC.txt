@@ -29,10 +29,12 @@ CONTROLE PESSOAL — USO EM OUTRO PC (Linux / Windows)
    ln -sf "$PWD/scripts/converterpdf" ~/bin/converterpdf
    ln -sf "$PWD/scripts/desprotegerpdf" ~/bin/desprotegerpdf
    ln -sf "$PWD/scripts/backup-financa" ~/bin/backup-financa
+   ln -sf "$PWD/scripts/baixarfinanca" ~/bin/baixarfinanca
    # Depois, em qualquer pasta:
    #   converterpdf extrato.pdf
    #   desprotegerpdf extrato.pdf
    #   backup-financa            (backup manual do banco Supabase)
+   #   baixarfinanca             (git pull + npm install quando necessario)
 
 7) Requisitos do sistema
    - Node.js 18+

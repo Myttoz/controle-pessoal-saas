@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Atualiza o projeto local com o que esta no GitHub (master).
+#
+# Uso:
+#   baixarfinanca
+#
+# - Faz git pull --ff-only (nao cria merge nem sobrescreve alteracoes locais).
+# - Se package.json/package-lock.json mudaram, roda npm install sozinho.
+# - Nao mexe no repositorio de backups (esse e separado).
+set -euo pipefail
+
+PROJETO="${SAAS_FINANCAS_DIR:-$HOME/Documentos/Pessoal/saas-financas}"
+
+if [ ! -d "$PROJETO/.git" ]; then
+  echo "Projeto nao encontrado em $PROJETO"
+  exit 1
+fi
+
+cd "$PROJETO"
+
+if [ -n "$(git status --porcelain)" ]; then
+  echo "Atencao: ha alteracoes locais nao commitadas:"
+  git status --short
+  echo ""
+  echo "Resolva (commite com 'subirfinanca' ou descarte) antes de baixar."
+  exit 1
+fi
+
+ANTES="$(git rev-parse HEAD)"
+echo "Baixando atualizacoes..."
+git pull --ff-only origin master
+DEPOIS="$(git rev-parse HEAD)"
+
+if [ "$ANTES" = "$DEPOIS" ]; then
+  echo "Ja estava atualizado."
+  exit 0
+fi
+
+if git diff --name-only "$ANTES" "$DEPOIS" | grep -qE '(^|/)(package\.json|package-lock\.json)$'; then
+  echo ""
+  echo "Dependencias mudaram; rodando npm install..."
+  (cd ganhos-gastos && npm install)
+fi
+
+echo ""
+echo "Atualizado para $(git log -1 --format='%h %s')."
