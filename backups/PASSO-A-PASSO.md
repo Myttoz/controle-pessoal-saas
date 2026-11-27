@@ -8,7 +8,8 @@
 > Tudo vai para o repositório **privado** `Myttoz/controle-pessoal-backup` no GitHub.
 > Grátis, sem máquina ligada e sem intervenção manual depois de configurado.
 >
-> **Pré-requisitos:** senha do banco e a chave `service_role` do projeto.
+> **Pré-requisitos:** senha do banco e a chave **secret** do projeto
+> (`sb_secret_...`; em projetos antigos, a `service_role`).
 
 ---
 
@@ -80,16 +81,21 @@ No repositório `controle-pessoal-backup`:
 
 ## Passo 5 — Secret `SUPABASE_SERVICE_ROLE_KEY` (novo)
 
-1. No Supabase: **Project Settings** (engrenagem) → **API**
-2. Em **Project API keys**, clique em **Reveal** na chave **`service_role`** e copie
+1. No Supabase: **Project Settings** (engrenagem) → **API Keys**
+2. Copie a chave **secret** — na tela nova ela aparece em **Secret keys** e começa
+   com `sb_secret_...`. **Não** use a *publishable/public* (`sb_publishable_...`),
+   que é a mesma que vai no site.
+   - Se o seu projeto ainda mostrar o formato antigo, use a aba **Legacy API keys**
+     → chave **`service_role`**.
 3. No GitHub (`controle-pessoal-backup`): **Settings** → **Secrets and variables**
    → **Actions** → **New repository secret**
 4. Name: `SUPABASE_SERVICE_ROLE_KEY`
 5. Value: a chave copiada
 
-> ⚠️ A `service_role` **ignora todas as regras de segurança (RLS)** e dá acesso total
-> ao banco e ao Storage. Ela só pode ficar em repositório **privado** e nunca no
-> código do site. Se vazar, rotacione em **Settings → API → Rotate**.
+> ⚠️ A chave **secret** (ou `service_role` no formato antigo) **ignora todas as
+> regras de segurança (RLS)** e dá acesso total ao banco e ao Storage. Ela só pode
+> ficar em repositório **privado** e nunca no código do site. Se vazar, rotacione
+> em **Settings → API Keys** (revogue a chave e crie outra).
 
 ---
 

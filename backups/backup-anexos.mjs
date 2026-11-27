@@ -8,7 +8,8 @@
  *
  * Variáveis de ambiente:
  *   SUPABASE_URL               https://SEU-PROJETO.supabase.co
- *   SUPABASE_SERVICE_ROLE_KEY  Settings → API → service_role (NUNCA publique)
+ *   SUPABASE_SERVICE_ROLE_KEY  Settings → API Keys → chave secret (sb_secret_...)
+ *                              (em projetos antigos: a chave service_role)
  *   SUPABASE_BUCKET            opcional, padrão: anexos
  *   OUT_DIR                    opcional, padrão: anexos
  *

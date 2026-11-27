@@ -9,7 +9,7 @@ name: Backup Supabase — semanal
 #
 # Secrets necessários no repo privado:
 #   SUPABASE_DB_URL               (connection string do Session pooler)
-#   SUPABASE_SERVICE_ROLE_KEY     (Settings → API → service_role)
+#   SUPABASE_SERVICE_ROLE_KEY     (Settings → API Keys → chave secret: sb_secret_...)
 
 on:
   schedule:
