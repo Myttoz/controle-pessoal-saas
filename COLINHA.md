@@ -261,8 +261,8 @@ Não gera múltiplas versões — sobrescreve; guardar só a mais recente.
 
 | Arquivo/local | Conteúdo |
 |---|---|
-| `/home/infra/Documentos/Pessoal/APP-Financas-backup.tar.gz` | **Backup da pasta inteira** (`APP Financas` com `.git`, `.env`, planilhas, migrations; sem node_modules) |
-| Repo privado `controle-pessoal-backups` (GitHub) | **Backup automático semanal** do Postgres (workflow `backups/backup-semanal.yml`, copia pro repo privado) — ver `backups/PASSO-A-PASSO.md` |
+| `/home/infra/Documentos/Pessoal/backups-saas-financas.tar.gz` | **Backup consolidado da pasta inteira** (23 snapshots: `.git`, `.env`, planilhas, migrations; sem node_modules) |
+| Repo privado `controle-pessoal-backup` (GitHub) | **Backup automático semanal** do Postgres **e dos anexos** (workflow `backups/backup-semanal.yml`, copia pro repo privado) — ver `backups/PASSO-A-PASSO.md` |
 | `scripts/Ganhos-Gastos 2026.xlsx` | Planilha original 2026 (usada na migração) |
 | `scripts/migracao-2026.sql` | SQL gerado a partir da planilha (ENTREGA ÚNICA; não está no Git) |
 | `../APP/` | Projeto desktop antigo **completo** — congelado; só servirá como backup/estrado antes de excluir; nada mais será trabalhado nela |
@@ -303,7 +303,7 @@ APP Financas/                     (raiz do repositório; clone direto do GitHub)
 ### Toda semana (30 s)
 - **GitHub → Actions → `backup-semanal`**: último run verde? Se vermelho, abrir e ler o erro.
 - **GitHub → Actions → `deploy-web`**: último deploy verde? Se vermelho, o site fica na versão anterior.
-- Conferir que o dump semanal está aparecendo em `Myttoz/controle-pessoal-backup` (Actions cria lá).
+- Conferir que o dump semanal está aparecendo em `Myttoz/controle-pessoal-backup` (Actions cria lá) e que a pasta `anexos/AAAA-MM-DD/` foi criada quando há comprovantes.
 
 ### Todo mês (5 min)
 - Baixar um dump ou CSV manual do mês (backup extra no Drive).

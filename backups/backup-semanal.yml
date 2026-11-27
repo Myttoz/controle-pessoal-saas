@@ -1,7 +1,15 @@
 name: Backup Supabase — semanal
 
-# Workflow para o repositório PRIVADO de backups (ex.: Myttoz/controle-pessoal-backups).
+# Workflow para o repositório PRIVADO de backups (Myttoz/controle-pessoal-backup).
 # NÃO coloque este arquivo no repositório público do SaaS.
+#
+# Faz duas coisas todo domingo:
+#   1) pg_dump do banco (schema + dados)  → backups/backup-AAAA-MM-DD.dump
+#   2) baixa o bucket "anexos" do Storage → anexos/AAAA-MM-DD/...
+#
+# Secrets necessários no repo privado:
+#   SUPABASE_DB_URL               (connection string do Session pooler)
+#   SUPABASE_SERVICE_ROLE_KEY     (Settings → API → service_role)
 
 on:
   schedule:
@@ -17,9 +25,12 @@ permissions:
 jobs:
   backup:
     runs-on: ubuntu-latest
+    env:
+      # Fica vazio se o secret não existir; o passo de anexos é pulado.
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - name: Checkout repo de backups
-        uses: actions/checkout@v4   # usa o GITHUB_TOKEN padrão do próprio repo — sem secret extra
+        uses: actions/checkout@v5   # usa o GITHUB_TOKEN padrão do próprio repo — sem secret extra
 
       - name: pg_dump (Docker, cliente PG 17 = mesmo servidor)
         env:
@@ -28,14 +39,26 @@ jobs:
           docker run --rm -e SUPABASE_DB_URL -v "$PWD:/backup" postgres:17-alpine \
             pg_dump "$SUPABASE_DB_URL" --format=custom --no-owner --no-acl --file=/backup/backup.dump
           ls -lh backup.dump
-
-      - name: Mover para backups/ com nome datado e commitar
-        run: |
           mkdir -p backups
           cp backup.dump "backups/backup-$(date -u +%F).dump"
           rm backup.dump
+
+      - name: Baixar anexos do Storage (bucket anexos)
+        if: env.SUPABASE_SERVICE_ROLE_KEY != ''
+        env:
+          SUPABASE_URL: https://srojhhwpwfjbotuphoxq.supabase.co
+        run: |
+          export OUT_DIR="anexos/$(date -u +%F)"
+          node scripts/backup-anexos.mjs
+
+      - name: Aviso — anexos não configurados
+        if: env.SUPABASE_SERVICE_ROLE_KEY == ''
+        run: echo "::warning::Secret SUPABASE_SERVICE_ROLE_KEY ausente — os anexos NÃO foram baixados."
+
+      - name: Commitar backups
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add backups/
+          git add -A
           git commit -m "backup automático $(date -u +%F)" || echo "nada a commitar"
           git push
