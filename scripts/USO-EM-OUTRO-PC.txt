@@ -33,7 +33,9 @@ CONTROLE PESSOAL — USO EM OUTRO PC (Linux / Windows)
    # Depois, em qualquer pasta:
    #   converterpdf extrato.pdf
    #   desprotegerpdf extrato.pdf
-   #   backup-financa            (backup manual do banco Supabase)
+   #   backup-financa            (backup manual: banco + anexos)
+   #   backup-financa --configurar-anexos   (cadastrar chave secret, uma vez)
+   #   backup-financa --sem-anexos          (so o banco)
    #   baixarfinanca             (git pull + npm install quando necessario)
 
 7) Requisitos do sistema

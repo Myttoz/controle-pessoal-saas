@@ -1,25 +1,48 @@
 #!/usr/bin/env bash
-# Backup manual do banco do Supabase (pg_dump).
+# Backup manual do Controle Pessoal: banco (pg_dump) + anexos (Storage).
 #
 # Uso:
-#   backup-financa [pasta-de-saida]
+#   backup-financa [pasta-de-saida]     # banco + anexos (se configurados)
+#   backup-financa --configurar-anexos  # cadastra a chave secret do Supabase
+#   backup-financa --sem-anexos         # so o banco
 #
-# Sem argumento, salva em ~/Documentos/Pessoal/backups-saas-financas/.
-# Na primeira execucao, pede apenas a SENHA do banco (a digitacao nao aparece)
+# Sem argumento, salva em ~/Documentos/Pessoal/backups-saas-financas/:
+#   backup-AAAA-MM-DD-HHMM.dump
+#   anexos-AAAA-MM-DD/...
+#
+# Na primeira execucao do banco, pede apenas a SENHA (a digitacao nao aparece)
 # e monta a connection string do Session pooler automaticamente.
+# Os anexos sao opcionais: exigem a chave SECRET do Supabase, guardada em
+# ~/.config/saas-financas/service-role (permissao 600).
 #
-# Requisito: pg_dump instalado (versao >= a do servidor, hoje PG 17).
-# Observacao: este comando salva apenas o BANCO. Os anexos (Storage) sao
-# baixados pelo workflow semanal do repositorio privado de backups.
+# Requisitos: pg_dump (>= 17) e, para anexos, node (ja vem com o projeto).
 set -euo pipefail
 
 # Dados fixos do projeto (nao sao segredo).
 PROJ_REF="srojhhwpwfjbotuphoxq"
 POOLER_HOST="aws-1-us-east-1.pooler.supabase.com"
+SUPABASE_URL="https://srojhhwpwfjbotuphoxq.supabase.co"
 
+PROJETO="${SAAS_FINANCAS_DIR:-$HOME/Documentos/Pessoal/saas-financas}"
 CONFIG_DIR="$HOME/.config/saas-financas"
 CONFIG="$CONFIG_DIR/db-url"
-SAIDA_DIR="${1:-$HOME/Documentos/Pessoal/backups-saas-financas}"
+SECRET_FILE="$CONFIG_DIR/service-role"
+
+SAIDA_DIR="$HOME/Documentos/Pessoal/backups-saas-financas"
+CONFIGURAR_ANEXOS=0
+SEM_ANEXOS=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --configurar-anexos) CONFIGURAR_ANEXOS=1 ;;
+    --sem-anexos)        SEM_ANEXOS=1 ;;
+    -h|--help)
+      sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *) SAIDA_DIR="$arg" ;;
+  esac
+done
 
 if ! command -v pg_dump >/dev/null 2>&1; then
   echo "pg_dump nao encontrado. Instale o cliente do PostgreSQL:"
@@ -27,6 +50,30 @@ if ! command -v pg_dump >/dev/null 2>&1; then
   exit 1
 fi
 
+# ---------------------------------------------------------------------------
+# Chave secret para baixar os anexos (opcional)
+# ---------------------------------------------------------------------------
+if [ "$CONFIGURAR_ANEXOS" -eq 1 ]; then
+  echo "Configuracao dos anexos (Storage)."
+  echo "Cole a chave SECRET do Supabase (Project Settings -> API Keys -> Secret keys)."
+  echo "A chave NAO aparece na tela e fica so neste computador."
+  printf "Chave secret (nao aparece): "
+  read -r -s CHAVE
+  echo
+  if [ -z "$CHAVE" ]; then
+    echo "Nada informado. Encerrando."
+    exit 1
+  fi
+  mkdir -p "$CONFIG_DIR"
+  printf '%s\n' "$CHAVE" > "$SECRET_FILE"
+  chmod 600 "$SECRET_FILE"
+  echo "Chave salva em $SECRET_FILE (permissao 600)."
+  echo ""
+fi
+
+# ---------------------------------------------------------------------------
+# Banco de dados
+# ---------------------------------------------------------------------------
 if [ ! -f "$CONFIG" ]; then
   echo "Configuracao inicial do backup do banco."
   echo "Cole a SENHA do banco do Supabase (Project Settings -> Database)."
@@ -62,4 +109,39 @@ ARQUIVO="$SAIDA_DIR/backup-$(date +%F-%H%M).dump"
 
 echo "Gerando backup do banco..."
 pg_dump "$URL" --format=custom --no-owner --no-acl --file="$ARQUIVO"
-echo "Backup salvo: $ARQUIVO ($(du -h "$ARQUIVO" | cut -f1))"
+echo "Banco salvo: $ARQUIVO ($(du -h "$ARQUIVO" | cut -f1))"
+
+# ---------------------------------------------------------------------------
+# Anexos (Storage)
+# ---------------------------------------------------------------------------
+if [ "$SEM_ANEXOS" -eq 1 ]; then
+  exit 0
+fi
+
+if [ ! -f "$SECRET_FILE" ]; then
+  echo ""
+  echo "Anexos nao configurados (opcional). Para incluir nos proximos backups:"
+  echo "  backup-financa --configurar-anexos"
+  exit 0
+fi
+
+SCRIPT_ANEXOS="$PROJETO/backups/backup-anexos.mjs"
+if ! command -v node >/dev/null 2>&1 || [ ! -f "$SCRIPT_ANEXOS" ]; then
+  echo ""
+  echo "Aviso: node ou $SCRIPT_ANEXOS nao encontrado; anexos nao baixados."
+  exit 0
+fi
+
+PASTA_ANEXOS="$SAIDA_DIR/anexos-$(date +%F)"
+mkdir -p "$PASTA_ANEXOS"
+
+echo ""
+echo "Baixando anexos..."
+if SUPABASE_URL="$SUPABASE_URL" \
+   SUPABASE_SERVICE_ROLE_KEY="$(cat "$SECRET_FILE")" \
+   OUT_DIR="$PASTA_ANEXOS" \
+   node "$SCRIPT_ANEXOS"; then
+  echo "Anexos salvos em: $PASTA_ANEXOS"
+else
+  echo "Aviso: falha ao baixar anexos (o dump do banco foi salvo normalmente)."
+fi

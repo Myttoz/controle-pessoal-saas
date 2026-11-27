@@ -31,24 +31,31 @@ O arquivo resultante abre no LibreOffice sem senha e pode ser exportado para CSV
 O parser é específico do formato de extrato do Mercado Pago. Para outros
 bancos, adapte a função `parsear` em `scripts/pdf2csv.py`.
 
-## `backup-financa` — Backup manual do banco (pg_dump)
+## `backup-financa` — Backup manual (banco + anexos)
 
-Gera um `.dump` completo do banco do Supabase na hora, sem esperar o backup
-semanal do GitHub.
+Gera, na hora, o `.dump` do banco **e** uma pasta com os anexos do Storage —
+sem esperar o backup semanal do GitHub.
 
 ```bash
-backup-financa
-# ou indicando a pasta de saída:
-backup-financa /caminho/para/salvar
+backup-financa                         # banco + anexos
+backup-financa /caminho/para/salvar    # pasta de saída customizada
+backup-financa --sem-anexos            # só o banco
+backup-financa --configurar-anexos     # cadastra a chave secret (uma vez)
+backup-financa --help                  # ajuda
 ```
 
-- Sem argumento, salva em `~/Documentos/Pessoal/backups-saas-financas/`.
-- Na primeira execução, pede apenas a **senha do banco** (a digitação não aparece
-  na tela) e monta a connection string do Session pooler sozinho, guardando em
-  `~/.config/saas-financas/db-url` com permissão `600`. Também aceita colar a
-  connection string completa, se preferir.
-- Requer `pg_dump` (pacote `postgresql-client`).
-- **Só o banco**: os anexos do Storage são baixados pelo workflow semanal.
+- Sem argumento, salva em `~/Documentos/Pessoal/backups-saas-financas/`:
+  - `backup-AAAA-MM-DD-HHMM.dump`
+  - `anexos-AAAA-MM-DD/` (com a mesma estrutura do bucket)
+- **Banco:** na primeira execução, pede apenas a **senha do banco** (a digitação
+  não aparece) e monta a connection string do Session pooler sozinho, guardando
+  em `~/.config/saas-financas/db-url` (permissão `600`).
+- **Anexos:** são opcionais. Exigem a **chave secret** do Supabase, cadastrada
+  uma vez com `backup-financa --configurar-anexos` e guardada em
+  `~/.config/saas-financas/service-role` (permissão `600`). Sem ela, o script
+  salva o banco e avisa que os anexos foram pulados.
+- Requer `pg_dump` 17+ e, para os anexos, `node` + `backups/backup-anexos.mjs`.
+- A chave secret **nunca** vai para o GitHub, para o `.env` nem para o chat.
 
 ## `baixarfinanca` — Atualizar o projeto
 
