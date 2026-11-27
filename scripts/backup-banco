@@ -5,13 +5,17 @@
 #   backup-banco [pasta-de-saida]
 #
 # Sem argumento, salva em ~/Documentos/Pessoal/backups-saas-financas/.
-# Na primeira execucao, pede a connection string (Session pooler) e guarda
-# em ~/.config/saas-financas/db-url com permissao 600.
+# Na primeira execucao, pede apenas a SENHA do banco (a digitacao nao aparece)
+# e monta a connection string do Session pooler automaticamente.
 #
 # Requisito: pg_dump instalado (versao >= a do servidor, hoje PG 17).
 # Observacao: este comando salva apenas o BANCO. Os anexos (Storage) sao
 # baixados pelo workflow semanal do repositorio privado de backups.
 set -euo pipefail
+
+# Dados fixos do projeto (nao sao segredo).
+PROJ_REF="srojhhwpwfjbotuphoxq"
+POOLER_HOST="aws-1-us-east-1.pooler.supabase.com"
 
 CONFIG_DIR="$HOME/.config/saas-financas"
 CONFIG="$CONFIG_DIR/db-url"
@@ -19,24 +23,37 @@ SAIDA_DIR="${1:-$HOME/Documentos/Pessoal/backups-saas-financas}"
 
 if ! command -v pg_dump >/dev/null 2>&1; then
   echo "pg_dump nao encontrado. Instale o cliente do PostgreSQL:"
-  echo "  sudo apt install postgresql-client"
+  echo "  sudo apt install postgresql-client-17"
   exit 1
 fi
 
 if [ ! -f "$CONFIG" ]; then
-  echo "Cole a connection string do Supabase (Connect -> Direct -> Session pooler)."
-  echo "Ela comeca com postgresql://postgres.srojhhwpwfjbotuphoxq:"
-  printf "URL (nao aparece na tela): "
-  read -r -s URL
+  echo "Configuracao inicial do backup do banco."
+  echo "Cole a SENHA do banco do Supabase (Project Settings -> Database)."
+  echo "Se preferir, cole a connection string completa (comeca com postgresql://)."
+  printf "Senha (nao aparece na tela): "
+  read -r -s ENTRADA
   echo
-  if [ -z "$URL" ]; then
-    echo "URL vazia. Nada foi salvo."
+
+  if [ -z "$ENTRADA" ]; then
+    echo "Nada informado. Encerrando."
     exit 1
   fi
+
+  case "$ENTRADA" in
+    postgresql://*)
+      URL="$ENTRADA"
+      ;;
+    *)
+      SENHA_ENC="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$ENTRADA")"
+      URL="postgresql://postgres.${PROJ_REF}:${SENHA_ENC}@${POOLER_HOST}:5432/postgres"
+      ;;
+  esac
+
   mkdir -p "$CONFIG_DIR"
   printf '%s\n' "$URL" > "$CONFIG"
   chmod 600 "$CONFIG"
-  echo "Connection string salva em $CONFIG (permissao 600)."
+  echo "Configuracao salva em $CONFIG (permissao 600)."
 fi
 
 URL="$(cat "$CONFIG")"

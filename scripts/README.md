@@ -43,8 +43,10 @@ backup-banco /caminho/para/salvar
 ```
 
 - Sem argumento, salva em `~/Documentos/Pessoal/backups-saas-financas/`.
-- Na primeira execução, pede a connection string (Session pooler) e guarda em
-  `~/.config/saas-financas/db-url` com permissão `600`.
+- Na primeira execução, pede apenas a **senha do banco** (a digitação não aparece
+  na tela) e monta a connection string do Session pooler sozinho, guardando em
+  `~/.config/saas-financas/db-url` com permissão `600`. Também aceita colar a
+  connection string completa, se preferir.
 - Requer `pg_dump` (pacote `postgresql-client`).
 - **Só o banco**: os anexos do Storage são baixados pelo workflow semanal.
 
