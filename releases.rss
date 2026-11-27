@@ -6,7 +6,25 @@
     <description>Versões e novidades do Controle Pessoal (SaaS by Myttoz).</description>
     <language>pt-BR</language>
     <atom:link href="https://myttoz.github.io/controle-pessoal-saas/releases.rss" rel="self" type="application/rss+xml" />
-    <lastBuildDate>Thu, 26 Nov 2026 19:10:49 GMT</lastBuildDate>
+    <lastBuildDate>Fri, 27 Nov 2026 12:15:09 GMT</lastBuildDate>
+<item>
+  <title>v3.1.1</title>
+  <link>https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v3.1.1</link>
+  <guid isPermaLink="true">https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v3.1.1</guid>
+  <pubDate>Thu, 26 Nov 2026 19:10:48 GMT</pubDate>
+  <description><![CDATA[<h2>Controle Pessoal — v3.1.1</h2>
+<p>Patch de segurança e utilitários sobre a v3.1.0. <strong>Sem alteração destrutiva de banco.</strong></p>
+<h2>Segurança (duplo clique)</h2>
+<ul><li>Adicionado guard de reentrância nas escritas do <code>storeAno</code> (<code>executarEscrita</code>, <code>revalidar</code>, <code>adicionarLancamento</code>, <code>adicionarExtra</code>, <code>criarNovoAno</code>, <code>excluirAno</code>, <code>gerarDashboard</code>) — evita duplicação de lançamentos/serviços/anos por cliques rápidos.</li><li>Guards de reentrância com <code>useRef</code> em todos os formulários de gravação (<code>FormLancamento</code>, <code>FormHoraExtra</code>, <code>FormFerias</code>, <code>FormManutencao</code>, <code>LoginPage</code>, <code>RecuperarSenhaPage</code>, <code>AnexosCampo</code>, <code>ImportacaoPage</code>).</li><li>Leitura fresca do store (<code>getState()</code>) em <code>ConciliacaoPage</code>, <code>AlertasBoletos</code> e <code>OpcoesPage</code>, evitando closures stale.</li><li>Unificada a entrada de salvamento da observação em <code>TabelaLancamentos</code> (Enter ou blur, nunca as duas).</li><li><code>CampoEditavel</code> (Resumo Pagamentos) passa a salvar só no blur.</li><li>Ponto eletrônico: cancelamento do timeout de &quot;Lançado!&quot; e guard de reentrância.</li><li><code>RecorrentesLembretes</code> e <code>OpcoesPage</code> com guard de duplicata via <code>getState()</code>.</li></ul>
+<h2>Utilitários (PDF → CSV)</h2>
+<ul><li>Novos scripts em <code>scripts/</code>: <code>pdf2csv.py</code> (extrato do Mercado Pago → CSV), <code>converterpdf</code> e <code>desprotegerpdf</code> (atalhos), <code>gerar_feed.py</code> (feed RSS).</li><li><code>scripts/USO-EM-OUTRO-PC.txt</code> com tutorial completo para rodar em outro PC (Linux/Windows).</li></ul>
+<h2>Feed RSS</h2>
+<ul><li>Feeds <code>releases.rss</code> e <code>releases.xml</code> publicados no GitHub Pages.</li><li>Workflow de release atualiza e publica o feed; workflow de deploy copia para o site.</li></ul>
+<h2>Visual (slim)</h2>
+<ul><li>Explicações de cálculo e textos auxiliares escondidos em tooltips por todo o app; paddings/gaps reduzidos, sem alterar cores, bordas ou formatos.</li><li>Correções de alinhamento em Horas Extras, Conciliação, Lançamentos, Gestão Anual e Importação CSV.</li></ul>
+<h2>Como atualizar</h2>
+<p><code>master</code> é produção. Após o push, o deploy do Pages acontece automaticamente — faça hard refresh (Ctrl+Shift+R) no app.</p>]]></description>
+</item>
 <item>
   <title>v3.1.0</title>
   <link>https://github.com/Myttoz/controle-pessoal-saas/releases/tag/v3.1.0</link>
