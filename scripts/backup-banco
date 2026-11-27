@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Backup manual do banco do Supabase (pg_dump).
+#
+# Uso:
+#   backup-banco [pasta-de-saida]
+#
+# Sem argumento, salva em ~/Documentos/Pessoal/backups-saas-financas/.
+# Na primeira execucao, pede a connection string (Session pooler) e guarda
+# em ~/.config/saas-financas/db-url com permissao 600.
+#
+# Requisito: pg_dump instalado (versao >= a do servidor, hoje PG 17).
+# Observacao: este comando salva apenas o BANCO. Os anexos (Storage) sao
+# baixados pelo workflow semanal do repositorio privado de backups.
+set -euo pipefail
+
+CONFIG_DIR="$HOME/.config/saas-financas"
+CONFIG="$CONFIG_DIR/db-url"
+SAIDA_DIR="${1:-$HOME/Documentos/Pessoal/backups-saas-financas}"
+
+if ! command -v pg_dump >/dev/null 2>&1; then
+  echo "pg_dump nao encontrado. Instale o cliente do PostgreSQL:"
+  echo "  sudo apt install postgresql-client"
+  exit 1
+fi
+
+if [ ! -f "$CONFIG" ]; then
+  echo "Cole a connection string do Supabase (Connect -> Direct -> Session pooler)."
+  echo "Ela comeca com postgresql://postgres.srojhhwpwfjbotuphoxq:"
+  printf "URL (nao aparece na tela): "
+  read -r -s URL
+  echo
+  if [ -z "$URL" ]; then
+    echo "URL vazia. Nada foi salvo."
+    exit 1
+  fi
+  mkdir -p "$CONFIG_DIR"
+  printf '%s\n' "$URL" > "$CONFIG"
+  chmod 600 "$CONFIG"
+  echo "Connection string salva em $CONFIG (permissao 600)."
+fi
+
+URL="$(cat "$CONFIG")"
+mkdir -p "$SAIDA_DIR"
+ARQUIVO="$SAIDA_DIR/backup-$(date +%F-%H%M).dump"
+
+echo "Gerando backup do banco..."
+pg_dump "$URL" --format=custom --no-owner --no-acl --file="$ARQUIVO"
+echo "Backup salvo: $ARQUIVO ($(du -h "$ARQUIVO" | cut -f1))"
